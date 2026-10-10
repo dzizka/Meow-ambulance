@@ -23,8 +23,11 @@ export interface Layout {
 export function computeLayout(width: number, height: number): Layout {
   const portrait = height > width;
   // Na výšku je garáž väčšia ako šírka displeja – posúva sa prstom do strán
+  // Karta mačky pod garážou potrebuje ~405 px, aby sa vošla bez rolovania – na nižších
+  // displejoch je garáž o to menšia (najmenej 36 % výšky).
+  const maxWorldH = Math.max(height * 0.36, Math.min(height * 0.5, height - 405));
   const zoom = portrait
-    ? Math.max(width / WORLD_W, Math.min((height * 0.5) / WORLD_H, (width / WORLD_W) * 2))
+    ? Math.max(width / WORLD_W, Math.min(maxWorldH / WORLD_H, (width / WORLD_W) * 2))
     : Math.max(0.5, Math.min(width / WORLD_W, height / WORLD_H));
   const worldScreenH = Math.round(WORLD_H * zoom);
   const font = Math.round(Math.min(20, Math.max(13, Math.min(width, height) / 26)));

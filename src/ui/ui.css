@@ -474,3 +474,87 @@ body.minigame #ui > :not(.toasts) {
   height: 32px;
   font-size: 16px;
 }
+
+/* ---------- Kompaktná karta so záložkami (bez rolovania) ---------- */
+.sheet {
+  gap: 10px;
+  padding: 12px;
+}
+.card-head .sprite {
+  margin: -6px -2px;
+}
+.sheet h2 {
+  font-size: 19px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.sheet h2 .chip {
+  margin-top: 0;
+}
+.stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+}
+.stat {
+  font-size: 12px;
+}
+.bar {
+  height: 6px;
+}
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  border-bottom: 1px solid #5a4a63;
+  padding-bottom: 6px;
+}
+.tab {
+  position: relative;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ui-dim);
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tab.active {
+  background: var(--ui-bg-deep);
+  color: var(--ui-text);
+  font-weight: 700;
+}
+.tab:focus-visible {
+  outline: 2px solid var(--ui-accent);
+}
+.tab .dot {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ui-bad);
+}
+.tab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tab-body .list .btn {
+  min-height: 34px;
+  padding: 6px 10px;
+}
+.actions .btn {
+  min-height: 38px;
+  padding: 7px 9px;
+}
+.portrait .sheet {
+  bottom: auto;
+  max-height: calc(100% - var(--world-h) - 18px - env(safe-area-inset-bottom));
+}
