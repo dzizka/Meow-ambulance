@@ -33,6 +33,17 @@ export const AUDIO = {
   mewFood: audio('assets/audio/sfx/cats/cat_mewfood'),
   click: audio('assets/audio/sfx/ui/click_002'),
   select: audio('assets/audio/sfx/ui/select_001'),
+  // ďalšie zvuky z balíka Kenney Interface Sounds (S3, CC0) – nič nie je vytvorené ručne
+  open: audio('assets/audio/sfx/ui/open_001'),
+  close: audio('assets/audio/sfx/ui/close_001'),
+  success: audio('assets/audio/sfx/ui/confirmation_002'),
+  error: audio('assets/audio/sfx/ui/error_004'),
+  pluck: audio('assets/audio/sfx/ui/pluck_002'),
+  drop: audio('assets/audio/sfx/ui/drop_002'),
+  notify: audio('assets/audio/sfx/ui/bong_001'),
+  upgrade: audio('assets/audio/sfx/ui/maximize_003'),
+  found: audio('assets/audio/sfx/ui/glass_002'),
+  nothing: audio('assets/audio/sfx/ui/question_001'),
   music: audio('assets/audio/music/lofi_home'),
 } as const satisfies Record<string, string[]>;
 

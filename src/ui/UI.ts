@@ -304,12 +304,12 @@ export class UI {
     });
     bus.on('reportAdded', () => {
       this.toast(t('TOAST_NEW_REPORT'));
-      this.game.playSound('select', 0.4);
+      this.game.playSound('notify', 0.5);
       if (this.modalKind === 'reports') this.renderModal();
     });
     bus.on('adopterArrived', () => {
       this.toast(t('TOAST_VISITOR'));
-      this.game.playSound('select', 0.4);
+      this.game.playSound('notify', 0.5);
       if (this.modalKind === 'visitors') this.renderModal();
     });
     bus.on('catBecameReady', ({ cat }) => {
@@ -318,7 +318,7 @@ export class UI {
     });
     bus.on('postcardArrived', () => {
       this.toast(t('TOAST_POSTCARD'));
-      this.game.playSound('select', 0.5);
+      this.game.playSound('notify', 0.5);
     });
     bus.on('catAdopted', ({ record }) => {
       if (this.selectedId === record.cat.id) this.game.select(null);
@@ -327,14 +327,14 @@ export class UI {
     bus.on('catBecameResident', ({ cat }) => this.toast(t('TOAST_RESIDENT', { cat: cat.name })));
     bus.on('challengeCompleted', () => {
       this.toast(t('TOAST_CHALLENGE'));
-      this.game.playSound('select', 0.6);
+      this.game.playSound('success', 0.5);
       this.updateHud();
       if (this.modalKind === 'menu') this.renderModal();
     });
     bus.on('albumAdded', () => this.toast(t('TOAST_ALBUM')));
     bus.on('upgradeBought', ({ kind }) => {
       this.toast(t(kind === 'cage' ? 'TOAST_BOUGHT_CAGE' : 'TOAST_BOUGHT_SLOT'));
-      this.game.playSound('select', 0.6);
+      this.game.playSound('upgrade', 0.6);
     });
     bus.on('welcomeBack', ({ summary }) => {
       if (summary.minutes < 1) return;
@@ -649,7 +649,7 @@ export class UI {
 
   private doExamine(cat: CatData, tool: DiagnosticTool): void {
     const found = this.state.examine(cat.id, tool);
-    this.game.playSound(found.length ? 'mew' : 'click', 0.5);
+    this.game.playSound(found.length ? 'found' : 'nothing', 0.5);
     const names = found.map((id) =>
       t(this.state.data.conditions.find((d) => d.id === id)?.name_key ?? id),
     );
@@ -715,11 +715,13 @@ export class UI {
     this.modalKind = kind;
     this.welcomeLines = lines;
     this.selectedForVisit = null;
+    if (this.modal.hidden) this.game.playSound('open', 0.4);
     this.modal.hidden = false;
     this.renderModal();
   }
 
   private closeModal(): void {
+    if (!this.modal.hidden) this.game.playSound('close', 0.4);
     this.modal.hidden = true;
     this.modalKind = null;
     this.confirmReset = false;

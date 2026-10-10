@@ -134,6 +134,7 @@ export class MinigameScene extends Phaser.Scene {
       true,
     ).setOrigin(0.5);
     this.catSprite.play(catAnimKey(this.cfg.cat.sprite, 'look', 'down'));
+    this.sound.play('success', { volume: 0.5 });
     this.sound.play('mewPurr', { volume: 0.6 });
     this.hearts(6);
     this.time.delayedCall(1300, () => this.close(stars));
@@ -252,6 +253,7 @@ export class MinigameScene extends Phaser.Scene {
           this.input.setDragState(p, 0);
           tick.setPosition(home.x, home.y);
           this.flash(t('MG_SLIPPED'), home.x, home.y - S * 6, '#e86a6a');
+          this.sound.play('error', { volume: 0.5 });
           this.sound.play('mew', { volume: 0.4 });
           return;
         }
@@ -260,7 +262,7 @@ export class MinigameScene extends Phaser.Scene {
           meter.clear();
           tick.disableInteractive();
           this.input.setDragState(p, 0);
-          this.sound.play('click', { volume: 0.7 });
+          this.sound.play('pluck', { volume: 0.7 });
           this.tweens.add({
             targets: tick,
             x: this.scale.width - S * 6,
@@ -492,6 +494,7 @@ export class MinigameScene extends Phaser.Scene {
           outside = true;
           slips += 1;
           this.flash(t('MG_SLIPPED'), cx, cy - outer, '#e86a6a');
+          this.sound.play('error', { volume: 0.4 });
         }
         lastAngle = null;
         return;
@@ -563,7 +566,7 @@ export class MinigameScene extends Phaser.Scene {
           b.g.setAlpha(Math.max(0, b.dirt) * 0.9);
           if (b.dirt <= 0) {
             b.g.destroy();
-            this.sound.play('click', { volume: 0.35 });
+            this.sound.play('drop', { volume: 0.45 });
           }
         }
       }
@@ -618,6 +621,7 @@ export class MinigameScene extends Phaser.Scene {
       } else {
         misses += 1;
         this.flash(t('MG_MISS'), mx, by - S * 3, '#e86a6a');
+        this.sound.play('error', { volume: 0.4 });
       }
     });
 
