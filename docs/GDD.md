@@ -363,7 +363,7 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 - Ovládanie **jednou rukou / myšou** – pripravené na mobil.
 - Karta mačky dostupná jedným klikom: štatistiky, odhalené rysy, diagnózy, príbeh.
 - Farebné kódovanie potrieb (ikonky nad hlavou mačky).
-- **Písmo:** čitateľné Nunito pre texty a čísla, pixelové Pixelify Sans iba na nadpisy a mená mačiek.
+- **Písmo:** všade čitateľné Nunito (nadpisy hrubším rezom). Pixelové písmo sa pri malých veľkostiach rozmazávalo.
 - Prístupnosť: veľkosť písma, režim pre farboslepých (ikony + farby, nie len farby), možnosť vypnúť časový tlak („Pokojný režim").
 
 ---

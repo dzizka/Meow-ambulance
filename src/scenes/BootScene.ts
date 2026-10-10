@@ -84,11 +84,9 @@ export class BootScene extends Phaser.Scene {
     this.registry.set('state', loaded?.state ?? new GameState(data));
     this.registry.set('offline', loaded?.offline ?? null);
 
-    // Pixelový font musí byť načítaný skôr, než vzniknú texty
+    // Písmo musí byť načítané skôr, než vzniknú texty na plátne
     try {
       await Promise.all([
-        document.fonts.load('16px "Pixelify Sans"'),
-        document.fonts.load('bold 16px "Pixelify Sans"'),
         document.fonts.load('600 16px "Nunito"'),
         document.fonts.load('700 16px "Nunito"'),
       ]);

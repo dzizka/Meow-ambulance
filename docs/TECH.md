@@ -12,7 +12,10 @@ Verzie (M0, október 2026): Phaser 4.2, TypeScript 6.0, Vite 8.3, Vitest 5.0, ES
 
 ## Zobrazenie (pixel-art)
 - Mriežka **32×32 px**, herný svet garáže **480×270 px** (`src/scenes/layout.ts`).
-- Plátno má veľkosť okna (`Phaser.Scale.RESIZE`, `pixelArt: true`, `roundPixels: true`). Kamera sveta si sama vypočíta priblíženie (`computeLayout`).
+- Plátno má veľkosť okna **× DPR** (`Phaser.Scale.NONE`, `zoom: 1/DPR`, `src/scenes/dpr.ts`) – kreslí sa v plnom rozlíšení displeja, takže texty a pixel-art sú na mobile ostré. Pri zmene okna `game.scale.resize` v `main.ts`.
+- Rozloženie (`computeLayout`) sa počíta v **CSS pixeloch** (rovnako ako HTML rozhranie); kamera a minihry ho násobia `DPR`. Pevné rozmery v minihrách (písmo, okraje) písať ako `px * DPR`, ostatné relatívne k `S`.
+- Texty na plátne majú `resolution` 1 (plátno už je v plnom rozlíšení). `pixelArt: true`, `roundPixels: true`.
+- Tieň pod mačkou: labky sú v snímke na riadku ~24–26, preto `FEET_OFFSET` v `CatSprite.ts`.
 - **Na šírku:** garáž cez celú obrazovku, karta mačky sa zobrazí vpravo.
 - **Na výšku:** garáž v hornej polovici, väčšia ako displej – posúva sa ťahaním prstom; karta mačky a zoznam mačiek pod ňou.
 - **Rozhranie je HTML/CSS** (`src/ui/`) položené nad plátnom – karty, zoznamy, dialógy, oznámenia. Phaser kreslí iba svet a minihry (`MinigameScene`). Počas minihry sa HTML rozhranie skryje (trieda `body.minigame`).

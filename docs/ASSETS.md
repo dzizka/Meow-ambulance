@@ -59,8 +59,8 @@ Overené k 10. 10. 2026. **Mriežka hry: 32×32 px.** Pri „Name your own price
 ### 4.2 Font
 | # | Font | Licencia | Poznámka |
 |---|---|---|---|
-| F1 | [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans) | **OFL** | Obsahuje latin-ext → slovenská diakritika ✅. Nadpisy a UI. |
-| F2 | [Nunito](https://fonts.google.com/specimen/Nunito) – cez npm balík `@fontsource/nunito` (iba latin + latin-ext, váhy 600/700/800) | **OFL** | Všetky texty a čísla v rozhraní. Pixelify Sans (F1) iba na nadpisy. Je v `node_modules`, nie v súkromnom repozitári – OFL to dovoľuje. |
+| F1 | [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans) | **OFL** | Obsahuje latin-ext → slovenská diakritika ✅. **Momentálne nepoužité** – pri malých veľkostiach bolo rozmazané. |
+| F2 | [Nunito](https://fonts.google.com/specimen/Nunito) – cez npm balík `@fontsource/nunito` (iba latin + latin-ext, váhy 600/700/800) | **OFL** | Všetky texty, nadpisy a čísla v rozhraní aj v minihrách. Je v `node_modules`, nie v súkromnom repozitári – OFL to dovoľuje. |
 
 ### 4.3 Hudba
 | # | Na čo | Balík | Autor | Licencia | Credit |

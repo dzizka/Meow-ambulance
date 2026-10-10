@@ -9,10 +9,11 @@ import '@fontsource/nunito/latin-ext-800.css';
 import { BootScene } from './scenes/BootScene';
 import { GarageScene } from './scenes/GarageScene';
 import { MinigameScene } from './scenes/MinigameScene';
+import { DPR, canvasSize } from './scenes/dpr';
 
 /**
- * Konfigurácia hry. Veľkosť plátna = veľkosť okna (RESIZE); scény si samy
- * prepočítajú priblíženie, aby garáž vždy celá vošla – na PC aj mobile.
+ * Konfigurácia hry. Plátno má veľkosť okna × DPR (ostré na mobile) a CSS ho
+ * zmenší späť na veľkosť okna (zoom 1/DPR). Scény si samy prepočítajú priblíženie.
  */
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -21,13 +22,20 @@ const game = new Phaser.Game({
   pixelArt: true,
   roundPixels: true,
   scale: {
-    mode: Phaser.Scale.RESIZE,
-    width: '100%',
-    height: '100%',
+    mode: Phaser.Scale.NONE,
+    ...canvasSize(),
+    zoom: 1 / DPR,
   },
   input: { activePointers: 2 },
   scene: [BootScene, GarageScene, MinigameScene],
 });
+
+const fit = () => {
+  const { width, height } = canvasSize();
+  game.scale.resize(width, height);
+};
+window.addEventListener('resize', fit);
+window.visualViewport?.addEventListener('resize', fit);
 
 // Uľahčuje ladenie v konzole prehliadača
 (window as unknown as { game: Phaser.Game }).game = game;

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { DISPLAY_FONT, FONT_FAMILY } from '../assets';
+import { FONT_FAMILY } from '../assets';
+import { DPR } from './dpr';
 import type { Stars } from '../core/systems/Care';
 import type { CatData } from '../data/types';
 import { t } from '../i18n/t';
@@ -41,26 +42,21 @@ export class MinigameScene extends Phaser.Scene {
     this.finished = false;
     this.updater = null;
     const { width: W, height: H } = this.scale;
-    const font = Math.round(Math.min(22, Math.max(14, Math.min(W, H) / 24)));
+    // písmo v CSS pixeloch × DPR (plátno má plné rozlíšenie displeja)
+    const font = Math.round(DPR * Math.min(22, Math.max(14, Math.min(W, H) / DPR / 24)));
     this.S = Math.max(4, Math.floor(Math.min(W, H) / 44));
     this.cx = W / 2;
     this.cy = H * 0.52;
 
     this.add.rectangle(0, 0, W, H, BG, 0.96).setOrigin(0).setInteractive();
-    this.text(
-      W / 2,
-      Math.max(28, H * 0.07),
-      init.title,
-      font * 1.4,
-      TEXT,
-      true,
-      DISPLAY_FONT,
-    ).setOrigin(0.5);
-    this.hintText = this.text(W / 2, Math.max(28, H * 0.07) + font * 2, '', font * 0.9, DIM)
+    this.text(W / 2, Math.max(28 * DPR, H * 0.07), init.title, font * 1.4, TEXT, true).setOrigin(
+      0.5,
+    );
+    this.hintText = this.text(W / 2, Math.max(28 * DPR, H * 0.07) + font * 2, '', font * 0.9, DIM)
       .setOrigin(0.5, 0)
       .setWordWrapWidth(W * 0.86)
       .setAlign('center');
-    const close = this.text(W - 16, 16, '✕', font * 1.4, DIM).setOrigin(1, 0);
+    const close = this.text(W - 16 * DPR, 16 * DPR, '✕', font * 1.4, DIM).setOrigin(1, 0);
     close.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.finish(null));
 
     ensureCatAnims(this.anims, init.cat.sprite);
@@ -120,7 +116,6 @@ export class MinigameScene extends Phaser.Scene {
       fontSize: `${Math.round(size)}px`,
       fontStyle: bold ? 'bold' : 'normal',
       color,
-      resolution: Math.min(window.devicePixelRatio || 1, 3),
     });
   }
 
@@ -132,7 +127,7 @@ export class MinigameScene extends Phaser.Scene {
       return;
     }
     const { width: W, height: H } = this.scale;
-    const font = Math.round(Math.min(28, Math.max(18, Math.min(W, H) / 18)));
+    const font = Math.round(DPR * Math.min(28, Math.max(18, Math.min(W, H) / DPR / 18)));
     this.text(
       W / 2,
       H * 0.84,

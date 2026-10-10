@@ -20,7 +20,7 @@
 
 ## Fonty
 - Nunito – The Nunito Project Authors (https://github.com/googlefonts/nunito) – SIL Open Font License 1.1 (cez balík @fontsource/nunito)
-- Pixelify Sans – The Pixelify Sans Project Authors (https://github.com/eifetx/Pixelify-Sans) – SIL Open Font License 1.1
+- (momentálne nepoužité) Pixelify Sans – The Pixelify Sans Project Authors (https://github.com/eifetx/Pixelify-Sans) – SIL Open Font License 1.1
 
 ## Nástroje
 - [Phaser](https://phaser.io) – MIT License

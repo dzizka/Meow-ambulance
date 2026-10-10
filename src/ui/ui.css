@@ -11,7 +11,7 @@
   --ui-bad: #e86a6a;
   --ui-info: #7ec8e3;
   --ui-font: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --ui-display: 'Pixelify Sans', ui-monospace, monospace;
+  --ui-display: 'Nunito', system-ui, sans-serif;
   --ui-gap: 10px;
   --ui-radius: 10px;
   --world-h: 50vh;
@@ -674,12 +674,12 @@ body.minigame .toast:not(:last-child) {
   color: var(--ui-dim);
 }
 
-/* ---------- Písmo: čitateľný text, pixelové iba nadpisy ---------- */
+/* ---------- Písmo: všade čitateľné Nunito, nadpisy hrubšie ---------- */
 .sheet h2,
 .modal-box h2 {
   font-family: var(--ui-display);
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-weight: 800;
+  letter-spacing: 0.01em;
 }
 .pill,
 .match-score,
