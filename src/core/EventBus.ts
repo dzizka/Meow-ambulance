@@ -1,4 +1,4 @@
-import type { AdopterVisit, AdoptionRecord, CatData, Report } from '../data/types';
+import type { ActiveChallenge, AdopterVisit, AdoptionRecord, CatData, Report } from '../data/types';
 
 /** Súhrn toho, čo sa udialo, kým bola hra zatvorená (GDD §2.3). */
 export interface OfflineSummary {
@@ -24,6 +24,9 @@ export interface GameEvents {
   moneyChanged: { money: number; delta: number };
   reputationChanged: { reputation: number };
   welcomeBack: { summary: OfflineSummary };
+  challengeCompleted: { challenge: ActiveChallenge };
+  albumAdded: { key: string };
+  upgradeBought: { kind: 'cage' | 'slot' };
 }
 
 type Handler<T> = (payload: T) => void;

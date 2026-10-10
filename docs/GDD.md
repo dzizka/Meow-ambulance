@@ -253,6 +253,8 @@ Adopcia **nie je povinná**. Vyliečenú mačku si hráč môže nechať ako **s
 
 **Dva zdroje príjmu, dva štýly hrania:** kto rád adoptuje, zarába hlavne príspevkami a zbiera pohľadnice; kto si mačky necháva, zarába pomalšie, ale stabilne z kaviarne – aj keď nehrá.
 
+**Vylepšenia Fázy 1** 🟢 (menu ☰ → Garáž): 3. klietka 120 €, 4. klietka 180 €; kútik pre stálice +1 miesto 150 €, +2 220 € (ceny v `balance.json`).
+
 **Bez prevádzkových nákladov v MVP.** Krmivo a bežná starostlivosť sú zadarmo – peniaze sa míňajú iba na rast. (Neskôr personál so mzdou, ale nikdy nie bankrot.)
 
 ### 6.2 Fázy rastu útulku
@@ -289,14 +291,14 @@ Adopcia **nie je povinná**. Vyliečenú mačku si hráč môže nechať ako **s
 - Mriežka slotov: **plemená × farby/vzory** + špeciálne strany (vzácne diagnózy, udalosti, seniori).
 - Každá adoptovaná mačka = stránka: portrét pred/po, meno, povaha, príbeh, pohľadnice.
 - Percentá dokončenia a odmeny za dokončené strany (dekorácie, nové typy hlásení).
-- MVP: 6 plemien × 6 farieb = 36 slotov.
+- MVP: 6 plemien × 6 farieb = 36 slotov (menu ☰ → Album). Zapisuje sa prvá mačka každého políčka, ďalšie zvyšujú počítadlo ×N.
 
 ### 7.2 Vzácne mačky 🟡 v1.0
 - Vzácne farby (napr. dymová, čokoládová), heterochrómia, polydaktylia („palčiaky"), bezsrsté, trojfarebný kocúr (ultra vzácny).
 - Šanca na výskyt rastie s reputáciou a vybavením.
 
 ### 7.3 Výzvy a udalosti
-**Nástenka výziev** 🟢 MVP – 3 aktívne úlohy bez časového limitu, po splnení príde nová. Príklady:
+**Nástenka výziev** 🟢 MVP (menu ☰ → Výzvy) – 3 aktívne úlohy bez časového limitu. Odmenu si hráč vyzdvihne ťuknutím; na miesto výzvy príde nová. Každá ďalšia výzva rovnakého typu má vyšší cieľ (`public/data/challenges.json`). Príklady:
 - „Zachráň 3 mačiatka", „Nájdi domov pre plachú mačku", „Maj 2 stálice naraz", „Vylieč 5 kliešťových pacientov"
 - Odmena: peniaze, ★, neskôr srdiečka a dekorácie.
 

@@ -1,5 +1,5 @@
 import type { GameData } from '../data/types';
-import { GameState, SAVE_VERSION, type SaveData } from './GameState';
+import { GameState, SAVE_VERSION, emptyCounters, type SaveData } from './GameState';
 import type { OfflineSummary } from './EventBus';
 
 /** Úložisko savu – v prehliadači localStorage, na mobile neskôr Capacitor Preferences (TECH.md). */
@@ -34,7 +34,33 @@ export const browserStorage: SaveStorage = {
 };
 
 /** Migrácie starších formátov savu. Kľúč = verzia, z ktorej sa migruje. */
-const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {};
+const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
+  /** v1 → v2: výzvy, album, vylepšenia, tutoriál (M2). Album sa doplní z doterajších adopcií a stálic. */
+  1: (old) => {
+    const s = old as SaveData & { rescued?: number };
+    const counters = { ...emptyCounters(), rescued: s.rescued ?? 0, adopted: s.adoptions.length };
+    const album: SaveData['album'] = {};
+    const add = (c: SaveData['cats'][number], how: 'adopted' | 'resident', at: number) => {
+      const key = `${c.breedId}:${c.coatId}`;
+      const e = album[key];
+      if (e) e.count += 1;
+      else album[key] = { name: c.name, sprite: c.sprite, how, at, count: 1 };
+    };
+    for (const a of s.adoptions) add(a.cat, 'adopted', a.adoptedAt);
+    for (const c of s.cats.filter((x) => x.resident)) add(c, 'resident', c.admittedAt);
+    return {
+      ...s,
+      version: 2,
+      counters,
+      challenges: [],
+      challengeTiers: {},
+      album,
+      upgrades: { cages: 0, slots: 0 },
+      tutorialStep: 0,
+      tutorialDone: s.adoptions.length > 0,
+    };
+  },
+};
 
 export class SaveManager {
   constructor(

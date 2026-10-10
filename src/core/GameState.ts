@@ -1,6 +1,10 @@
 import type {
+  ActiveChallenge,
   AdopterVisit,
   AdoptionRecord,
+  AlbumEntry,
+  ChallengeDef,
+  Counters,
   CatData,
   DiagnosticTool,
   GameData,
@@ -13,7 +17,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -25,13 +29,42 @@ export interface SaveData {
   reputation: number;
   rng: number;
   nextId: number;
-  rescued: number;
   cats: CatData[];
   reports: Report[];
   adopters: AdopterVisit[];
   adoptions: AdoptionRecord[];
   timers: { report: number; adopter: number };
+  // od verzie 2
+  counters: Counters;
+  challenges: ActiveChallenge[];
+  challengeTiers: Record<string, number>;
+  album: Record<string, AlbumEntry>;
+  upgrades: { cages: number; slots: number };
+  tutorialStep: number;
+  tutorialDone: boolean;
 }
+
+export const emptyCounters = (): Counters => ({
+  rescued: 0,
+  kittens: 0,
+  adopted: 0,
+  perfect: 0,
+  shy_homed: 0,
+  treated: 0,
+  ticks: 0,
+  social: 0,
+  fed: 0,
+});
+
+/** Kroky tutoriálu so Zuzkou (kľúče textov) – postupujú podľa toho, čo hráč už urobil. */
+export const TUTORIAL_STEPS = [
+  'TUT_REPORT',
+  'TUT_EXAMINE',
+  'TUT_TREAT',
+  'TUT_CARE',
+  'TUT_READY',
+  'TUT_MENU',
+] as const;
 
 export type DayPhase = 'night' | 'morning' | 'day' | 'evening';
 
@@ -51,7 +84,13 @@ export class GameState {
   reports: Report[] = [];
   adopters: AdopterVisit[] = [];
   adoptions: AdoptionRecord[] = [];
-  rescued = 0;
+  counters: Counters = emptyCounters();
+  challenges: ActiveChallenge[] = [];
+  challengeTiers: Record<string, number> = {};
+  album: Record<string, AlbumEntry> = {};
+  upgrades = { cages: 0, slots: 0 };
+  tutorialStep = 0;
+  tutorialDone = false;
   private nextId = 1;
   private reportTimer: number;
   private adopterTimer: number;
@@ -67,6 +106,11 @@ export class GameState {
     // Prvé hlásenie a prvý adoptér prídu skôr ako ďalšie
     this.reportTimer = (b.rescue.interval_s - b.rescue.first_delay_s) * 1000;
     this.adopterTimer = (b.adopters.interval_s - b.adopters.first_delay_s) * 1000;
+    this.fillChallenges();
+  }
+
+  get rescued(): number {
+    return this.counters.rescued;
   }
 
   // ---------- Hodiny pre atmosféru ----------
@@ -102,7 +146,11 @@ export class GameState {
   }
 
   get cageCount(): number {
-    return this.data.balance.phase_1.cages;
+    return this.data.balance.phase_1.cages + this.upgrades.cages;
+  }
+
+  get residentSlots(): number {
+    return this.data.balance.residents.slots + this.upgrades.slots;
   }
 
   get freeCages(): number {
@@ -110,7 +158,7 @@ export class GameState {
   }
 
   get freeResidentSlots(): number {
-    return this.data.balance.residents.slots - this.residents.length;
+    return this.residentSlots - this.residents.length;
   }
 
   getCat(id: string): CatData | undefined {
@@ -247,8 +295,10 @@ export class GameState {
       now: this.now,
     });
     this.cats.push(cat);
-    this.rescued += 1;
+    this.counters.rescued += 1;
+    if (cat.age === 'kitten') this.counters.kittens += 1;
     this.bus.emit('catAdmitted', { cat });
+    this.checkChallenges();
     return cat;
   }
 
@@ -271,6 +321,8 @@ export class GameState {
   treat(catId: string, conditionId: string, stars: Care.Stars): boolean {
     const cat = this.getCat(catId);
     if (!cat || !Care.treat(cat, conditionId, stars, this.data)) return false;
+    this.counters.treated += 1;
+    if (conditionId === 'ticks') this.counters.ticks += 1;
     this.changed(cat);
     return true;
   }
@@ -279,7 +331,10 @@ export class GameState {
     const cat = this.getCat(catId);
     if (!cat) return null;
     const result = Care.socialize(cat, activity, stars, this.now, this.data);
-    if (result) this.changed(cat);
+    if (result) {
+      this.counters.social += 1;
+      this.changed(cat);
+    }
     return result;
   }
 
@@ -291,6 +346,7 @@ export class GameState {
   feed(catId: string): boolean {
     const cat = this.getCat(catId);
     if (!cat || !Care.feed(cat, this.now, this.data)) return false;
+    this.counters.fed += 1;
     this.changed(cat);
     return true;
   }
@@ -305,6 +361,7 @@ export class GameState {
     const cat = this.getCat(catId);
     if (!cat || cat.resident || !this.isReady(cat) || this.freeResidentSlots <= 0) return false;
     cat.resident = true;
+    this.addToAlbum(cat, 'resident');
     this.bus.emit('catBecameResident', { cat });
     this.changed(cat);
     return true;
@@ -362,10 +419,15 @@ export class GameState {
     this.adopters = this.adopters.filter((v) => v !== visit);
     this.readyIds.delete(cat.id);
     this.adoptions.push(record);
+    this.counters.adopted += 1;
+    if (match.quality === 'perfect') this.counters.perfect += 1;
+    if (cat.traits.some((t) => t.id === 'shy')) this.counters.shy_homed += 1;
+    if (!cat.resident) this.addToAlbum(cat, 'adopted');
     this.addMoney(fee, true);
     this.reputation += rep;
     this.bus.emit('reputationChanged', { reputation: this.reputation });
     this.bus.emit('catAdopted', { record });
+    this.checkChallenges();
     return record;
   }
 
@@ -381,6 +443,143 @@ export class GameState {
     record.postcardSeen = true;
   }
 
+  // ---------- Výzvy (GDD §7.3) ----------
+
+  challengeDef(defId: string): ChallengeDef | undefined {
+    return this.data.challenges.find((d) => d.id === defId);
+  }
+
+  /** Aktuálny postup výzvy (môže presiahnuť cieľ). */
+  challengeProgress(ch: ActiveChallenge): number {
+    const def = this.challengeDef(ch.defId);
+    if (!def) return 0;
+    if (def.kind === 'residents') return this.residents.length;
+    return this.counters[def.kind] - ch.start;
+  }
+
+  /** Doplní nástenku na počet aktívnych výziev – vyberá typy, ktoré na nej ešte nie sú. */
+  private fillChallenges(): void {
+    const want = this.data.balance.challenges.active;
+    while (this.challenges.length < want) {
+      const active = new Set(this.challenges.map((c) => c.defId));
+      const pool = this.data.challenges.filter((d) => !active.has(d.id));
+      if (pool.length === 0) return;
+      const def = this.rng.weighted(pool, (d) => d.weight);
+      const tier = this.challengeTiers[def.id] ?? 0;
+      this.challenges.push({
+        defId: def.id,
+        target: def.base + def.step * tier,
+        start: def.kind === 'residents' ? 0 : this.counters[def.kind],
+        completed: false,
+      });
+    }
+    this.checkChallenges();
+  }
+
+  private checkChallenges(): void {
+    for (const ch of this.challenges) {
+      if (!ch.completed && this.challengeProgress(ch) >= ch.target) {
+        ch.completed = true;
+        this.bus.emit('challengeCompleted', { challenge: ch });
+      }
+    }
+  }
+
+  /** Vyzdvihnúť odmenu za splnenú výzvu; na jej miesto príde nová. */
+  claimChallenge(defId: string): ChallengeDef | null {
+    const ch = this.challenges.find((c) => c.defId === defId && c.completed);
+    const def = ch && this.challengeDef(ch.defId);
+    if (!ch || !def) return null;
+    this.challenges = this.challenges.filter((c) => c !== ch);
+    this.challengeTiers[def.id] = (this.challengeTiers[def.id] ?? 0) + 1;
+    this.addMoney(def.money, true);
+    this.reputation += def.rep;
+    this.bus.emit('reputationChanged', { reputation: this.reputation });
+    this.fillChallenges();
+    return def;
+  }
+
+  get claimableChallenges(): number {
+    return this.challenges.filter((c) => c.completed).length;
+  }
+
+  // ---------- Album (GDD §7.1) ----------
+
+  static albumKey(breedId: string, coatId: string): string {
+    return `${breedId}:${coatId}`;
+  }
+
+  private addToAlbum(cat: CatData, how: AlbumEntry['how']): void {
+    const key = GameState.albumKey(cat.breedId, cat.coatId);
+    const existing = this.album[key];
+    if (existing) {
+      existing.count += 1;
+      return;
+    }
+    this.album[key] = { name: cat.name, sprite: cat.sprite, how, at: this.now, count: 1 };
+    this.bus.emit('albumAdded', { key });
+  }
+
+  get albumSize(): number {
+    return this.data.breeds.length * this.data.coats.length;
+  }
+
+  // ---------- Vylepšenia garáže (GDD §6.1) ----------
+
+  /** Cena ďalšej klietky, alebo null, ak sa už viac kúpiť nedá. */
+  get nextCagePrice(): number | null {
+    return this.data.balance.upgrades.cage_prices[this.upgrades.cages] ?? null;
+  }
+
+  get nextSlotPrice(): number | null {
+    return this.data.balance.upgrades.slot_prices[this.upgrades.slots] ?? null;
+  }
+
+  buyCage(): boolean {
+    const price = this.nextCagePrice;
+    if (price === null || this.money < price) return false;
+    this.addMoney(-price, true);
+    this.upgrades.cages += 1;
+    this.bus.emit('upgradeBought', { kind: 'cage' });
+    return true;
+  }
+
+  buySlot(): boolean {
+    const price = this.nextSlotPrice;
+    if (price === null || this.money < price) return false;
+    this.addMoney(-price, true);
+    this.upgrades.slots += 1;
+    this.bus.emit('upgradeBought', { kind: 'slot' });
+    return true;
+  }
+
+  // ---------- Tutoriál so Zuzkou ----------
+
+  /** Kľúč textu aktuálnej rady, alebo null, ak je tutoriál hotový. */
+  get tutorialHint(): (typeof TUTORIAL_STEPS)[number] | null {
+    if (this.tutorialDone) return null;
+    const done = [
+      () => this.counters.rescued > 0,
+      () =>
+        this.cats.some((c) => c.examined.length >= 2) ||
+        this.counters.adopted > 0 ||
+        this.residents.length > 0,
+      () => this.cats.some((c) => Care.allTreated(c)) || this.counters.adopted > 0,
+      () =>
+        this.cats.some((c) => this.isReady(c)) ||
+        this.counters.adopted > 0 ||
+        this.residents.length > 0,
+      () => this.counters.adopted > 0 || this.residents.length > 0,
+    ];
+    // Krok sa nikdy nevracia späť (nová mačka neznamená tutoriál odznova)
+    while (this.tutorialStep < done.length && done[this.tutorialStep]?.()) this.tutorialStep += 1;
+    return TUTORIAL_STEPS[this.tutorialStep] ?? null;
+  }
+
+  dismissTutorial(): void {
+    this.tutorialDone = true;
+  }
+
   // ---------- Ukladanie ----------
 
   toSave(wallClock: number): SaveData {
@@ -392,12 +591,18 @@ export class GameState {
       reputation: this.reputation,
       rng: this.rng.getState(),
       nextId: this.nextId,
-      rescued: this.rescued,
       cats: structuredClone(this.cats),
       reports: structuredClone(this.reports),
       adopters: structuredClone(this.adopters),
       adoptions: structuredClone(this.adoptions),
       timers: { report: this.reportTimer, adopter: this.adopterTimer },
+      counters: { ...this.counters },
+      challenges: structuredClone(this.challenges),
+      challengeTiers: { ...this.challengeTiers },
+      album: structuredClone(this.album),
+      upgrades: { ...this.upgrades },
+      tutorialStep: this.tutorialStep,
+      tutorialDone: this.tutorialDone,
     };
   }
 
@@ -407,14 +612,22 @@ export class GameState {
     s.money = save.money;
     s.reputation = save.reputation;
     s.nextId = save.nextId;
-    s.rescued = save.rescued;
     s.cats = save.cats;
     s.reports = save.reports;
     s.adopters = save.adopters;
     s.adoptions = save.adoptions;
     s.reportTimer = save.timers.report;
     s.adopterTimer = save.timers.adopter;
+    s.counters = { ...emptyCounters(), ...save.counters };
+    s.challenges = save.challenges;
+    s.challengeTiers = save.challengeTiers;
+    s.album = save.album;
+    s.upgrades = save.upgrades;
+    s.tutorialStep = save.tutorialStep;
+    s.tutorialDone = save.tutorialDone;
+    s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
+    s.fillChallenges();
     return s;
   }
 
@@ -436,5 +649,6 @@ export class GameState {
   private changed(cat: CatData): void {
     this.bus.emit('catChanged', { cat });
     this.checkReadiness();
+    this.checkChallenges();
   }
 }

@@ -77,7 +77,8 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - Web a Tauri: `localStorage` (kľúč `meow-ambulance:save:1`); Capacitor: plugin Preferences/Filesystem – za spoločným rozhraním `SaveStorage` (`src/core/SaveManager.ts`).
 - Ukladá sa každých 15 s, po dôležitých udalostiach a pri skrytí/zatvorení stránky. Pri načítaní sa dopočíta offline čas (`GameState.applyOffline`).
 - Adresa končiaca `#novahra` zmaže uloženú hru (na testovanie).
-- Pole `saveVersion`; pri zmene formátu sa pridá migračná funkcia, staré savy nesmú prestať fungovať.
+- Pole `version` (aktuálne 2); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
+- „Nová hra" v menu (☰ → Garáž) zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
 
 ## Testy a CI
 - Vitest pre `src/core/`: generovanie mačky, starostlivosť, výpočet zhody, hlásenia a adoptéri v čase, offline, ukladanie.

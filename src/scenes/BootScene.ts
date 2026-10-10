@@ -56,6 +56,7 @@ export class BootScene extends Phaser.Scene {
     const json = this.cache.json;
     const breeds = json.get('breeds') as { breeds: GameData['breeds']; coats: GameData['coats'] };
     const data: GameData = {
+      challenges: json.get('challenges').challenges,
       traits: json.get('traits').traits,
       conditions: json.get('conditions').conditions,
       breeds: breeds.breeds,

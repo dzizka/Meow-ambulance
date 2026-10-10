@@ -10,6 +10,7 @@ export const DATA_FILES = {
   names: 'data/names.json',
   balance: 'data/balance.json',
   reports: 'data/reports.json',
+  challenges: 'data/challenges.json',
 } as const;
 
 export const IMAGES = {

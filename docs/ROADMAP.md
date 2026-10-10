@@ -38,16 +38,18 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 
 ## M2 – Vertikálny rez / MVP (6–8 týždňov)
 - [ ] Grafika garáže a mačiek z vybraných free assetov
-- [ ] 3 vizuálne stavy mačky + efekt premeny
+- [x] Efekt premeny (iskričky, pradenie), špinavá mačka tmavšia
+- [ ] 3 plné vizuálne stavy mačky (obväzy, lesk)
 - [ ] Diagnostika so skrytými diagnózami (ruka, teplomer, stetoskop)
 - [ ] 4 liečebné minihry: kliešte, obväz, uši, sirup
 - [ ] 3 socializačné: pero, česanie, kŕmenie z ruky
 - [ ] 6 rysov, odhaľovanie rysov
 - [ ] 8 archetypov adoptérov
-- [ ] Album (36 slotov) – stránky adoptovaných aj stálic
-- [ ] Nástenka výziev (3 aktívne úlohy)
-- [ ] Ekonomika: €, ★, nákup klietok a rozšírenie kútika
-- [ ] Tutoriál so Zuzkou (prvé 3 hlásenia skriptované)
+- [x] Album (36 slotov) – adoptované aj stálice, pohľadnice v albume
+- [x] Nástenka výziev (3 aktívne úlohy, 10 typov, rastúce ciele)
+- [x] Ekonomika: €, ★, nákup 3. a 4. klietky a rozšírenie kútika (menu ☰ → Garáž)
+- [x] Tutoriál so Zuzkou (rady podľa postupu hráča, dá sa skryť)
+- [x] Ukladanie v2 s migráciou starých savov, „Nová hra" v menu
 - [ ] Ukladanie (3 sloty, autosave)
 - [ ] Hudba (3 skladby) + SFX (~20)
 - [ ] SK + EN lokalizácia
