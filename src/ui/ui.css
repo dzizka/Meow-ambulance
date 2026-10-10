@@ -10,7 +10,8 @@
   --ui-warn: #f2c14e;
   --ui-bad: #e86a6a;
   --ui-info: #7ec8e3;
-  --ui-font: 'Pixelify Sans', ui-monospace, monospace;
+  --ui-font: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ui-display: 'Pixelify Sans', ui-monospace, monospace;
   --ui-gap: 10px;
   --ui-radius: 10px;
   --world-h: 50vh;
@@ -24,6 +25,7 @@
   font-family: var(--ui-font);
   color: var(--ui-text);
   font-size: 15px;
+  font-weight: 600;
   line-height: 1.35;
   z-index: 10;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
@@ -662,4 +664,42 @@ body.minigame #ui > :not(.toasts) {
   bottom: 1px;
   font-size: 10px;
   color: var(--ui-dim);
+}
+
+/* ---------- Písmo: čitateľný text, pixelové iba nadpisy ---------- */
+.sheet h2,
+.modal-box h2 {
+  font-family: var(--ui-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.pill,
+.match-score,
+.stat .val,
+.badge {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.stat {
+  font-size: 13px;
+}
+.sub,
+.muted,
+.hint {
+  font-weight: 600;
+}
+.btn,
+.tab {
+  font-weight: 700;
+}
+.zuzka p {
+  font-size: 14px;
+  line-height: 1.3;
+}
+.sheet h2 .chip {
+  font-family: var(--ui-font);
+  letter-spacing: 0;
+}
+.challenge .bar {
+  background: #1d1824;
 }

@@ -87,6 +87,8 @@ export class BootScene extends Phaser.Scene {
       await Promise.all([
         document.fonts.load('16px "Pixelify Sans"'),
         document.fonts.load('bold 16px "Pixelify Sans"'),
+        document.fonts.load('600 16px "Nunito"'),
+        document.fonts.load('700 16px "Nunito"'),
       ]);
     } catch {
       /* ak font zlyhá, použije sa monospace */

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY } from '../assets';
+import { DISPLAY_FONT, FONT_FAMILY } from '../assets';
 import type { Stars } from '../core/systems/Care';
 import type { CatData } from '../data/types';
 import { t } from '../i18n/t';
@@ -47,7 +47,15 @@ export class MinigameScene extends Phaser.Scene {
     this.cy = H * 0.52;
 
     this.add.rectangle(0, 0, W, H, BG, 0.96).setOrigin(0).setInteractive();
-    this.text(W / 2, Math.max(28, H * 0.07), init.title, font * 1.4, TEXT, true).setOrigin(0.5);
+    this.text(
+      W / 2,
+      Math.max(28, H * 0.07),
+      init.title,
+      font * 1.4,
+      TEXT,
+      true,
+      DISPLAY_FONT,
+    ).setOrigin(0.5);
     this.hintText = this.text(W / 2, Math.max(28, H * 0.07) + font * 2, '', font * 0.9, DIM)
       .setOrigin(0.5, 0)
       .setWordWrapWidth(W * 0.86)
@@ -81,9 +89,17 @@ export class MinigameScene extends Phaser.Scene {
     if (!this.finished) this.updater?.(delta);
   }
 
-  private text(x: number, y: number, value: string, size: number, color: string, bold = false) {
+  private text(
+    x: number,
+    y: number,
+    value: string,
+    size: number,
+    color: string,
+    bold = false,
+    family = FONT_FAMILY,
+  ) {
     return this.add.text(x, y, value, {
-      fontFamily: FONT_FAMILY,
+      fontFamily: family,
       fontSize: `${Math.round(size)}px`,
       fontStyle: bold ? 'bold' : 'normal',
       color,
