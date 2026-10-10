@@ -1,19 +1,94 @@
 {
-  "_comment": "Plemená MVP (6) a farby (6) = 36 slotov albumu (GDD §7.1). rarity: 1 bežná – 5 legendárna.",
+  "_comment": "Plemená MVP (6) a farby (6) = 36 slotov albumu (GDD §7.1). rarity: 1 bežná – 5 legendárna. sprites = hárky z public/assets/sprites/cats/popshop/; coat_override = plemeno má vždy túto farbu.",
   "breeds": [
-    {"id": "domestic_short", "name_key": "BREED_DOMESTIC_SHORT", "rarity": 1},
-    {"id": "domestic_long",  "name_key": "BREED_DOMESTIC_LONG",  "rarity": 1},
-    {"id": "european_short", "name_key": "BREED_EUROPEAN_SHORT", "rarity": 2},
-    {"id": "persian",        "name_key": "BREED_PERSIAN",        "rarity": 3},
-    {"id": "maine_coon",     "name_key": "BREED_MAINE_COON",     "rarity": 3},
-    {"id": "siamese",        "name_key": "BREED_SIAMESE",        "rarity": 4}
+    {
+      "id": "domestic_short",
+      "name_key": "BREED_DOMESTIC_SHORT",
+      "rarity": 1
+    },
+    {
+      "id": "domestic_long",
+      "name_key": "BREED_DOMESTIC_LONG",
+      "rarity": 1
+    },
+    {
+      "id": "european_short",
+      "name_key": "BREED_EUROPEAN_SHORT",
+      "rarity": 2
+    },
+    {
+      "id": "persian",
+      "name_key": "BREED_PERSIAN",
+      "rarity": 3
+    },
+    {
+      "id": "maine_coon",
+      "name_key": "BREED_MAINE_COON",
+      "rarity": 3
+    },
+    {
+      "id": "siamese",
+      "name_key": "BREED_SIAMESE",
+      "rarity": 4,
+      "sprite_override": "seal_point_0"
+    }
   ],
   "coats": [
-    {"id": "black",      "name_key": "COAT_BLACK",      "rarity": 1},
-    {"id": "orange",     "name_key": "COAT_ORANGE",     "rarity": 1},
-    {"id": "tabby",      "name_key": "COAT_TABBY",      "rarity": 1},
-    {"id": "tuxedo",     "name_key": "COAT_TUXEDO",     "rarity": 2},
-    {"id": "calico",     "name_key": "COAT_CALICO",     "rarity": 2},
-    {"id": "white",      "name_key": "COAT_WHITE",      "rarity": 3}
+    {
+      "id": "black",
+      "name_key": "COAT_BLACK",
+      "rarity": 1,
+      "sprites": [
+        "black_0",
+        "black_1",
+        "black_2",
+        "black_3"
+      ]
+    },
+    {
+      "id": "orange",
+      "name_key": "COAT_ORANGE",
+      "rarity": 1,
+      "sprites": [
+        "orange_0",
+        "orange_2",
+        "gold_0"
+      ]
+    },
+    {
+      "id": "tabby",
+      "name_key": "COAT_TABBY",
+      "rarity": 1,
+      "sprites": [
+        "brown_7",
+        "grey_2",
+        "orange_3"
+      ]
+    },
+    {
+      "id": "tuxedo",
+      "name_key": "COAT_TUXEDO",
+      "rarity": 2,
+      "sprites": [
+        "black_4"
+      ]
+    },
+    {
+      "id": "calico",
+      "name_key": "COAT_CALICO",
+      "rarity": 2,
+      "sprites": [
+        "calico_0"
+      ]
+    },
+    {
+      "id": "white",
+      "name_key": "COAT_WHITE",
+      "rarity": 3,
+      "sprites": [
+        "white_0",
+        "white_grey_0"
+      ]
+    }
   ]
 }

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="sk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#2b2533" />
+    <title>Meow Ambulance</title>
+    <style>
+      @font-face {
+        font-family: 'Pixelify Sans';
+        src: url('./assets/fonts/PixelifySans-Regular.ttf') format('truetype');
+        font-weight: 400;
+      }
+      @font-face {
+        font-family: 'Pixelify Sans';
+        src: url('./assets/fonts/PixelifySans-Bold.ttf') format('truetype');
+        font-weight: 700;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #2b2533;
+        overflow: hidden;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #game {
+        position: fixed;
+        inset: 0;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+          env(safe-area-inset-left);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

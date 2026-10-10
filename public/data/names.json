@@ -2,7 +2,7 @@
   "_comment": "Mená mačiek. by_coat = šanca 30 % použiť meno podľa farby.",
   "generic": ["Bublina", "Pán Fúzik", "Micka", "Ťapka", "Gombík", "Žofka", "Kubko", "Lienka", "Šmudla", "Pradúšik", "Fazuľka", "Bruno", "Mňauka", "Kapitán", "Pusinka", "Oskar"],
   "by_coat": {
-    "black":  ["Uhlík", "Noc", "Černica", "Pepř"],
+    "black":  ["Uhlík", "Noc", "Černica", "Mak"],
     "orange": ["Mrkvička", "Tekvička", "Marhuľka", "Rysko"],
     "tabby":  ["Tigrík", "Pruhovka", "Lesík"],
     "tuxedo": ["Smokíng", "Pán Barón", "Domino"],

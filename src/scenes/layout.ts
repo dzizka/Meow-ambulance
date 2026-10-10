@@ -1,0 +1,43 @@
+/** Veľkosť herného sveta (garáž) v pixeloch pixel-artu. */
+export const WORLD_W = 480;
+export const WORLD_H = 270;
+
+export interface Layout {
+  width: number;
+  height: number;
+  portrait: boolean;
+  /** Priblíženie sveta (1 px pixel-artu = zoom px obrazovky). */
+  zoom: number;
+  /** Výška oblasti so svetom na obrazovke. */
+  worldScreenH: number;
+  /** Panel s kartou mačky v pixeloch obrazovky. */
+  panel: { x: number; y: number; w: number; h: number };
+  /** Základná veľkosť písma UI. */
+  font: number;
+}
+
+/**
+ * Na šírku: garáž cez celú obrazovku, karta mačky sa vysunie sprava.
+ * Na výšku: garáž hore, karta mačky pod ňou (GDD §9.3 – ovládanie jednou rukou).
+ */
+export function computeLayout(width: number, height: number): Layout {
+  const portrait = height > width;
+  // Na výšku je garáž väčšia ako šírka displeja – posúva sa prstom do strán
+  const zoom = portrait
+    ? Math.max(width / WORLD_W, Math.min((height * 0.5) / WORLD_H, (width / WORLD_W) * 2))
+    : Math.max(0.5, Math.min(width / WORLD_W, height / WORLD_H));
+  const worldScreenH = Math.round(WORLD_H * zoom);
+  const font = Math.round(Math.min(20, Math.max(13, Math.min(width, height) / 26)));
+
+  const panel = portrait
+    ? { x: 10, y: worldScreenH + 8, w: width - 20, h: height - worldScreenH - 18 }
+    : {
+        w: Math.round(Math.min(300, Math.max(220, width * 0.32))),
+        x: 0,
+        y: Math.round(font * 3.2),
+        h: Math.round(height - font * 3.2 - 10),
+      };
+  if (!portrait) panel.x = width - panel.w - 10;
+
+  return { width, height, portrait, zoom, worldScreenH, panel, font };
+}

@@ -8,19 +8,23 @@ Každý míľnik = GitHub Milestone. Každá odrážka = GitHub Issue. Značky r
 - [x] GitHub repozitár, GDD, pravidlá assetov
 - [x] Súkromný repozitár pre assety, pripojený ako podmodul `public/assets/`
 - [ ] Ochrana vetvy `main`
-- [ ] Stiahnuť a nahrať vybrané assety (ASSETS.md §4), uložiť licencie do `public/assets/licenses/`
-- [ ] Kostra projektu: Vite + TypeScript + Phaser, ESLint, Prettier, Vitest
-- [ ] Konfigurácia Phaseru pre pixel-art (480×270, celočíselné škálovanie, na výšku aj na šírku)
-- [ ] `src/core/`: prázdne kostry GameState, TimeManager, EventBus, SaveManager, CatRegistry
-- [ ] GitHub Actions: lint + testy + build pri PR, nasadenie webovej verzie
+- [x] Stiahnuť a nahrať vybrané assety (ASSETS.md §4), uložiť licencie do `public/assets/licenses/`
+- [x] Kostra projektu: Vite + TypeScript + Phaser, ESLint, Prettier, Vitest
+- [x] Konfigurácia Phaseru pre pixel-art (svet 480×270, na výšku aj na šírku, posúvanie prstom)
+- [x] `src/core/`: GameState, TimeManager, EventBus, Rng, CatGenerator + testy (SaveManager v M1)
+- [x] GitHub Actions: lint + testy + build pri PR
+- [ ] Nasadenie webovej verzie s assetmi (potrebuje token k súkromnému repozitáru) – zatiaľ ručne ako Claude artifact
 - [ ] GitHub Project (Kanban: Backlog → Todo → In progress → Review → Done)
 
 ## M1 – Prototyp „šedé krabice" (2 týždne)
 Cieľ: overiť zábavnosť slučky s jednoduchou grafikou – **hrateľné na mobile cez odkaz**.
-- [ ] Načítanie `public/data/*.json`, generovanie mačky (`CatGenerator`) + testy
-- [ ] Garáž z Tiled mapy, klietky, klik/ťuk na mačku → karta mačky
-- [ ] Štatistiky (Zdravie, Čistota, Dôvera, Spokojnosť) a ich pokles v čase
-- [ ] Herný deň (07:00–20:00), pauza, zrýchlenie, súhrn dňa
+- [x] Načítanie `public/data/*.json`, generovanie mačky (`CatGenerator`) + testy
+- [x] Garáž (zatiaľ poskladaná v kóde), klietky, ťuk na mačku → karta mačky; mačky sa prechádzajú v 8 smeroch
+- [ ] Garáž z Tiled mapy
+- [x] Karta mačky so štatistikami (Zdravie, Čistota, Dôvera, Spokojnosť)
+- [ ] Pokles štatistík v čase
+- [x] Herný deň (07:00–20:00), pauza, zrýchlenie
+- [ ] Súhrn dňa
 - [ ] 1 liečebná minihra (kliešte) + 1 socializačná (pero)
 - [ ] 1 adoptér, výpočet zhody (`MatchCalculator`) + testy, adopcia
 - [ ] Výber palety, test mierky assetov
