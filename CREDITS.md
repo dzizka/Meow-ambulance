@@ -18,7 +18,7 @@
 - Interface Sounds – Kenney – www.kenney.nl (CC0)
 
 ## Fonty
-- Pixelify Sans – Stefie Justprince – SIL Open Font License 1.1
+- Pixelify Sans – The Pixelify Sans Project Authors (https://github.com/eifetx/Pixelify-Sans) – SIL Open Font License 1.1
 
 ## Nástroje
 - [Phaser](https://phaser.io) – MIT License
