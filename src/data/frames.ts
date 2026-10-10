@@ -31,6 +31,9 @@ export const INTERIOR_FRAMES = {
   cushion: [456, 207, 18, 11],
   bowl: [461, 237, 10, 11],
   desk_lamp: [299, 296, 11, 20],
+  counter_cups: [128, 173, 64, 19],
+  table_small: [483, 116, 26, 20],
+  chair_side: [426, 194, 15, 28],
 } as const satisfies Record<string, FrameRect>;
 
 export const CLINIC_FRAMES = {

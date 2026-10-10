@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { EXTRA_SFX } from '../sfx';
+import { personKey } from './personAnims';
 import { AUDIO, DATA_FILES, IMAGES, ZUZKA_SHEET, catSheetPath, personSheetPath } from '../assets';
 import type { GameData } from '../data/types';
 import { t } from '../i18n/t';
@@ -38,6 +39,16 @@ export class BootScene extends Phaser.Scene {
     });
     for (const [key, urls] of Object.entries({ ...AUDIO, ...EXTRA_SFX }))
       this.load.audio(key, [...urls]);
+
+    // Postavičky hostí a baristky v kaviarni – zoznam je v balance.json (GDD §5.5)
+    this.load.once(Phaser.Loader.Events.FILE_COMPLETE + '-json-balance', () => {
+      const balance = this.cache.json.get('balance') as GameData['balance'];
+      for (const s of new Set([...balance.cafe.guest_sprites, balance.cafe.barista_sprite]))
+        this.load.spritesheet(personKey(s), personSheetPath(s), {
+          frameWidth: 20,
+          frameHeight: 32,
+        });
+    });
 
     // Hárky mačiek sa načítajú až keď vieme, ktoré farby existujú (z breeds.json)
     this.load.once(Phaser.Loader.Events.FILE_COMPLETE + '-json-breeds', () => {

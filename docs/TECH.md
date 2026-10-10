@@ -102,6 +102,12 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `licenses/`). To je v súlade s licenciami – assety sú súčasťou hry, nešíria sa samostatne.
 - Minihry a UI sa testujú ručne podľa checklistu v PR – **vždy aj na telefóne**.
 
+## Miestnosti
+- Svet má dve miestnosti vedľa seba, každá `WORLD_W × WORLD_H`: garáž (x 0) a kaviareň (`CAFE_X`). Kamera má hranice iba aktuálnej miestnosti (`GarageScene.showRoom`, `roomX` v `layout.ts`).
+- Kaviareň kreslí `src/scenes/CafeRoom.ts` (pozadie, nábytok, hostia, bubliny objednávok); stav a pravidlá sú v `GameState` (sekcia Mačacia kaviareň), balans v `balance.json → cafe`.
+- Hostia sú postavičky G5 (`personAnims.ts`, hárky sa načítajú podľa `cafe.guest_sprites`). „Sedenie": stolička má väčšiu hĺbku ako hosť, takže mu zakryje nohy.
+- Save v3 pridal `cafe` a `counters.served` (migrácia `MIGRATIONS[2]`).
+
 ## Zvuky
 - Základné zvuky sú v `AUDIO` (`src/assets.ts`) – vždy OGG + MP3.
 - Voliteľné zvuky (`src/sfx.ts`) sa hľadajú v `public/assets/audio/sfx/extra/` pri štarte Vite / builde (`define __EXTRA_SFX__` vo `vite.config.ts`) – načítajú sa iba existujúce, takže žiadne chyby 404. Po pridaní súboru treba reštartovať `npm run dev`.

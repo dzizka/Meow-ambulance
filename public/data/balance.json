@@ -66,5 +66,21 @@
   },
   "challenges": {
     "active": 3
+  },
+  "cafe": {
+    "price": 350,
+    "slots": 3,
+    "donation_multiplier": 2,
+    "tables": 2,
+    "table_prices": [180, 260],
+    "guest_interval_s": 55,
+    "guest_first_delay_s": 6,
+    "guest_stay_s": 70,
+    "tip_base": 2,
+    "tip_per_resident": 1,
+    "served_multiplier": 1.5,
+    "pet_satisfaction": 8,
+    "guest_sprites": ["005", "006", "007", "027", "029", "032", "033", "000", "003", "010", "015"],
+    "barista_sprite": "023"
   }
 }

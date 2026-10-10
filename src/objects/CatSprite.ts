@@ -100,6 +100,30 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     );
   }
 
+  /** Presun do inej miestnosti (kaviareň) – zmizne a objaví sa na novom mieste. */
+  teleport(x: number, y: number, area: Phaser.Geom.Rectangle): void {
+    this.walkArea = area;
+    this.target = null;
+    this.scene.tweens.add({
+      targets: [this, this.shadow],
+      alpha: 0,
+      duration: 250,
+      onComplete: () => {
+        this.setPosition(x, y);
+        this.shadow.setPosition(x, y + FEET_OFFSET);
+        this.behaviour = 'idle';
+        this.nextDecisionAt = this.scene.time.now + 800;
+        this.scene.tweens.add({ targets: [this, this.shadow], alpha: 1, duration: 300 });
+      },
+    });
+  }
+
+  /** Prejde k bodu (napr. k hosťovi v kaviarni), ak nie je plachá a práve neodchádza. */
+  visit(x: number, y: number): void {
+    if (this.behaviour === 'leaving' || this.behaviour === 'fleeing') return;
+    this.goTo(x, y, 'walking');
+  }
+
   /** Odchod z garáže (adopcia) – dôjde k dverám a zmizne. */
   leave(x: number, y: number, onLeft: () => void): void {
     this.disableInteractive();

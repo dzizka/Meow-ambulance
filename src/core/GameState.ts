@@ -3,11 +3,14 @@ import type {
   AdopterVisit,
   AdoptionRecord,
   AlbumEntry,
+  CafeGuest,
+  CafeState,
   ChallengeDef,
   Counters,
   CatData,
   DiagnosticTool,
   GameData,
+  GuestOrder,
   Report,
   SocialActivity,
 } from '../data/types';
@@ -17,7 +20,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -42,7 +45,12 @@ export interface SaveData {
   upgrades: { cages: number; slots: number };
   tutorialStep: number;
   tutorialDone: boolean;
+  // od verzie 3
+  cafe: CafeState;
 }
+
+export const emptyCafe = (): CafeState => ({ open: false, tables: 0, guests: [], timer: 0 });
+const ORDERS: GuestOrder[] = ['coffee', 'coffee', 'tea', 'cake'];
 
 export const emptyCounters = (): Counters => ({
   rescued: 0,
@@ -54,6 +62,7 @@ export const emptyCounters = (): Counters => ({
   ticks: 0,
   social: 0,
   fed: 0,
+  served: 0,
 });
 
 /** Kroky tutoriálu so Zuzkou (kľúče textov) – postupujú podľa toho, čo hráč už urobil. */
@@ -89,6 +98,7 @@ export class GameState {
   challengeTiers: Record<string, number> = {};
   album: Record<string, AlbumEntry> = {};
   upgrades = { cages: 0, slots: 0 };
+  cafe: CafeState = emptyCafe();
   tutorialStep = 0;
   tutorialDone = false;
   private nextId = 1;
@@ -150,7 +160,8 @@ export class GameState {
   }
 
   get residentSlots(): number {
-    return this.data.balance.residents.slots + this.upgrades.slots;
+    const b = this.data.balance;
+    return b.residents.slots + this.upgrades.slots + (this.cafe.open ? b.cafe.slots : 0);
   }
 
   get freeCages(): number {
@@ -171,7 +182,8 @@ export class GameState {
 
   /** Dary za minútu od návštevníkov (GDD §5.4) – spokojnejšie stálice prinášajú viac. */
   get donationsPerMinute(): number {
-    const rate = this.data.balance.residents.donation_per_min;
+    const b = this.data.balance;
+    const rate = b.residents.donation_per_min * (this.cafe.open ? b.cafe.donation_multiplier : 1);
     return this.residents.reduce((sum, c) => sum + rate * (0.5 + c.stats.satisfaction / 100), 0);
   }
 
@@ -187,6 +199,7 @@ export class GameState {
     this.addMoney(this.donationsPerMinute * minutes, false);
     this.advanceReports(deltaMs);
     this.advanceAdopters(deltaMs);
+    this.advanceGuests(deltaMs);
     this.deliverPostcards();
     this.checkReadiness();
   }
@@ -462,7 +475,9 @@ export class GameState {
     const want = this.data.balance.challenges.active;
     while (this.challenges.length < want) {
       const active = new Set(this.challenges.map((c) => c.defId));
-      const pool = this.data.challenges.filter((d) => !active.has(d.id));
+      const pool = this.data.challenges.filter(
+        (d) => !active.has(d.id) && (d.requires !== 'cafe' || this.cafe.open),
+      );
       if (pool.length === 0) return;
       const def = this.rng.weighted(pool, (d) => d.weight);
       const tier = this.challengeTiers[def.id] ?? 0;
@@ -553,6 +568,115 @@ export class GameState {
     return true;
   }
 
+  // ---------- Mačacia kaviareň (GDD §5.5) ----------
+
+  get tableCount(): number {
+    return this.data.balance.cafe.tables + this.cafe.tables;
+  }
+
+  get nextTablePrice(): number | null {
+    if (!this.cafe.open) return null;
+    return this.data.balance.cafe.table_prices[this.cafe.tables] ?? null;
+  }
+
+  /** Hostia, ktorí ešte čakajú na obsluhu. */
+  get waitingGuests(): CafeGuest[] {
+    return this.cafe.guests.filter((g) => !g.served);
+  }
+
+  buyCafe(): boolean {
+    const c = this.data.balance.cafe;
+    if (this.cafe.open || this.money < c.price) return false;
+    this.addMoney(-c.price, true);
+    this.cafe.open = true;
+    // Prvý hosť príde čoskoro
+    this.cafe.timer = (c.guest_interval_s - c.guest_first_delay_s) * 1000;
+    this.bus.emit('upgradeBought', { kind: 'cafe' });
+    this.fillChallenges();
+    return true;
+  }
+
+  buyTable(): boolean {
+    const price = this.nextTablePrice;
+    if (price === null || this.money < price) return false;
+    this.addMoney(-price, true);
+    this.cafe.tables += 1;
+    this.bus.emit('upgradeBought', { kind: 'table' });
+    return true;
+  }
+
+  /** Obslúženie hosťa – ťuknutie na bublinu s objednávkou. */
+  serveGuest(guestId: string): boolean {
+    const g = this.cafe.guests.find((x) => x.id === guestId);
+    if (!g || g.served) return false;
+    g.served = true;
+    this.counters.served += 1;
+    this.bus.emit('guestServed', { guest: g });
+    this.checkChallenges();
+    return true;
+  }
+
+  /** Dar hosťa pri odchode: základ + bonus za každú stálicu podľa spokojnosti. */
+  guestTip(served: boolean): number {
+    const c = this.data.balance.cafe;
+    const bonus = this.residents.reduce(
+      (sum, cat) => sum + c.tip_per_resident * (0.5 + cat.stats.satisfaction / 100),
+      0,
+    );
+    const tip = (c.tip_base + bonus) * (served ? c.served_multiplier : 1);
+    return Math.round(tip * 10) / 10;
+  }
+
+  private advanceGuests(deltaMs: number): void {
+    if (!this.cafe.open) return;
+    const c = this.data.balance.cafe;
+    // Odchody – hosť nechá dar a pohladká si svoju mačku
+    for (const g of [...this.cafe.guests]) {
+      if (this.now < g.leaveAt) continue;
+      this.cafe.guests = this.cafe.guests.filter((x) => x !== g);
+      const amount = this.guestTip(g.served);
+      this.addMoney(amount, true);
+      const cat = g.catId ? this.getCat(g.catId) : undefined;
+      if (cat?.resident) {
+        Care.addStats(cat, { satisfaction: c.pet_satisfaction });
+        this.bus.emit('catChanged', { cat });
+      }
+      this.bus.emit('guestLeft', { guest: g, amount });
+    }
+    // Príchody – iba keď je na koho sa prísť pozrieť a je voľný stôl
+    const residents = this.residents;
+    if (residents.length === 0) return;
+    const interval = c.guest_interval_s * 1000;
+    this.cafe.timer += deltaMs;
+    if (this.cafe.timer < interval) return;
+    const taken = new Set(this.cafe.guests.map((g) => g.table));
+    let table = -1;
+    for (let i = 0; i < this.tableCount; i++) {
+      if (!taken.has(i)) {
+        table = i;
+        break;
+      }
+    }
+    if (table < 0) {
+      this.cafe.timer = interval; // príde hneď, ako sa uvoľní stôl
+      return;
+    }
+    this.cafe.timer = 0;
+    const used = new Set(this.cafe.guests.map((g) => g.sprite));
+    const pool = c.guest_sprites.filter((s) => !used.has(s));
+    const guest: CafeGuest = {
+      id: this.newId('g'),
+      sprite: this.rng.pick(pool.length ? pool : c.guest_sprites),
+      table,
+      order: this.rng.pick(ORDERS),
+      served: false,
+      leaveAt: this.now + c.guest_stay_s * 1000,
+      catId: this.rng.pick(residents).id,
+    };
+    this.cafe.guests.push(guest);
+    this.bus.emit('guestArrived', { guest });
+  }
+
   // ---------- Tutoriál so Zuzkou ----------
 
   /** Kľúč textu aktuálnej rady, alebo null, ak je tutoriál hotový. */
@@ -603,6 +727,7 @@ export class GameState {
       upgrades: { ...this.upgrades },
       tutorialStep: this.tutorialStep,
       tutorialDone: this.tutorialDone,
+      cafe: structuredClone(this.cafe),
     };
   }
 
@@ -625,6 +750,7 @@ export class GameState {
     s.upgrades = save.upgrades;
     s.tutorialStep = save.tutorialStep;
     s.tutorialDone = save.tutorialDone;
+    s.cafe = save.cafe ?? emptyCafe();
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();

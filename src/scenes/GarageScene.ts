@@ -10,12 +10,20 @@ import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { CatSprite } from '../objects/CatSprite';
 import { UI, type GameBridge, type MinigameRequest } from '../ui/UI';
 import type { MinigameInit } from './MinigameScene';
-import { WORLD_H, WORLD_W, computeLayout } from './layout';
+import {
+  CAFE_X,
+  FLOOR_TOP,
+  ROOM,
+  WORLD_H,
+  WORLD_W,
+  computeLayout,
+  roomX,
+  type Room,
+} from './layout';
+import { CAFE_AREA, CafeRoom } from './CafeRoom';
+import type { CafeGuest } from '../data/types';
 import { DPR } from './dpr';
 
-/** Rozmery miestnosti v garáži (pixely pixel-artu). */
-const ROOM = { x: 16, y: 6, w: 448, wallH: 64, floorH: 192 };
-const FLOOR_TOP = ROOM.y + ROOM.wallH;
 /** Miesta pre klietky – prvé dve od začiatku, ďalšie sa dokupujú (GDD §6.1). */
 const CAGES = [
   { x: 348, y: FLOOR_TOP + 38 },
@@ -65,6 +73,10 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   /** Po „Nová hra" sa už nesmie uložiť (inak by sa stará hra zapísala späť). */
   private noSave = false;
   private sinceSparkle = 0;
+  /** Miestnosť, ktorú práve vidí kamera. */
+  room: Room = 'garage';
+  private cafe: CafeRoom | null = null;
+  private ui!: UI;
 
   constructor() {
     super('Garage');
@@ -81,10 +93,11 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.createZuzka();
     this.createLighting();
     this.makeSparkTexture();
+    if (this.state.cafe.open) this.openCafeRoom();
 
     this.state.cats.forEach((cat, i) => {
-      const area = cat.resident ? RESIDENT_AREA : PATIENT_AREA;
-      this.spawnCat(cat, area.x + 30 + i * 40, area.centerY);
+      const area = this.areaFor(cat);
+      this.spawnCat(cat, area.x + 30 + (i % 8) * 40, area.centerY);
     });
     this.listen();
 
@@ -107,7 +120,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     });
     window.addEventListener('pagehide', saveNow);
 
-    new UI(this.state, this);
+    this.ui = new UI(this.state, this);
     if (offline) this.state.bus.emit('welcomeBack', { summary: offline });
     this.saves.save(this.state);
   }
@@ -136,6 +149,10 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   select(catId: string | null): void {
     const sprite = catId ? (this.sprites.get(catId) ?? null) : null;
+    if (sprite) {
+      const room: Room = sprite.x >= CAFE_X ? 'cafe' : 'garage';
+      if (room !== this.room) this.showRoom(room, false);
+    }
     this.selected?.setSelected(false);
     this.selected = sprite;
     sprite?.setSelected(true);
@@ -155,6 +172,55 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   playSound(key: string, volume = 0.6, fallback?: string): void {
     if (this.cache.audio.exists(key)) this.sound.play(key, { volume });
     else if (fallback && this.cache.audio.exists(fallback)) this.sound.play(fallback, { volume });
+  }
+
+  /** Prepne kameru do inej miestnosti (garáž / kaviareň) s krátkym prelínaním. */
+  showRoom(room: Room, fade = true): void {
+    if (room === this.room || (room === 'cafe' && !this.cafe)) return;
+    const cam = this.cameras.main;
+    const apply = () => {
+      this.room = room;
+      this.applyLayout();
+      this.ui.setRoom(room);
+    };
+    if (!fade) {
+      apply();
+      return;
+    }
+    cam.fadeOut(150, 43, 37, 51);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      apply();
+      cam.fadeIn(200, 43, 37, 51);
+    });
+  }
+
+  /** Kde žije mačka: pacienti v garáži, stálice v kútiku alebo v kaviarni. */
+  private areaFor(cat: CatData): Phaser.Geom.Rectangle {
+    if (!cat.resident) return PATIENT_AREA;
+    return this.cafe ? CAFE_AREA : RESIDENT_AREA;
+  }
+
+  private openCafeRoom(): void {
+    if (this.cafe) return;
+    this.cafe = new CafeRoom(
+      this,
+      this.state,
+      this.obstacles,
+      (id) => this.sprites.get(id),
+      (guest) => this.serveGuest(guest),
+    );
+    for (const [x, y, r] of this.cafe.lamps) this.addGlow(x, y, r);
+  }
+
+  private serveGuest(guest: CafeGuest): void {
+    if (this.state.serveGuest(guest.id)) this.save();
+  }
+
+  /** Stálica sa presťahuje do kaviarne. */
+  private moveToCafe(sprite: CatSprite): void {
+    const x = Phaser.Math.Between(CAFE_AREA.left + 20, CAFE_AREA.right - 20);
+    const y = Phaser.Math.Between(CAFE_AREA.top + 10, CAFE_AREA.bottom - 10);
+    sprite.teleport(x, y, CAFE_AREA);
   }
 
   setMuted(muted: boolean): void {
@@ -216,7 +282,9 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     });
     bus.on('catChanged', ({ cat }) => this.refreshCat(cat));
     bus.on('catBecameResident', ({ cat }) => {
-      this.sprites.get(cat.id)?.setWalkArea(RESIDENT_AREA);
+      const sprite = this.sprites.get(cat.id);
+      if (sprite && this.cafe) this.moveToCafe(sprite);
+      else sprite?.setWalkArea(RESIDENT_AREA);
       this.refreshCat(cat);
       save();
     });
@@ -232,6 +300,12 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     bus.on('reportDeclined', save);
     bus.on('upgradeBought', ({ kind }) => {
       if (kind === 'cage') this.drawCages(true);
+      if (kind === 'cafe') {
+        this.openCafeRoom();
+        for (const sprite of this.sprites.values())
+          if (sprite.cat.resident) this.moveToCafe(sprite);
+        this.showRoom('cafe');
+      }
       save();
     });
     bus.on('challengeCompleted', save);
@@ -256,7 +330,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   }
 
   private spawnCat(cat: CatData, x: number, y: number): void {
-    const area = cat.resident ? RESIDENT_AREA : PATIENT_AREA;
+    const area = this.areaFor(cat);
     const sprite = new CatSprite(this, x, y, cat, area, this.obstacles);
     sprite.on('pointerdown', () => {
       const reaction = sprite.react();
@@ -299,7 +373,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private createLighting(): void {
     this.nightOverlay = this.add
-      .rectangle(0, 0, WORLD_W, WORLD_H, 0x000000, 0)
+      .rectangle(0, 0, WORLD_W * 2, WORLD_H, 0x000000, 0)
       .setOrigin(0)
       .setDepth(5000);
     // Mäkké svetlo lámp: radiálny prechod v textúre, sčítaný s obrazom
@@ -316,19 +390,21 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
         tex.refresh();
       }
     }
-    for (const [x, y, r] of [
-      [448, FLOOR_TOP + 132, 46],
-      [96, FLOOR_TOP + 136, 30],
-    ] as const) {
-      this.lampGlows.push(
-        this.add
-          .image(x, y, 'glow')
-          .setScale(r / 32)
-          .setAlpha(0)
-          .setDepth(5001)
-          .setBlendMode(Phaser.BlendModes.ADD),
-      );
-    }
+    this.addGlow(448, FLOOR_TOP + 132, 46);
+    this.addGlow(96, FLOOR_TOP + 136, 30);
+  }
+
+  private addGlow(x: number, y: number, r: number): void {
+    const phase = this.phase;
+    const alpha = phase === 'night' ? 0.9 : phase === 'evening' ? 0.5 : 0;
+    this.lampGlows.push(
+      this.add
+        .image(x, y, 'glow')
+        .setScale(r / 32)
+        .setAlpha(alpha)
+        .setDepth(5001)
+        .setBlendMode(Phaser.BlendModes.ADD),
+    );
   }
 
   private updateLighting(): void {
@@ -391,8 +467,9 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       Math.round((l.portrait ? l.worldScreenH : l.height) * DPR),
     );
     cam.setZoom(l.zoom * DPR);
-    cam.setBounds(0, 0, WORLD_W, WORLD_H, true);
-    cam.centerOn(WORLD_W / 2, WORLD_H / 2);
+    const x0 = roomX(this.room);
+    cam.setBounds(x0, 0, WORLD_W, WORLD_H, true);
+    cam.centerOn(x0 + WORLD_W / 2, WORLD_H / 2);
   }
 
   /** Ťuknutie pod garážou (mobil na výšku) – tam je HTML karta. */

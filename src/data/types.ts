@@ -99,6 +99,24 @@ export interface BalanceData {
   /** Ceny ďalších klietok a miest v kútiku – dĺžka poľa = koľko sa dá dokúpiť. */
   upgrades: { cage_prices: number[]; slot_prices: number[] };
   challenges: { active: number };
+  /** Mačacia kaviareň (GDD §5.5). */
+  cafe: {
+    price: number;
+    slots: number;
+    donation_multiplier: number;
+    tables: number;
+    table_prices: number[];
+    guest_interval_s: number;
+    guest_first_delay_s: number;
+    guest_stay_s: number;
+    tip_base: number;
+    tip_per_resident: number;
+    served_multiplier: number;
+    pet_satisfaction: number;
+    guest_sprites: string[];
+    /** Postavička za pultom. */
+    barista_sprite: string;
+  };
 }
 
 /** Čo sa v hre počíta (pre výzvy a štatistiky). */
@@ -112,6 +130,7 @@ export interface Counters {
   ticks: number;
   social: number;
   fed: number;
+  served: number;
 }
 
 export type ChallengeKind = keyof Counters | 'residents';
@@ -125,6 +144,8 @@ export interface ChallengeDef {
   money: number;
   rep: number;
   weight: number;
+  /** Výzva sa ponúka iba po splnení podmienky (napr. otvorená kaviareň). */
+  requires?: 'cafe';
 }
 
 /** Výzva na nástenke (GDD §7.3). */
@@ -221,4 +242,31 @@ export interface AdoptionRecord {
   postcardDueAt: number | null;
   postcardDelivered: boolean;
   postcardSeen: boolean;
+}
+
+/** Objednávka hosťa v kaviarni. */
+export type GuestOrder = 'coffee' | 'tea' | 'cake';
+
+/** Hosť v mačacej kaviarni (GDD §5.5). */
+export interface CafeGuest {
+  id: string;
+  /** Hárok postavičky (G5). */
+  sprite: string;
+  /** Index stola. */
+  table: number;
+  order: GuestOrder;
+  served: boolean;
+  /** Herný čas (ms simulácie) odchodu. */
+  leaveAt: number;
+  /** Stálica, ktorú si hosť pohladká. */
+  catId: string | null;
+}
+
+export interface CafeState {
+  open: boolean;
+  /** Dokúpené stoly navyše. */
+  tables: number;
+  guests: CafeGuest[];
+  /** Odpočet do ďalšieho hosťa (ms). */
+  timer: number;
 }

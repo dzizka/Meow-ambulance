@@ -2,6 +2,14 @@
 export const WORLD_W = 480;
 export const WORLD_H = 270;
 
+/** Rozmery miestnosti (garáž aj kaviareň) v pixeloch pixel-artu, relatívne k ľavému okraju miestnosti. */
+export const ROOM = { x: 16, y: 6, w: 448, wallH: 64, floorH: 192 } as const;
+export const FLOOR_TOP = ROOM.y + ROOM.wallH;
+/** Kaviareň je vo svete hneď vedľa garáže (GDD §5.5). */
+export const CAFE_X = WORLD_W;
+export type Room = 'garage' | 'cafe';
+export const roomX = (room: Room): number => (room === 'cafe' ? CAFE_X : 0);
+
 export interface Layout {
   width: number;
   height: number;
