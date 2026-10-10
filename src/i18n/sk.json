@@ -149,5 +149,10 @@
   "HOLD_EAR": "Čistenie ušiek",
   "HOLD_SYRUP": "Sirup proti horúčke",
   "HOLD_BRUSH": "Česanie srsti",
-  "HOLD_TREAT": "Maškrta z ruky"
+  "HOLD_TREAT": "Maškrta z ruky",
+  "TAB_HEALTH": "Liečba",
+  "TAB_CARE": "Opatera",
+  "TAB_ABOUT": "O mačke",
+  "UI_FOUND_AT": "Nájdená: {where}",
+  "UI_TRAITS_HINT": "Povahu spoznáš pri starostlivosti – podľa toho, čo ju baví a čo nie."
 }

@@ -149,5 +149,10 @@
   "HOLD_EAR": "Cleaning the ears",
   "HOLD_SYRUP": "Fever syrup",
   "HOLD_BRUSH": "Brushing the fur",
-  "HOLD_TREAT": "Treat from hand"
+  "HOLD_TREAT": "Treat from hand",
+  "TAB_HEALTH": "Health",
+  "TAB_CARE": "Care",
+  "TAB_ABOUT": "About",
+  "UI_FOUND_AT": "Found: {where}",
+  "UI_TRAITS_HINT": "You learn her personality through care – by what she enjoys and what she doesn’t."
 }

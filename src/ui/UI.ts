@@ -69,6 +69,7 @@ const STAT_KEYS: Record<keyof CatStats, string> = {
 };
 
 type Attrs = Record<string, string | number | boolean | undefined>;
+type CardTab = 'health' | 'care' | 'about';
 
 /** Malý pomocník na tvorbu DOM prvkov. */
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -143,6 +144,8 @@ export class UI {
   private modal = el('div', { class: 'modal', hidden: true, role: 'dialog', 'aria-modal': 'true' });
   private toasts = el('div', { class: 'toasts' });
   private selectedId: string | null = null;
+  private tab: CardTab = 'health';
+  private tabFor: string | null = null;
   private busy = false;
   private muted = false;
   private modalKind: 'reports' | 'visitors' | 'postcards' | 'welcome' | null = null;
@@ -320,6 +323,10 @@ export class UI {
       this.renderCatList();
       return;
     }
+    if (cat.id !== this.tabFor) {
+      this.tabFor = cat.id;
+      this.tab = this.defaultTab(cat);
+    }
     const s = this.state;
     const data = s.data;
     const ready = s.isReady(cat);
@@ -338,14 +345,15 @@ export class UI {
     );
     close.addEventListener('click', () => this.game.select(null));
 
+    // Hlavička: portrét, meno, stav – v jednom riadku
     const head = el(
       'div',
       { class: 'card-head' },
-      catPortrait(cat),
+      catPortrait(cat, 2),
       el(
         'div',
         { class: 'who' },
-        el('h2', {}, cat.name),
+        el('h2', {}, cat.name, ' ', status),
         el(
           'div',
           { class: 'sub' },
@@ -353,11 +361,11 @@ export class UI {
             .filter(Boolean)
             .join(' · '),
         ),
-        status,
       ),
       close,
     );
 
+    // Štatistiky v mriežke 2×2
     const stats = el('div', { class: 'stats' });
     for (const key of Object.keys(STAT_KEYS) as (keyof CatStats)[]) {
       const v = Math.round(cat.stats[key]);
@@ -376,80 +384,136 @@ export class UI {
       );
     }
 
-    // Povaha
-    const traitNames = cat.traits
-      .filter((tr) => tr.revealed)
-      .map((tr) => t(data.traits.find((d) => d.id === tr.id)?.name_key ?? tr.id));
-    const hiddenTraits = cat.traits.length - traitNames.length;
-    const traits = el(
-      'section',
-      {},
-      el('h3', {}, t('UI_TRAITS')),
-      el(
-        'div',
-        {},
-        ...traitNames.map((n) => el('span', { class: 'chip', style: 'margin-right:4px' }, n)),
-        hiddenTraits > 0 ? el('span', { class: 'muted' }, ` ${t('UI_UNKNOWN')}`) : '',
-      ),
-    );
+    // Záložky namiesto jedného dlhého zoznamu – karta sa vojde bez rolovania
+    const needsHealth =
+      !cat.resident &&
+      (cat.conditions.some((c) => c.revealed && !c.treated) || cat.examined.length < 2 || ready);
+    const tabs: { id: CardTab; label: string; dot: boolean }[] = [
+      { id: 'health', label: `🩺 ${t('TAB_HEALTH')}`, dot: needsHealth },
+      { id: 'care', label: `❤️ ${t('TAB_CARE')}`, dot: false },
+      { id: 'about', label: `🐾 ${t('TAB_ABOUT')}`, dot: false },
+    ];
+    const tabBar = el('div', { class: 'tabs', role: 'tablist' });
+    for (const tb of tabs) {
+      const b = el(
+        'button',
+        {
+          class: `tab${this.tab === tb.id ? ' active' : ''}`,
+          type: 'button',
+          role: 'tab',
+          'aria-selected': this.tab === tb.id ? 'true' : 'false',
+        },
+        tb.label,
+        tb.dot && this.tab !== tb.id ? el('span', { class: 'dot' }) : '',
+      );
+      b.addEventListener('click', () => {
+        this.tab = tb.id;
+        this.renderSheet();
+      });
+      tabBar.append(b);
+    }
 
-    const sections: HTMLElement[] = [head, stats, traits];
+    const body =
+      this.tab === 'health'
+        ? this.healthTab(cat, ready)
+        : this.tab === 'care'
+          ? this.careTab(cat)
+          : this.aboutTab(cat);
 
-    if (!cat.resident) {
-      // Diagnózy a ošetrenie
-      const list = el('ul', { class: 'list' });
-      for (const c of cat.conditions) {
-        const def = data.conditions.find((d) => d.id === c.id);
-        if (!c.revealed) {
-          list.append(el('li', { class: 'row muted' }, t('UI_COND_HIDDEN')));
-        } else if (c.treated) {
-          list.append(
-            el(
-              'li',
-              { class: 'row' },
-              el('span', {}, t(def?.name_key ?? c.id)),
-              el('span', { class: 'done' }, `✓ ${t('UI_TREATED')}`),
-            ),
-          );
-        } else {
-          list.append(
-            el(
-              'li',
-              { class: 'row' },
-              el('span', {}, t(def?.name_key ?? c.id)),
-              button(`🩹 ${t('UI_TREAT')}`, () => void this.doTreat(cat, c.id), {
-                disabled: this.busy,
-              }),
-            ),
-          );
-        }
-      }
-      const tools: [DiagnosticTool, string, string][] = [
-        ['hand', '✋', 'UI_TOOL_HAND'],
-        ['thermometer', '🌡️', 'UI_TOOL_THERMOMETER'],
-      ];
-      const exam = el(
-        'div',
-        { class: 'actions' },
-        ...tools.map(([tool, icon, key]) =>
-          button(`${icon} ${t(key)}`, () => this.doExamine(cat, tool), {
-            disabled: this.busy || cat.examined.includes(tool),
+    this.sheet.replaceChildren(head, stats, tabBar, el('div', { class: 'tab-body' }, ...body));
+  }
+
+  private defaultTab(cat: CatData): CardTab {
+    if (cat.resident) return 'care';
+    return 'health';
+  }
+
+  /** Liečba: diagnózy, prehliadka; hotová mačka – adopcia alebo stálica. */
+  private healthTab(cat: CatData, ready: boolean): HTMLElement[] {
+    const s = this.state;
+    const data = s.data;
+    if (cat.resident) return [el('p', { class: 'hint' }, t('UI_RESIDENT_HINT'))];
+
+    const out: HTMLElement[] = [];
+    if (ready) {
+      const full = s.freeResidentSlots <= 0;
+      out.push(
+        el('p', { class: 'hint' }, t('UI_READY_HINT')),
+        el(
+          'div',
+          { class: 'actions' },
+          button(`🏠 ${t('UI_KEEP')}`, () => this.doKeep(cat), {
+            class: 'btn primary',
+            disabled: full,
           }),
+          button(
+            `🚪 ${t('UI_VISITORS')} (${s.adopters.length})`,
+            () => this.openModal('visitors'),
+            {
+              disabled: s.adopters.length === 0,
+            },
+          ),
         ),
       );
-      sections.push(
+      if (full)
+        out.push(
+          el('p', { class: 'hint' }, t('UI_KEEP_FULL', { max: data.balance.residents.slots })),
+        );
+      return out;
+    }
+
+    const list = el('ul', { class: 'list' });
+    for (const c of cat.conditions) {
+      const def = data.conditions.find((d) => d.id === c.id);
+      if (!c.revealed) {
+        list.append(el('li', { class: 'row muted' }, t('UI_COND_HIDDEN')));
+      } else if (c.treated) {
+        list.append(
+          el(
+            'li',
+            { class: 'row' },
+            el('span', {}, t(def?.name_key ?? c.id)),
+            el('span', { class: 'done' }, `✓ ${t('UI_TREATED')}`),
+          ),
+        );
+      } else {
+        list.append(
+          el(
+            'li',
+            { class: 'row' },
+            el('span', {}, t(def?.name_key ?? c.id)),
+            button(`🩹 ${t('UI_TREAT')}`, () => void this.doTreat(cat, c.id), {
+              class: 'btn primary',
+              disabled: this.busy,
+            }),
+          ),
+        );
+      }
+    }
+    out.push(list);
+
+    const tools: [DiagnosticTool, string, string][] = [
+      ['hand', '✋', 'UI_TOOL_HAND'],
+      ['thermometer', '🌡️', 'UI_TOOL_THERMOMETER'],
+    ];
+    const pending = tools.filter(([tool]) => !cat.examined.includes(tool));
+    if (pending.length > 0) {
+      out.push(
         el(
-          'section',
-          {},
-          el('h3', {}, t('UI_CONDITIONS')),
-          list,
-          el('div', { style: 'height:6px' }),
-          exam,
+          'div',
+          { class: 'actions' },
+          ...pending.map(([tool, icon, key]) =>
+            button(`${icon} ${t(key)}`, () => this.doExamine(cat, tool), { disabled: this.busy }),
+          ),
         ),
       );
     }
+    return out;
+  }
 
-    // Starostlivosť
+  /** Starostlivosť: socializácia a kŕmenie. */
+  private careTab(cat: CatData): HTMLElement[] {
+    const s = this.state;
     const socialLeft = Math.ceil(s.socialCooldownLeft(cat.id) / 1000);
     const feedLeft = Math.ceil(s.feedCooldownLeft(cat.id) / 1000);
     const care = el('div', { class: 'actions' });
@@ -466,40 +530,34 @@ export class UI {
     });
     if (feedLeft > 0) feedBtn.append(el('small', {}, t('UI_RESTING', { s: feedLeft })));
     care.append(feedBtn);
-    sections.push(el('section', {}, el('h3', {}, t('UI_CARE')), care));
+    return [care];
+  }
 
-    // Hotová mačka: adopcia alebo stálica
-    if (cat.resident) {
-      sections.push(el('p', { class: 'hint' }, t('UI_RESIDENT_HINT')));
-    } else if (ready) {
-      const full = s.freeResidentSlots <= 0;
-      sections.push(
-        el(
-          'section',
-          { class: 'actions' },
-          el('p', { class: 'hint', style: 'grid-column:1/-1' }, t('UI_READY_HINT')),
-          button(`🏠 ${t('UI_KEEP')}`, () => this.doKeep(cat), {
-            class: 'btn primary wide',
-            disabled: full,
-          }),
-          full
-            ? el(
-                'p',
-                { class: 'hint', style: 'grid-column:1/-1' },
-                t('UI_KEEP_FULL', { max: s.data.balance.residents.slots }),
-              )
-            : null,
-          s.adopters.length > 0
-            ? button(
-                `🚪 ${t('UI_VISITORS')} (${s.adopters.length})`,
-                () => this.openModal('visitors'),
-                { class: 'btn wide' },
-              )
-            : null,
+  /** O mačke: povaha a odkiaľ prišla. */
+  private aboutTab(cat: CatData): HTMLElement[] {
+    const data = this.state.data;
+    const known = cat.traits.filter((tr) => tr.revealed);
+    const hidden = cat.traits.length - known.length;
+    const report = data.reports.find((r) => r.id === cat.reportId);
+    return [
+      el('h3', {}, t('UI_TRAITS')),
+      el(
+        'div',
+        {},
+        ...known.map((tr) =>
+          el(
+            'span',
+            { class: 'chip', style: 'margin-right:4px' },
+            t(data.traits.find((d) => d.id === tr.id)?.name_key ?? tr.id),
+          ),
         ),
-      );
-    }
-    this.sheet.replaceChildren(...sections);
+        hidden > 0 ? el('span', { class: 'muted' }, ` ${t('UI_UNKNOWN')}`) : '',
+      ),
+      el('p', { class: 'hint' }, t('UI_TRAITS_HINT')),
+      report
+        ? el('p', { class: 'hint' }, t('UI_FOUND_AT', { where: t(report.name_key) }))
+        : el('span'),
+    ];
   }
 
   /** Bez vybranej mačky (na mobile na výšku): zoznam mačiek a voľných klietok. */
