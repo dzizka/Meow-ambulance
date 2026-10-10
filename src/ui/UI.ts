@@ -11,7 +11,7 @@ import type {
   SocialActivity,
 } from '../data/types';
 import { t } from '../i18n/t';
-import { computeLayout } from '../scenes/layout';
+import { computeLayout, type Room } from '../scenes/layout';
 
 /** Čo rozhranie potrebuje od hernej scény. */
 export interface GameBridge {
@@ -22,6 +22,9 @@ export interface GameBridge {
   setMuted(muted: boolean): void;
   /** Zmaže uloženú hru a začne odznova. */
   resetGame(): void;
+  /** Miestnosť, ktorú vidí kamera, a prepnutie do inej (GDD §5.5). */
+  readonly room: Room;
+  showRoom(room: Room): void;
 }
 
 export type MinigameKind =
@@ -127,6 +130,7 @@ function personPortrait(sprite: string, scale = 3): HTMLElement {
 }
 
 const paws = (n: number): string => '🐾'.repeat(n);
+const ORDER_ICON = { coffee: '☕', tea: '🍵', cake: '🍰' } as const;
 const round1 = (n: number): string =>
   (Math.round(n * 10) / 10).toLocaleString(undefined, { maximumFractionDigits: 1 });
 
@@ -144,7 +148,10 @@ export class UI {
     reports: el('span', { class: 'badge', hidden: true }),
     visitors: el('span', { class: 'badge', hidden: true }),
     menu: el('span', { class: 'badge', hidden: true }),
+    room: el('span', { class: 'badge', hidden: true }),
   };
+  /** Prepínač garáž / kaviareň v hornom paneli – viditeľný až po otvorení kaviarne. */
+  private roomBtn = el('button', { class: 'icon-btn', type: 'button', hidden: true });
   private zuzka = el('div', { class: 'zuzka', hidden: true, role: 'status' });
   private zuzkaKey: string | null = null;
   private sheet = el('aside', { class: 'sheet empty', 'aria-live': 'polite' });
@@ -211,11 +218,15 @@ export class UI {
       b.addEventListener('click', onClick);
       return b;
     };
+    this.roomBtn.addEventListener('click', () =>
+      this.game.showRoom(this.game.room === 'cafe' ? 'garage' : 'cafe'),
+    );
     this.hud.append(
       this.clockPill,
       this.moneyPill,
       this.repPill,
       el('div', { class: 'spacer' }),
+      this.roomBtn,
       iconBtn('📋', t('UI_REPORTS'), this.badges.reports, () => this.openModal('reports')),
       iconBtn('🚪', t('UI_VISITORS'), this.badges.visitors, () => this.openModal('visitors')),
       iconBtn('☰', t('UI_MENU'), this.badges.menu, () => this.openMenu()),
@@ -235,7 +246,28 @@ export class UI {
     this.setBadge(this.badges.reports, s.reports.length);
     this.setBadge(this.badges.visitors, s.adopters.length);
     this.setBadge(this.badges.menu, s.claimableChallenges + this.unseenPostcards);
+    this.updateRoomButton();
     this.updateZuzka();
+  }
+
+  private updateRoomButton(): void {
+    const s = this.state;
+    const inCafe = this.game.room === 'cafe';
+    this.roomBtn.hidden = !s.cafe.open;
+    const label = t(inCafe ? 'UI_GO_GARAGE' : 'UI_GO_CAFE');
+    if (this.roomBtn.title !== label) {
+      this.roomBtn.title = label;
+      this.roomBtn.setAttribute('aria-label', label);
+      this.roomBtn.replaceChildren(inCafe ? '🏥' : '☕', this.badges.room);
+    }
+    // Hostia čakajúci na obsluhu, kým je hráč v garáži
+    this.setBadge(this.badges.room, inCafe ? 0 : s.waitingGuests.length);
+  }
+
+  /** Volá scéna po prepnutí miestnosti. */
+  setRoom(_room: Room): void {
+    this.updateHud();
+    if (!this.selectedId) this.renderSheet();
   }
 
   private get unseenPostcards(): number {
@@ -335,8 +367,34 @@ export class UI {
     });
     bus.on('albumAdded', () => this.toast(t('TOAST_ALBUM')));
     bus.on('upgradeBought', ({ kind }) => {
-      this.toast(t(kind === 'cage' ? 'TOAST_BOUGHT_CAGE' : 'TOAST_BOUGHT_SLOT'));
+      const key = {
+        cage: 'TOAST_BOUGHT_CAGE',
+        slot: 'TOAST_BOUGHT_SLOT',
+        cafe: 'TOAST_CAFE_OPEN',
+        table: 'TOAST_BOUGHT_TABLE',
+      }[kind];
+      this.toast(t(key));
       this.game.playSound('upgrade', 0.6);
+      this.updateHud();
+    });
+    // Mačacia kaviareň (GDD §5.5)
+    const refreshCafe = () => {
+      this.updateHud();
+      if (!this.selectedId && this.game.room === 'cafe') this.renderSheet();
+    };
+    bus.on('guestArrived', () => {
+      if (this.game.room !== 'cafe') this.toast(t('TOAST_GUEST'));
+      this.game.playSound('doorbell', 0.4, 'notify');
+      refreshCafe();
+    });
+    bus.on('guestServed', () => {
+      this.game.playSound('success', 0.4);
+      refreshCafe();
+    });
+    bus.on('guestLeft', ({ amount }) => {
+      this.toast(t('TOAST_GUEST_TIP', { n: round1(amount) }));
+      this.game.playSound('coins', 0.5, 'drop');
+      refreshCafe();
     });
     bus.on('welcomeBack', ({ summary }) => {
       if (summary.minutes < 1) return;
@@ -607,38 +665,19 @@ export class UI {
 
   /** Bez vybranej mačky (na mobile na výšku): zoznam mačiek a voľných klietok. */
   private renderCatList(): void {
+    if (this.game.room === 'cafe') {
+      this.renderCafePanel();
+      return;
+    }
     const s = this.state;
-    const tiles = s.cats.map((cat) => {
-      const b = el(
-        'button',
-        { class: 'btn cat-tile', type: 'button' },
-        catPortrait(cat, 1.5),
-        el(
-          'span',
-          {},
-          cat.name,
-          el('br'),
-          el(
-            'small',
-            {},
-            cat.resident
-              ? t('UI_STATUS_RESIDENT')
-              : s.isReady(cat)
-                ? t('UI_STATUS_READY')
-                : t('UI_STATUS_TREATMENT'),
-          ),
-        ),
-      );
-      b.addEventListener('click', () => this.game.select(cat.id));
-      return b;
-    });
+    const tiles = s.cats.map((cat) => this.catTile(cat));
     this.sheet.replaceChildren(
       el('p', { class: 'hint' }, t('UI_TAP_CAT')),
       el('div', { class: 'cat-list' }, ...tiles),
       el(
         'p',
         { class: 'hint' },
-        `${t('UI_FREE_CAGES', { free: s.freeCages, total: s.cageCount })} · ${t('UI_RESIDENTS', { n: s.residents.length, max: s.data.balance.residents.slots })}`,
+        `${t('UI_FREE_CAGES', { free: s.freeCages, total: s.cageCount })} · ${t('UI_RESIDENTS', { n: s.residents.length, max: s.residentSlots })}`,
       ),
       s.reports.length > 0
         ? button(`📋 ${t('UI_REPORTS')} (${s.reports.length})`, () => this.openModal('reports'), {
@@ -646,6 +685,79 @@ export class UI {
           })
         : '',
     );
+  }
+
+  /** Panel kaviarne: hostia s objednávkami (obsluha ťuknutím) a stálice (GDD §5.5). */
+  private renderCafePanel(): void {
+    const s = this.state;
+    const guests = [...s.cafe.guests].sort((a, b) => Number(a.served) - Number(b.served));
+    const rows = guests.map((g) =>
+      el(
+        'div',
+        { class: 'guest' },
+        personPortrait(g.sprite, 1.25),
+        el(
+          'span',
+          { class: 'grow' },
+          t('UI_GUEST_WANTS', { order: t(`ORDER_${g.order.toUpperCase()}`) }),
+        ),
+        g.served
+          ? el('span', { class: 'chip good' }, t('UI_SERVED'))
+          : button(
+              `${ORDER_ICON[g.order]} ${t('UI_SERVE')}`,
+              () => {
+                if (s.serveGuest(g.id)) this.renderSheet();
+              },
+              { class: 'btn primary' },
+            ),
+      ),
+    );
+    const residents = s.residents.map((cat) => this.catTile(cat));
+    this.sheet.replaceChildren(
+      el('h2', {}, `☕ ${t('UI_CAFE')}`),
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_CAFE_LINE', {
+          n: s.residents.length,
+          max: s.residentSlots,
+          tables: s.tableCount,
+          d: round1(s.donationsPerMinute),
+        }),
+      ),
+      s.residents.length === 0
+        ? el('p', { class: 'warning' }, t('UI_CAFE_NO_RESIDENTS'))
+        : rows.length === 0
+          ? el('p', { class: 'muted' }, t('UI_CAFE_NO_GUESTS'))
+          : el('div', { class: 'guests' }, ...rows),
+      residents.length ? el('div', { class: 'cat-list' }, ...residents) : '',
+    );
+  }
+
+  private catTile(cat: CatData): HTMLButtonElement {
+    const s = this.state;
+    const b = el(
+      'button',
+      { class: 'btn cat-tile', type: 'button' },
+      catPortrait(cat, 1.5),
+      el(
+        'span',
+        {},
+        cat.name,
+        el('br'),
+        el(
+          'small',
+          {},
+          cat.resident
+            ? t('UI_STATUS_RESIDENT')
+            : s.isReady(cat)
+              ? t('UI_STATUS_READY')
+              : t('UI_STATUS_TREATMENT'),
+        ),
+      ),
+    );
+    b.addEventListener('click', () => this.game.select(cat.id));
+    return b;
   }
 
   // ---------- Akcie ----------
@@ -1113,6 +1225,7 @@ export class UI {
               { class: 'btn primary', disabled: s.money < slotPrice },
             ),
       ),
+      this.cafeUpgrade(),
       button(this.muted ? `🔇 ${t('UI_SOUND_OFF')}` : `🔊 ${t('UI_SOUND_ON')}`, () =>
         this.toggleMute(),
       ),
@@ -1139,6 +1252,47 @@ export class UI {
       );
     }
     return out;
+  }
+
+  /** Kúpa kaviarne, potom dokupovanie stolov (GDD §5.5). */
+  private cafeUpgrade(): HTMLElement {
+    const s = this.state;
+    if (!s.cafe.open) {
+      const price = s.data.balance.cafe.price;
+      return el(
+        'div',
+        { class: 'upgrade cafe' },
+        el(
+          'div',
+          {},
+          el('strong', {}, `☕ ${t('UI_CAFE')}`),
+          el('p', { class: 'hint' }, t('UI_CAFE_DESC', { slots: s.data.balance.cafe.slots })),
+        ),
+        button(
+          t('UI_BUY_CAFE', { price }),
+          () => {
+            if (s.buyCafe()) this.closeModal();
+          },
+          { class: 'btn primary', disabled: s.money < price },
+        ),
+      );
+    }
+    const price = s.nextTablePrice;
+    return el(
+      'div',
+      { class: 'upgrade' },
+      el('strong', {}, `🪑 ${t('UI_TABLES', { n: s.tableCount })}`),
+      price === null
+        ? el('span', { class: 'muted' }, t('UI_MAXED'))
+        : button(
+            t('UI_BUY_TABLE', { price }),
+            () => {
+              s.buyTable();
+              this.renderModal();
+            },
+            { class: 'btn primary', disabled: s.money < price },
+          ),
+    );
   }
 
   private postcardsContent(): HTMLElement[] {

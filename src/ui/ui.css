@@ -711,3 +711,30 @@ body.minigame .toast:not(:last-child) {
 .challenge .bar {
   background: #1d1824;
 }
+
+/* ---------- Mačacia kaviareň (GDD §5.5) ---------- */
+.guests {
+  display: grid;
+  gap: 6px;
+}
+.guest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: var(--ui-bg-deep);
+}
+.guest .grow {
+  flex: 1;
+  min-width: 0;
+}
+.guest .btn {
+  flex: none;
+}
+.upgrade.cafe {
+  align-items: center;
+}
+.upgrade.cafe .hint {
+  margin: 2px 0 0;
+}

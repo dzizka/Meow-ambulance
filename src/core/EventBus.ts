@@ -1,4 +1,11 @@
-import type { ActiveChallenge, AdopterVisit, AdoptionRecord, CatData, Report } from '../data/types';
+import type {
+  ActiveChallenge,
+  AdopterVisit,
+  AdoptionRecord,
+  CafeGuest,
+  CatData,
+  Report,
+} from '../data/types';
 
 /** Súhrn toho, čo sa udialo, kým bola hra zatvorená (GDD §2.3). */
 export interface OfflineSummary {
@@ -26,7 +33,10 @@ export interface GameEvents {
   welcomeBack: { summary: OfflineSummary };
   challengeCompleted: { challenge: ActiveChallenge };
   albumAdded: { key: string };
-  upgradeBought: { kind: 'cage' | 'slot' };
+  upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' };
+  guestArrived: { guest: CafeGuest };
+  guestServed: { guest: CafeGuest };
+  guestLeft: { guest: CafeGuest; amount: number };
 }
 
 type Handler<T> = (payload: T) => void;

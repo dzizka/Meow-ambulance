@@ -11,6 +11,11 @@ const PALETTE: Record<string, number> = {
   B: 0x5a4a6e, // otáznik
   P: 0xf27a9b, // srdiečko
   Z: 0xb8d8ff, // spánok
+  C: 0x8a5a3c, // káva / čaj
+  M: 0xf4e6d0, // šálka, mlieko
+  G: 0x9ad17b, // čaj
+  K: 0xf2c14e, // koláč
+  S: 0xe0525a, // jahoda
 };
 
 const ICONS: Record<string, string[]> = {
@@ -54,6 +59,53 @@ const ICONS: Record<string, string[]> = {
     '....D....',
   ],
   zzz: ['ZZZZ', '..Z.', '.Z..', 'ZZZZ'],
+  // Objednávky hostí v kaviarni (GDD §5.5)
+  order_coffee: [
+    '.DDDDDDDDD.',
+    'DWWWWWWWWWD',
+    'DWWWWWWWWWD',
+    'DWDDDDDDWWD',
+    'DWDCCCCDDWD',
+    'DWDMMMMDWDD',
+    'DWDMMMMDDWD',
+    'DWWDDDDWWWD',
+    'DWWWWWWWWWD',
+    '.DDDDDDDDD.',
+    '....DD.....',
+    '....D......',
+  ],
+  order_tea: [
+    '.DDDDDDDDD.',
+    'DWWWWWDWWWD',
+    'DWWWWWDWWWD',
+    'DWDDDDDDWWD',
+    'DWDGGGGDDWD',
+    'DWDMMMMDWDD',
+    'DWDMMMMDDWD',
+    'DWWDDDDWWWD',
+    'DWWWWWWWWWD',
+    '.DDDDDDDDD.',
+    '....DD.....',
+    '....D......',
+  ],
+  order_cake: [
+    '.DDDDDDDDD.',
+    'DWWWWWWWWWD',
+    'DWWWWSWWWWD',
+    'DWWWDDDWWWD',
+    'DWWDMMMDWWD',
+    'DWDKKKKKDWD',
+    'DWDMMMMMDWD',
+    'DWDKKKKKDWD',
+    'DWWDDDDDWWD',
+    '.DDDDDDDDD.',
+    '....DD.....',
+    '....D......',
+  ],
+  // Čo hosť dostal na stôl
+  item_coffee: ['DDDD.', 'DCCDD', 'DMMDD', 'DMMD.', '.DD..'],
+  item_tea: ['DDDD.', 'DGGDD', 'DMMDD', 'DMMD.', '.DD..'],
+  item_cake: ['..S..', '.DMD.', 'DKKKD', 'DMMMD', 'DDDDD'],
 };
 
 export function ensurePixelIcons(scene: Phaser.Scene): void {

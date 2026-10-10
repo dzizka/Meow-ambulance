@@ -1,5 +1,5 @@
 {
-  "_comment": "Výzvy na nástenke (GDD §7.3). kind = čo sa počíta; cieľ = base + step × koľkokrát už bola splnená. Bez časového limitu.",
+  "_comment": "Výzvy na nástenke (GDD §7.3). kind = čo sa počíta; cieľ = base + step × koľkokrát už bola splnená. Bez časového limitu. requires = podmienka (cafe = iba s otvorenou kaviarňou).",
   "challenges": [
     {
       "id": "rescue",
@@ -100,6 +100,17 @@
       "money": 50,
       "rep": 6,
       "weight": 1
+    },
+    {
+      "id": "serve",
+      "kind": "served",
+      "name_key": "CH_SERVE",
+      "base": 3,
+      "step": 3,
+      "money": 45,
+      "rep": 4,
+      "weight": 3,
+      "requires": "cafe"
     }
   ]
 }

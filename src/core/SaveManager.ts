@@ -1,5 +1,5 @@
 import type { GameData } from '../data/types';
-import { GameState, SAVE_VERSION, emptyCounters, type SaveData } from './GameState';
+import { GameState, SAVE_VERSION, emptyCafe, emptyCounters, type SaveData } from './GameState';
 import type { OfflineSummary } from './EventBus';
 
 /** Úložisko savu – v prehliadači localStorage, na mobile neskôr Capacitor Preferences (TECH.md). */
@@ -60,6 +60,13 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v2 → v3: mačacia kaviareň (GDD §5.5), počítadlo obslúžených hostí. */
+  2: (s) => ({
+    ...s,
+    version: 3,
+    counters: { ...emptyCounters(), ...s.counters },
+    cafe: emptyCafe(),
+  }),
 };
 
 export class SaveManager {

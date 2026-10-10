@@ -235,11 +235,23 @@ Adopcia **nie je povinná**. Vyliečenú mačku si hráč môže nechať ako **s
   - **Dary od návštevníkov** – každá stálica prináša priebežný príjem (Fáza 1: 0,5 €/min, kaviareň ho násobí). Spokojnejšia stálica = viac darov.
   - 🟡 **Pomocníčka** – stálica s rysom „maznavá" upokojuje nové plaché mačky (rýchlejšia dôvera).
   - 🟡 Obliekanie, fotky, mená v kaviarni.
-- **Obmedzenie je iba miesto** – kútik má 2 miesta, kaviareň viac; rozširuje sa za peniaze. Žiadny trest za nechanie si mačky.
+- **Obmedzenie je iba miesto** – kútik má 2 miesta, kaviareň +3 (§5.5); rozširuje sa za peniaze. Žiadny trest za nechanie si mačky.
 - Stálicu je možné **kedykoľvek neskôr dať na adopciu** (napr. keď príde ideálny záujemca).
 - Stálica sa zapíše do albumu ako „Naša" – album sa dá dokončiť aj bez adopcií, ale pohľadnice existujú iba z adopcií.
 
 > Vzniká jemné napätie „chcem si ju nechať" vs. „chcem vidieť, ako je šťastná u babky" – emocionálne, nie stresujúce.
+
+### 5.5 Mačacia kaviareň 🟢 MVP (už vo Fáze 1)
+Druhá miestnosť vedľa garáže. Kúpi sa v menu ☰ → Garáž (**350 €**). Prepína sa tlačidlom ☕ / 🏥 v hornom paneli.
+
+- **Stálice sa presťahujú do kaviarne.** Kaviareň pridá **+3 miesta** pre stálice a **zdvojnásobí** ich priebežné dary.
+- **Hostia** prichádzajú v reálnom čase (každú ~minútu), keď je v kaviarni aspoň jedna stálica. Sadnú si k voľnému stolu (na začiatku 2 stoly, dokúpiť ďalšie 2).
+- Hosť si objedná (☕ káva, 🍵 čaj, 🍰 koláč) – bublina nad hlavou. **Ťuknutím ho obslúžiš.** Pohladká si mačku (stálica +spokojnosť).
+- Po ~minúte odíde a nechá **dar**: základ + bonus za každú stálicu (spokojnejšia = viac). Obslúžený hosť dá **1,5×** viac.
+- **Bez trestu:** neobslúžený hosť nič nezničí, iba nechá menší dar. Hostia nečakajú v rade a nikto sa nehnevá (cozy, §2.2).
+- Offline hostia neprichádzajú – bežia iba priebežné dary stálic (×2, max. 8 h).
+- Nová výzva: „Obslúž X hostí" (iba keď je kaviareň otvorená).
+- Balans je v `balance.json → cafe`.
 
 ---
 
