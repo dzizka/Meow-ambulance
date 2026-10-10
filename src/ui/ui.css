@@ -1,0 +1,476 @@
+/* Rozhranie nad plátnom hry (GDD §10.2). Jedna tmavá „útulná" téma ladiaca s pixel-artom. */
+:root {
+  --ui-bg: #3b2f45;
+  --ui-bg-deep: #2b2533;
+  --ui-line: #e8a87c;
+  --ui-text: #f4e6d0;
+  --ui-dim: #b9a8b8;
+  --ui-accent: #e8a87c;
+  --ui-good: #9ad17b;
+  --ui-warn: #f2c14e;
+  --ui-bad: #e86a6a;
+  --ui-info: #7ec8e3;
+  --ui-font: 'Pixelify Sans', ui-monospace, monospace;
+  --ui-gap: 10px;
+  --ui-radius: 10px;
+  --world-h: 50vh;
+  --hud-h: 52px;
+}
+
+#ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  font-size: 15px;
+  line-height: 1.35;
+  z-index: 10;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+#ui * {
+  box-sizing: border-box;
+}
+#ui button,
+#ui .sheet,
+#ui .modal,
+#ui .hud > * {
+  pointer-events: auto;
+}
+body.minigame #ui > :not(.toasts) {
+  display: none;
+}
+
+/* ---------- Horný panel ---------- */
+.hud {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: 8px;
+  right: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  pointer-events: none;
+}
+.pill {
+  background: var(--ui-bg);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.pill small {
+  font-weight: 400;
+  color: var(--ui-good);
+  margin-left: 4px;
+}
+.pill.money {
+  color: var(--ui-accent);
+}
+.hud .spacer {
+  flex: 1;
+  pointer-events: none;
+}
+.icon-btn {
+  position: relative;
+  min-width: 40px;
+  height: 36px;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+.icon-btn:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--ui-bad);
+  color: #fff;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 700;
+}
+.badge[hidden] {
+  display: none;
+}
+
+/* ---------- Karta mačky ---------- */
+.sheet {
+  position: absolute;
+  background: var(--ui-bg);
+  border: 2px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  padding: 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.landscape .sheet {
+  top: calc(env(safe-area-inset-top) + var(--hud-h) + 8px);
+  right: 10px;
+  bottom: 10px;
+  width: min(360px, 42vw);
+}
+.portrait .sheet {
+  top: calc(var(--world-h) + 8px);
+  left: 10px;
+  right: 10px;
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+}
+.landscape .sheet.empty {
+  display: none;
+}
+.sheet h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.1;
+}
+.sheet h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: var(--ui-accent);
+  letter-spacing: 0.04em;
+}
+.card-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.card-head .who {
+  flex: 1;
+  min-width: 0;
+}
+.sub {
+  color: var(--ui-dim);
+  font-size: 13px;
+}
+.close {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  color: var(--ui-dim);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: var(--ui-bg-deep);
+  color: var(--ui-dim);
+  margin-top: 4px;
+}
+.chip.good {
+  background: var(--ui-good);
+  color: var(--ui-bg-deep);
+}
+.chip.warn {
+  background: var(--ui-warn);
+  color: var(--ui-bg-deep);
+}
+.chip.bad {
+  background: var(--ui-bad);
+  color: #fff;
+}
+.chip.info {
+  background: var(--ui-info);
+  color: var(--ui-bg-deep);
+}
+
+/* Pixelové portréty zo sprite hárkov */
+.sprite {
+  flex: none;
+  image-rendering: pixelated;
+  background-repeat: no-repeat;
+}
+
+.stats {
+  display: grid;
+  gap: 6px;
+}
+.stat {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  font-size: 13px;
+}
+.stat .val {
+  color: var(--ui-dim);
+  font-variant-numeric: tabular-nums;
+}
+.bar {
+  grid-column: 1 / -1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ui-bg-deep);
+  overflow: hidden;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+}
+.row > span {
+  min-width: 0;
+}
+.done {
+  color: var(--ui-good);
+}
+.muted {
+  color: var(--ui-dim);
+  font-size: 13px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.btn {
+  background: var(--ui-bg-deep);
+  color: var(--ui-text);
+  border: 1px solid #5a4a63;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  min-height: 40px;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--ui-accent);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn.primary {
+  background: var(--ui-accent);
+  color: var(--ui-bg-deep);
+  border-color: var(--ui-accent);
+  font-weight: 700;
+  text-align: center;
+}
+.btn.wide {
+  grid-column: 1 / -1;
+}
+.btn small {
+  display: block;
+  color: var(--ui-dim);
+  font-size: 11px;
+}
+.hint {
+  font-size: 13px;
+  color: var(--ui-dim);
+  margin: 0;
+}
+
+/* Zoznam mačiek v prázdnej karte (mobil na výšku) */
+.cat-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+}
+.cat-tile {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+}
+
+/* ---------- Modálne okná ---------- */
+.modal {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 15, 28, 0.7);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.modal[hidden] {
+  display: none;
+}
+.modal-box {
+  background: var(--ui-bg);
+  border: 2px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  width: min(520px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal-box h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.report {
+  background: var(--ui-bg-deep);
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+.report .btns {
+  display: flex;
+  gap: 6px;
+}
+.report .btns .btn {
+  flex: 1;
+  text-align: center;
+}
+.paws {
+  color: var(--ui-accent);
+  letter-spacing: 2px;
+}
+.visitor-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.match-row {
+  width: 100%;
+}
+.match-row.selected {
+  border-color: var(--ui-accent);
+  background: #4a3b55;
+}
+.match-score {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.warning {
+  color: var(--ui-warn);
+  margin: 0;
+}
+.footer {
+  display: flex;
+  gap: 8px;
+}
+.footer .btn {
+  flex: 1;
+  text-align: center;
+}
+
+/* Pohľadnica */
+.postcard {
+  background: #f4e6d0;
+  color: #3b2f45;
+  border-radius: 6px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  box-shadow: 0 4px 0 #c9a98a;
+}
+.postcard .scene {
+  position: relative;
+  height: 150px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: linear-gradient(#7aa9a8 0 55%, #b98e74 55% 100%);
+}
+.postcard .scene .sprite {
+  position: absolute;
+  bottom: 12px;
+}
+.postcard p {
+  margin: 0;
+  font-size: 14px;
+}
+.postcard .from {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* ---------- Oznámenia ---------- */
+.toasts {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(env(safe-area-inset-top) + var(--hud-h) + 6px);
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  width: min(92vw, 420px);
+  pointer-events: none;
+}
+.toast {
+  background: var(--ui-bg-deep);
+  border: 1px solid var(--ui-line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 14px;
+  text-align: center;
+  animation: toast-in 0.25s ease-out;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+  .bar > i {
+    transition: none;
+  }
+}
+
+/* Mobil na výšku: kompaktnejší horný panel v jednom riadku */
+.portrait .hud {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.portrait .pill {
+  padding: 5px 7px;
+  font-size: 13px;
+}
+.portrait .pill small {
+  display: none;
+}
+.portrait .icon-btn {
+  min-width: 34px;
+  height: 32px;
+  font-size: 16px;
+}

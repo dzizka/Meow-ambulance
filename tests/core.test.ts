@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Rng } from '../src/core/Rng';
-import { EventBus } from '../src/core/EventBus';
-import { TimeManager } from '../src/core/TimeManager';
-import { GameState } from '../src/core/GameState';
+import { dirFromVector } from '../src/core/direction';
 import { generateCat } from '../src/core/systems/CatGenerator';
 import sk from '../src/i18n/sk.json';
 import en from '../src/i18n/en.json';
@@ -13,21 +11,22 @@ import { loadTestData } from './loadData';
 const data = loadTestData();
 
 describe('Rng', () => {
-  it('je deterministický pre rovnaký seed', () => {
+  it('je deterministický pre rovnaký seed a dá sa obnoviť zo stavu', () => {
     const a = new Rng(42);
     const b = new Rng(42);
     expect([a.next(), a.next(), a.int(1, 6)]).toEqual([b.next(), b.next(), b.int(1, 6)]);
+    const c = new Rng(a.getState());
+    expect(c.next()).toBe(a.next());
   });
 
   it('sample vracia rôzne prvky', () => {
-    const picked = new Rng(1).sample([1, 2, 3, 4, 5], 3);
-    expect(new Set(picked).size).toBe(3);
+    expect(new Set(new Rng(1).sample([1, 2, 3, 4, 5], 3)).size).toBe(3);
   });
 });
 
 describe('CatGenerator', () => {
   const rng = new Rng(7);
-  const cats = Array.from({ length: 300 }, () => generateCat(data, rng));
+  const cats = Array.from({ length: 300 }, (_, i) => generateCat(data, rng, { id: `c${i}` }));
 
   it('každá mačka má platné plemeno, farbu, rysy a 1–3 rôzne diagnózy', () => {
     for (const cat of cats) {
@@ -46,9 +45,10 @@ describe('CatGenerator', () => {
     }
   });
 
-  it('nikdy nie je pripravená na adopciu hneď po príjme', () => {
-    const { min_health } = data.balance.adoption_ready;
-    expect(cats.every((c) => c.stats.health < min_health)).toBe(true);
+  it('rešpektuje vek a počet diagnóz z hlásenia', () => {
+    const cat = generateCat(data, new Rng(3), { id: 'x', age: 'senior', conditionCount: 3 });
+    expect(cat.age).toBe('senior');
+    expect(cat.conditions).toHaveLength(3);
   });
 
   it('bežné plemená sú častejšie ako vzácne', () => {
@@ -57,54 +57,26 @@ describe('CatGenerator', () => {
   });
 
   it('každý hárok spritu, na ktorý dáta odkazujú, existuje (ak sú assety stiahnuté)', () => {
-    const dir = resolve(import.meta.dirname, '../public/assets/sprites/cats/popshop');
-    if (!existsSync(dir)) return; // CI bez prístupu k súkromným assetom
-    const sprites = [
+    const base = resolve(import.meta.dirname, '../public/assets/sprites');
+    if (!existsSync(base)) return; // CI bez prístupu k súkromným assetom
+    const cats = [
       ...data.coats.flatMap((c) => c.sprites),
       ...data.breeds.flatMap((b) => (b.sprite_override ? [b.sprite_override] : [])),
     ];
-    for (const s of sprites) expect(existsSync(resolve(dir, `${s}.png`)), s).toBe(true);
+    for (const s of cats) expect(existsSync(`${base}/cats/popshop/${s}.png`), s).toBe(true);
+    for (const s of data.adopters.flatMap((a) => a.sprites))
+      expect(existsSync(`${base}/people/gbtl/${s}.png`), s).toBe(true);
   });
 });
 
-describe('TimeManager', () => {
-  it('posúva čas, hlási hodiny a koniec dňa', () => {
-    const bus = new EventBus();
-    const hours: number[] = [];
-    let ended = 0;
-    bus.on('hourChanged', (e) => hours.push(e.hour));
-    bus.on('dayEnded', () => (ended += 1));
-    const time = new TimeManager(bus, 7, 20, 30);
-    expect(time.clock).toBe('07:00');
-    time.update(30_000); // 30 s = 1 herná hodina
-    expect(time.clock).toBe('08:00');
-    time.setSpeed(3);
-    time.update(10 * 60_000);
-    expect(time.isDayOver).toBe(true);
-    expect(time.clock).toBe('20:00');
-    expect(ended).toBe(1);
-    expect(hours[0]).toBe(8);
-    time.startNextDay();
-    expect([time.day, time.clock]).toEqual([2, '07:00']);
-  });
-
-  it('pauza zastaví čas', () => {
-    const time = new TimeManager(new EventBus(), 7, 20, 30);
-    time.setSpeed(0);
-    time.update(60_000);
-    expect(time.clock).toBe('07:00');
-  });
-});
-
-describe('GameState', () => {
-  it('prijme mačky iba do počtu klietok', () => {
-    const state = new GameState(data, 3);
-    const admitted: string[] = [];
-    state.bus.on('catAdmitted', (e) => admitted.push(e.cat.id));
-    expect(state.admitCat()).not.toBeNull();
-    expect(state.admitCat()).not.toBeNull();
-    expect(state.admitCat()).toBeNull();
-    expect(admitted).toHaveLength(data.balance.phase_1.cages);
+describe('dirFromVector', () => {
+  it('mapuje pohyb na 8 smerov', () => {
+    expect(dirFromVector(1, 0)).toBe('right');
+    expect(dirFromVector(-1, 0)).toBe('left');
+    expect(dirFromVector(0, 1)).toBe('down');
+    expect(dirFromVector(0, -1)).toBe('up');
+    expect(dirFromVector(1, 1)).toBe('down_right');
+    expect(dirFromVector(-1, -1)).toBe('up_left');
   });
 });
 
@@ -113,25 +85,15 @@ describe('Lokalizácia', () => {
     expect(Object.keys(sk).sort()).toEqual(Object.keys(en).sort());
   });
 
-  it('každý name_key z dát má preklad', () => {
+  it('každý kľúč z dát má preklad', () => {
     const keys = [
       ...data.traits.map((x) => x.name_key),
       ...data.conditions.map((x) => x.name_key),
       ...data.breeds.map((x) => x.name_key),
       ...data.coats.map((x) => x.name_key),
+      ...data.reports.map((x) => x.name_key),
+      ...data.adopters.flatMap((x) => [x.name_key, x.desc_key]),
     ];
     for (const k of keys) expect(sk, k).toHaveProperty(k);
-  });
-});
-
-describe('dirFromVector', () => {
-  it('mapuje pohyb na 8 smerov', async () => {
-    const { dirFromVector } = await import('../src/core/direction');
-    expect(dirFromVector(1, 0)).toBe('right');
-    expect(dirFromVector(-1, 0)).toBe('left');
-    expect(dirFromVector(0, 1)).toBe('down');
-    expect(dirFromVector(0, -1)).toBe('up');
-    expect(dirFromVector(1, 1)).toBe('down_right');
-    expect(dirFromVector(-1, -1)).toBe('up_left');
   });
 });

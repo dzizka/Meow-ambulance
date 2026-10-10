@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { AUDIO, DATA_FILES, IMAGES, ZUZKA_SHEET, catSheetPath, personSheetPath } from '../assets';
 import type { GameData } from '../data/types';
 import { t } from '../i18n/t';
+import { GameState } from '../core/GameState';
+import { SaveManager, browserStorage } from '../core/SaveManager';
 
 /** Načíta dáta, grafiku a zvuky; potom spustí garáž. */
 export class BootScene extends Phaser.Scene {
@@ -59,10 +61,25 @@ export class BootScene extends Phaser.Scene {
       breeds: breeds.breeds,
       coats: breeds.coats,
       adopters: json.get('adopters').adopters,
+      reports: json.get('reports').reports,
       names: json.get('names'),
       balance: json.get('balance'),
     };
     this.registry.set('gameData', data);
+
+    // Uložená hra + dopočítanie offline času (GDD §2.3). „#novahra" v adrese začne odznova.
+    const saves = new SaveManager(browserStorage);
+    if (location.hash === '#novahra') {
+      saves.clear();
+      try {
+        history.replaceState(null, '', location.pathname + location.search);
+      } catch {
+        /* v niektorých prostrediach (artifact) adresu meniť nemožno */
+      }
+    }
+    const loaded = saves.load(data);
+    this.registry.set('state', loaded?.state ?? new GameState(data));
+    this.registry.set('offline', loaded?.offline ?? null);
 
     // Pixelový font musí byť načítaný skôr, než vzniknú texty
     try {

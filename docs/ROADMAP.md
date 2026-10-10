@@ -21,17 +21,17 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Načítanie `public/data/*.json`, generovanie mačky (`CatGenerator`) + testy
 - [x] Garáž (zatiaľ poskladaná v kóde), klietky, ťuk na mačku → karta mačky; mačky sa prechádzajú v 8 smeroch
 - [x] Karta mačky so štatistikami
-- [ ] **Otvorený režim:** hodiny iba pre atmosféru (deň/noc), bez konca dňa (GDD §2.2)
-- [ ] Hlásenia o mačkách v reálnom čase (max 3, nevypršia), prijatie do voľnej klietky
-- [ ] Pokles čistoty a spokojnosti, zotavovanie zdravia (iba keď hra beží)
-- [ ] Prehliadka (ruka, teplomer) odhaľuje diagnózy
-- [ ] Minihra **vyťahovanie kliešťov** + univerzálna minihra „podrž" pre ostatné ošetrenia
-- [ ] Socializácia: **hra s perom** (minihra), česanie, kŕmenie z ruky, tiché sedenie; odhaľovanie rysov
-- [ ] Adoptéri v reálnom čase, výpočet zhody (`Match`) + testy, adopcia s príspevkom
-- [ ] **Stálice:** nechať si mačku, kútik pre 2, dary od návštevníkov
-- [ ] Pohľadnica po adopcii
-- [ ] Ukladanie (localStorage) + offline príjem a privítanie po návrate (GDD §2.3)
-- [ ] HTML rozhranie nad plátnom
+- [x] **Otvorený režim:** hodiny iba pre atmosféru (deň/noc), bez konca dňa (GDD §2.2)
+- [x] Hlásenia o mačkách v reálnom čase (max 3, nevypršia), prijatie do voľnej klietky
+- [x] Pokles čistoty a spokojnosti, zotavovanie zdravia (iba keď hra beží)
+- [x] Prehliadka (ruka, teplomer) odhaľuje diagnózy
+- [x] Minihra **vyťahovanie kliešťov** + univerzálna minihra „podrž" pre ostatné ošetrenia
+- [x] Socializácia: **hra s perom** (minihra), česanie, kŕmenie z ruky, tiché sedenie; odhaľovanie rysov
+- [x] Adoptéri v reálnom čase, výpočet zhody (`Match`) + testy, adopcia s príspevkom
+- [x] **Stálice:** nechať si mačku, kútik pre 2, dary od návštevníkov
+- [x] Pohľadnica po adopcii
+- [x] Ukladanie (localStorage) + offline príjem a privítanie po návrate (GDD §2.3)
+- [x] HTML rozhranie nad plátnom
 - [ ] Garáž z Tiled mapy, mačky obchádzajú nábytok (presunuté do M2)
 - [ ] **Playtest #1** na PC aj telefóne – je slučka zábavná?
 

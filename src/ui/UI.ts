@@ -1,0 +1,832 @@
+import './ui.css';
+import { catSheetPath, personSheetPath } from '../assets';
+import type { GameState } from '../core/GameState';
+import type { Stars } from '../core/systems/Care';
+import type { MatchResult } from '../core/systems/Match';
+import type {
+  AdoptionRecord,
+  CatData,
+  CatStats,
+  DiagnosticTool,
+  SocialActivity,
+} from '../data/types';
+import { t } from '../i18n/t';
+import { computeLayout } from '../scenes/layout';
+
+/** Čo rozhranie potrebuje od hernej scény. */
+export interface GameBridge {
+  select(catId: string | null): void;
+  runMinigame(req: MinigameRequest): Promise<Stars | null>;
+  playSound(key: string, volume?: number): void;
+  setMuted(muted: boolean): void;
+}
+
+export type MinigameKind = 'tick_removal' | 'feather' | 'hold' | 'quiet';
+export interface MinigameRequest {
+  kind: MinigameKind;
+  cat: CatData;
+  title: string;
+}
+
+/** Druh minihry podľa ošetrenia alebo aktivity (GDD §4.2, §4.3). */
+const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> = {
+  tick_removal: { kind: 'tick_removal', titleKey: 'MG_TICK_TITLE' },
+  hold_bandage: { kind: 'hold', titleKey: 'HOLD_BANDAGE' },
+  hold_ear: { kind: 'hold', titleKey: 'HOLD_EAR' },
+  hold_syrup: { kind: 'hold', titleKey: 'HOLD_SYRUP' },
+  hold_brush: { kind: 'hold', titleKey: 'HOLD_BRUSH' },
+};
+const SOCIAL: {
+  id: SocialActivity;
+  icon: string;
+  key: string;
+  kind: MinigameKind;
+  title: string;
+}[] = [
+  { id: 'feather', icon: '🪶', key: 'ACT_FEATHER', kind: 'feather', title: 'MG_FEATHER_TITLE' },
+  { id: 'brush', icon: '🪮', key: 'ACT_BRUSH', kind: 'hold', title: 'HOLD_BRUSH' },
+  { id: 'hand_feed', icon: '🐟', key: 'ACT_HAND_FEED', kind: 'hold', title: 'HOLD_TREAT' },
+  {
+    id: 'sit_quietly',
+    icon: '🤫',
+    key: 'ACT_SIT_QUIETLY',
+    kind: 'quiet',
+    title: 'ACT_SIT_QUIETLY',
+  },
+];
+
+const STAT_COLORS: Record<keyof CatStats, string> = {
+  health: 'var(--ui-bad)',
+  cleanliness: 'var(--ui-info)',
+  trust: 'var(--ui-warn)',
+  satisfaction: 'var(--ui-good)',
+};
+const STAT_KEYS: Record<keyof CatStats, string> = {
+  health: 'STAT_HEALTH',
+  cleanliness: 'STAT_CLEANLINESS',
+  trust: 'STAT_TRUST',
+  satisfaction: 'STAT_SATISFACTION',
+};
+
+type Attrs = Record<string, string | number | boolean | undefined>;
+
+/** Malý pomocník na tvorbu DOM prvkov. */
+function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  attrs: Attrs = {},
+  ...children: (Node | string | null | undefined | false)[]
+): HTMLElementTagNameMap[K] {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === undefined || v === false) continue;
+    if (k === 'class') node.className = String(v);
+    else if (k === 'text') node.textContent = String(v);
+    else if (k === 'style') node.setAttribute('style', String(v));
+    else node.setAttribute(k, v === true ? '' : String(v));
+  }
+  for (const c of children) if (c) node.append(c);
+  return node;
+}
+
+function button(label: string, onClick: () => void, attrs: Attrs = {}): HTMLButtonElement {
+  const b = el('button', { class: 'btn', type: 'button', ...attrs }, label);
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onClick();
+  });
+  return b;
+}
+
+/** Portrét mačky: snímka „sedí, pozerá na hráča" (riadok 1, stĺpec 0) z hárka 768×512. */
+function catPortrait(cat: CatData, scale = 3): HTMLElement {
+  const s = scale;
+  const node = el('div', {
+    class: 'sprite',
+    style: `width:${32 * s}px;height:${32 * s}px;background-image:url(${catSheetPath(cat.sprite)});background-size:${768 * s}px ${512 * s}px;background-position:0 ${-32 * s}px`,
+    role: 'img',
+    'aria-label': cat.name,
+  });
+  if (cat.stats.cleanliness < 30) node.style.filter = 'sepia(0.5) brightness(0.8)';
+  return node;
+}
+
+/** Portrét človeka: idle snímka dole (stĺpec 1, riadok 0) z hárka 64×128. */
+function personPortrait(sprite: string, scale = 3): HTMLElement {
+  const s = scale;
+  return el('div', {
+    class: 'sprite',
+    style: `width:${20 * s}px;height:${32 * s}px;background-image:url(${personSheetPath(sprite)});background-size:${64 * s}px ${128 * s}px;background-position:${-20 * s}px 0`,
+  });
+}
+
+const paws = (n: number): string => '🐾'.repeat(n);
+const round1 = (n: number): string =>
+  (Math.round(n * 10) / 10).toLocaleString(undefined, { maximumFractionDigits: 1 });
+
+/**
+ * HTML rozhranie nad plátnom: horný panel, karta mačky, hlásenia, záujemcovia,
+ * pohľadnice, oznámenia. Stav číta z GameState, akcie posiela späť cez GameState a GameBridge.
+ */
+export class UI {
+  private root = el('div', { id: 'ui' });
+  private hud = el('div', { class: 'hud' });
+  private clockPill = el('div', { class: 'pill' });
+  private moneyPill = el('div', { class: 'pill money' });
+  private repPill = el('div', { class: 'pill' });
+  private badges = {
+    reports: el('span', { class: 'badge', hidden: true }),
+    visitors: el('span', { class: 'badge', hidden: true }),
+    postcards: el('span', { class: 'badge', hidden: true }),
+  };
+  private soundBtn!: HTMLButtonElement;
+  private sheet = el('aside', { class: 'sheet empty', 'aria-live': 'polite' });
+  private modal = el('div', { class: 'modal', hidden: true, role: 'dialog', 'aria-modal': 'true' });
+  private toasts = el('div', { class: 'toasts' });
+  private selectedId: string | null = null;
+  private busy = false;
+  private muted = false;
+  private modalKind: 'reports' | 'visitors' | 'postcards' | 'welcome' | null = null;
+  private selectedForVisit: string | null = null;
+
+  constructor(
+    private state: GameState,
+    private game: GameBridge,
+  ) {
+    try {
+      this.muted = localStorage.getItem('meow:muted') === '1';
+    } catch {
+      /* úložisko nemusí byť dostupné */
+    }
+    this.game.setMuted(this.muted);
+    this.buildHud();
+    this.root.append(this.hud, this.sheet, this.modal, this.toasts);
+    document.body.append(this.root);
+    this.modal.addEventListener('click', (e) => {
+      if (e.target === this.modal) this.closeModal();
+    });
+    this.subscribe();
+    this.layout();
+    window.addEventListener('resize', () => this.layout());
+    this.renderSheet();
+    this.updateHud();
+    window.setInterval(() => this.tick(), 500);
+  }
+
+  // ---------- Rozloženie ----------
+
+  private layout(): void {
+    const l = computeLayout(window.innerWidth, window.innerHeight);
+    this.root.classList.toggle('portrait', l.portrait);
+    this.root.classList.toggle('landscape', !l.portrait);
+    this.root.style.setProperty('--world-h', `${l.worldScreenH}px`);
+  }
+
+  // ---------- Horný panel ----------
+
+  private buildHud(): void {
+    const iconBtn = (
+      icon: string,
+      label: string,
+      badge: HTMLElement | null,
+      onClick: () => void,
+    ) => {
+      const b = el(
+        'button',
+        { class: 'icon-btn', type: 'button', title: label, 'aria-label': label },
+        icon,
+      );
+      if (badge) b.append(badge);
+      b.addEventListener('click', onClick);
+      return b;
+    };
+    this.soundBtn = iconBtn('', t('UI_SOUND'), null, () => this.toggleMute());
+    this.hud.append(
+      this.clockPill,
+      this.moneyPill,
+      this.repPill,
+      el('div', { class: 'spacer' }),
+      iconBtn('📋', t('UI_REPORTS'), this.badges.reports, () => this.openModal('reports')),
+      iconBtn('🚪', t('UI_VISITORS'), this.badges.visitors, () => this.openModal('visitors')),
+      iconBtn('💌', t('UI_POSTCARDS'), this.badges.postcards, () => this.openModal('postcards')),
+      this.soundBtn,
+    );
+  }
+
+  private updateHud(): void {
+    const s = this.state;
+    const phaseIcon = { night: '🌙', morning: '🌅', day: '☀️', evening: '🌆' }[s.dayPhase];
+    this.clockPill.textContent = `${phaseIcon} ${s.clock}`;
+    const rate = s.donationsPerMinute;
+    this.moneyPill.replaceChildren(
+      `${Math.floor(s.money)} €`,
+      rate > 0 ? el('small', {}, t('UI_PER_MIN', { n: round1(rate) })) : '',
+    );
+    this.repPill.textContent = `★ ${s.reputation}`;
+    this.setBadge(this.badges.reports, s.reports.length);
+    this.setBadge(this.badges.visitors, s.adopters.length);
+    this.setBadge(
+      this.badges.postcards,
+      s.adoptions.filter((a) => a.postcardDelivered && !a.postcardSeen).length,
+    );
+    this.soundBtn.textContent = this.muted ? '🔇' : '🔊';
+  }
+
+  private setBadge(b: HTMLElement, n: number): void {
+    b.hidden = n === 0;
+    b.textContent = String(n);
+  }
+
+  private toggleMute(): void {
+    this.muted = !this.muted;
+    try {
+      localStorage.setItem('meow:muted', this.muted ? '1' : '0');
+    } catch {
+      /* nevadí */
+    }
+    this.game.setMuted(this.muted);
+    this.updateHud();
+  }
+
+  private tick(): void {
+    this.updateHud();
+    // Odpočet prestávok na karte
+    if (this.selectedId && !this.busy) this.renderSheet();
+  }
+
+  // ---------- Udalosti hry ----------
+
+  private subscribe(): void {
+    const bus = this.state.bus;
+    bus.on('catSelected', ({ catId }) => {
+      this.selectedId = catId;
+      this.renderSheet();
+    });
+    bus.on('catChanged', ({ cat }) => {
+      if (cat.id === this.selectedId) this.renderSheet();
+    });
+    bus.on('catAdmitted', ({ cat }) => {
+      this.toast(t('TOAST_ADMITTED', { cat: cat.name }));
+      this.renderSheet();
+    });
+    bus.on('reportAdded', () => {
+      this.toast(t('TOAST_NEW_REPORT'));
+      this.game.playSound('select', 0.4);
+      if (this.modalKind === 'reports') this.renderModal();
+    });
+    bus.on('adopterArrived', () => {
+      this.toast(t('TOAST_VISITOR'));
+      this.game.playSound('select', 0.4);
+      if (this.modalKind === 'visitors') this.renderModal();
+    });
+    bus.on('catBecameReady', ({ cat }) => {
+      this.toast(t('TOAST_READY', { cat: cat.name }));
+      this.game.playSound('mewPurr', 0.5);
+    });
+    bus.on('postcardArrived', () => {
+      this.toast(t('TOAST_POSTCARD'));
+      this.game.playSound('select', 0.5);
+    });
+    bus.on('catAdopted', ({ record }) => {
+      if (this.selectedId === record.cat.id) this.game.select(null);
+      this.renderSheet();
+    });
+    bus.on('catBecameResident', ({ cat }) => this.toast(t('TOAST_RESIDENT', { cat: cat.name })));
+    bus.on('welcomeBack', ({ summary }) => {
+      if (summary.minutes < 1) return;
+      this.openModal(
+        'welcome',
+        [
+          summary.reports > 0 ? t('UI_WELCOME_REPORTS', { n: summary.reports }) : '',
+          summary.donations > 0 ? t('UI_WELCOME_DONATIONS', { n: summary.donations }) : '',
+          summary.postcards > 0 ? t('UI_WELCOME_POSTCARDS', { n: summary.postcards }) : '',
+        ].filter(Boolean),
+      );
+    });
+  }
+
+  toast(text: string): void {
+    const node = el('div', { class: 'toast' }, text);
+    this.toasts.append(node);
+    while (this.toasts.childElementCount > 3) this.toasts.firstElementChild?.remove();
+    window.setTimeout(() => node.remove(), 2800);
+  }
+
+  // ---------- Karta mačky ----------
+
+  private renderSheet(): void {
+    const cat = this.selectedId ? this.state.getCat(this.selectedId) : undefined;
+    this.sheet.classList.toggle('empty', !cat);
+    if (!cat) {
+      this.renderCatList();
+      return;
+    }
+    const s = this.state;
+    const data = s.data;
+    const ready = s.isReady(cat);
+    const breed = data.breeds.find((b) => b.id === cat.breedId);
+    const coat = data.coats.find((c) => c.id === cat.coatId);
+    const status = cat.resident
+      ? el('span', { class: 'chip info' }, t('UI_STATUS_RESIDENT'))
+      : ready
+        ? el('span', { class: 'chip good' }, t('UI_STATUS_READY'))
+        : el('span', { class: 'chip warn' }, t('UI_STATUS_TREATMENT'));
+
+    const close = el(
+      'button',
+      { class: 'close', type: 'button', 'aria-label': t('UI_CLOSE') },
+      '✕',
+    );
+    close.addEventListener('click', () => this.game.select(null));
+
+    const head = el(
+      'div',
+      { class: 'card-head' },
+      catPortrait(cat),
+      el(
+        'div',
+        { class: 'who' },
+        el('h2', {}, cat.name),
+        el(
+          'div',
+          { class: 'sub' },
+          [breed && t(breed.name_key), coat && t(coat.name_key), t(`AGE_${cat.age.toUpperCase()}`)]
+            .filter(Boolean)
+            .join(' · '),
+        ),
+        status,
+      ),
+      close,
+    );
+
+    const stats = el('div', { class: 'stats' });
+    for (const key of Object.keys(STAT_KEYS) as (keyof CatStats)[]) {
+      const v = Math.round(cat.stats[key]);
+      stats.append(
+        el(
+          'div',
+          { class: 'stat' },
+          el('span', {}, t(STAT_KEYS[key])),
+          el('span', { class: 'val' }, String(v)),
+          el(
+            'div',
+            { class: 'bar' },
+            el('i', { style: `width:${v}%;background:${STAT_COLORS[key]}` }),
+          ),
+        ),
+      );
+    }
+
+    // Povaha
+    const traitNames = cat.traits
+      .filter((tr) => tr.revealed)
+      .map((tr) => t(data.traits.find((d) => d.id === tr.id)?.name_key ?? tr.id));
+    const hiddenTraits = cat.traits.length - traitNames.length;
+    const traits = el(
+      'section',
+      {},
+      el('h3', {}, t('UI_TRAITS')),
+      el(
+        'div',
+        {},
+        ...traitNames.map((n) => el('span', { class: 'chip', style: 'margin-right:4px' }, n)),
+        hiddenTraits > 0 ? el('span', { class: 'muted' }, ` ${t('UI_UNKNOWN')}`) : '',
+      ),
+    );
+
+    const sections: HTMLElement[] = [head, stats, traits];
+
+    if (!cat.resident) {
+      // Diagnózy a ošetrenie
+      const list = el('ul', { class: 'list' });
+      for (const c of cat.conditions) {
+        const def = data.conditions.find((d) => d.id === c.id);
+        if (!c.revealed) {
+          list.append(el('li', { class: 'row muted' }, t('UI_COND_HIDDEN')));
+        } else if (c.treated) {
+          list.append(
+            el(
+              'li',
+              { class: 'row' },
+              el('span', {}, t(def?.name_key ?? c.id)),
+              el('span', { class: 'done' }, `✓ ${t('UI_TREATED')}`),
+            ),
+          );
+        } else {
+          list.append(
+            el(
+              'li',
+              { class: 'row' },
+              el('span', {}, t(def?.name_key ?? c.id)),
+              button(`🩹 ${t('UI_TREAT')}`, () => void this.doTreat(cat, c.id), {
+                disabled: this.busy,
+              }),
+            ),
+          );
+        }
+      }
+      const tools: [DiagnosticTool, string, string][] = [
+        ['hand', '✋', 'UI_TOOL_HAND'],
+        ['thermometer', '🌡️', 'UI_TOOL_THERMOMETER'],
+      ];
+      const exam = el(
+        'div',
+        { class: 'actions' },
+        ...tools.map(([tool, icon, key]) =>
+          button(`${icon} ${t(key)}`, () => this.doExamine(cat, tool), {
+            disabled: this.busy || cat.examined.includes(tool),
+          }),
+        ),
+      );
+      sections.push(
+        el(
+          'section',
+          {},
+          el('h3', {}, t('UI_CONDITIONS')),
+          list,
+          el('div', { style: 'height:6px' }),
+          exam,
+        ),
+      );
+    }
+
+    // Starostlivosť
+    const socialLeft = Math.ceil(s.socialCooldownLeft(cat.id) / 1000);
+    const feedLeft = Math.ceil(s.feedCooldownLeft(cat.id) / 1000);
+    const care = el('div', { class: 'actions' });
+    for (const a of SOCIAL) {
+      const b = button(`${a.icon} ${t(a.key)}`, () => void this.doSocial(cat, a), {
+        disabled: this.busy || socialLeft > 0,
+      });
+      if (socialLeft > 0) b.append(el('small', {}, t('UI_RESTING', { s: socialLeft })));
+      care.append(b);
+    }
+    const feedBtn = button(`🍽️ ${t('ACT_FEED')}`, () => this.doFeed(cat), {
+      class: 'btn wide',
+      disabled: this.busy || feedLeft > 0,
+    });
+    if (feedLeft > 0) feedBtn.append(el('small', {}, t('UI_RESTING', { s: feedLeft })));
+    care.append(feedBtn);
+    sections.push(el('section', {}, el('h3', {}, t('UI_CARE')), care));
+
+    // Hotová mačka: adopcia alebo stálica
+    if (cat.resident) {
+      sections.push(el('p', { class: 'hint' }, t('UI_RESIDENT_HINT')));
+    } else if (ready) {
+      const full = s.freeResidentSlots <= 0;
+      sections.push(
+        el(
+          'section',
+          { class: 'actions' },
+          el('p', { class: 'hint', style: 'grid-column:1/-1' }, t('UI_READY_HINT')),
+          button(`🏠 ${t('UI_KEEP')}`, () => this.doKeep(cat), {
+            class: 'btn primary wide',
+            disabled: full,
+          }),
+          full
+            ? el(
+                'p',
+                { class: 'hint', style: 'grid-column:1/-1' },
+                t('UI_KEEP_FULL', { max: s.data.balance.residents.slots }),
+              )
+            : null,
+          s.adopters.length > 0
+            ? button(
+                `🚪 ${t('UI_VISITORS')} (${s.adopters.length})`,
+                () => this.openModal('visitors'),
+                { class: 'btn wide' },
+              )
+            : null,
+        ),
+      );
+    }
+    this.sheet.replaceChildren(...sections);
+  }
+
+  /** Bez vybranej mačky (na mobile na výšku): zoznam mačiek a voľných klietok. */
+  private renderCatList(): void {
+    const s = this.state;
+    const tiles = s.cats.map((cat) => {
+      const b = el(
+        'button',
+        { class: 'btn cat-tile', type: 'button' },
+        catPortrait(cat, 1.5),
+        el(
+          'span',
+          {},
+          cat.name,
+          el('br'),
+          el(
+            'small',
+            {},
+            cat.resident
+              ? t('UI_STATUS_RESIDENT')
+              : s.isReady(cat)
+                ? t('UI_STATUS_READY')
+                : t('UI_STATUS_TREATMENT'),
+          ),
+        ),
+      );
+      b.addEventListener('click', () => this.game.select(cat.id));
+      return b;
+    });
+    this.sheet.replaceChildren(
+      el('p', { class: 'hint' }, t('UI_TAP_CAT')),
+      el('div', { class: 'cat-list' }, ...tiles),
+      el(
+        'p',
+        { class: 'hint' },
+        `${t('UI_FREE_CAGES', { free: s.freeCages, total: s.cageCount })} · ${t('UI_RESIDENTS', { n: s.residents.length, max: s.data.balance.residents.slots })}`,
+      ),
+      s.reports.length > 0
+        ? button(`📋 ${t('UI_REPORTS')} (${s.reports.length})`, () => this.openModal('reports'), {
+            class: 'btn primary',
+          })
+        : '',
+    );
+  }
+
+  // ---------- Akcie ----------
+
+  private doExamine(cat: CatData, tool: DiagnosticTool): void {
+    const found = this.state.examine(cat.id, tool);
+    this.game.playSound(found.length ? 'mew' : 'click', 0.5);
+    const names = found.map((id) =>
+      t(this.state.data.conditions.find((d) => d.id === id)?.name_key ?? id),
+    );
+    this.toast(found.length ? t('UI_FOUND', { list: names.join(', ') }) : t('UI_FOUND_NOTHING'));
+  }
+
+  private async doTreat(cat: CatData, conditionId: string): Promise<void> {
+    const def = this.state.data.conditions.find((d) => d.id === conditionId);
+    const game = def && TREATMENT_GAMES[def.minigame];
+    if (!game) return;
+    const stars = await this.runMinigame({ kind: game.kind, cat, title: t(game.titleKey) });
+    if (stars === null) return;
+    this.state.treat(cat.id, conditionId, stars);
+    this.toast(`${t(def.name_key)}: ${t('UI_TREATED')} ${'★'.repeat(stars)}`);
+  }
+
+  private async doSocial(cat: CatData, a: (typeof SOCIAL)[number]): Promise<void> {
+    const stars = await this.runMinigame({ kind: a.kind, cat, title: t(a.title) });
+    if (stars === null) return;
+    const result = this.state.socialize(cat.id, a.id, stars);
+    if (!result) return;
+    this.toast(
+      t(
+        result.reaction === 'love'
+          ? 'REACT_LOVE'
+          : result.reaction === 'meh'
+            ? 'REACT_MEH'
+            : 'REACT_OK',
+      ),
+    );
+    for (const id of result.revealed) {
+      const name = t(this.state.data.traits.find((d) => d.id === id)?.name_key ?? id);
+      this.toast(t('UI_TRAIT_REVEALED', { trait: name }));
+    }
+    this.game.playSound(result.reaction === 'meh' ? 'mew' : 'mewPurr', 0.5);
+  }
+
+  private doFeed(cat: CatData): void {
+    if (this.state.feed(cat.id)) this.game.playSound('mewFood', 0.6);
+  }
+
+  private doKeep(cat: CatData): void {
+    if (this.state.makeResident(cat.id)) this.game.playSound('mewPurr', 0.6);
+  }
+
+  private async runMinigame(req: MinigameRequest): Promise<Stars | null> {
+    this.busy = true;
+    document.body.classList.add('minigame');
+    try {
+      return await this.game.runMinigame(req);
+    } finally {
+      document.body.classList.remove('minigame');
+      this.busy = false;
+      this.renderSheet();
+    }
+  }
+
+  // ---------- Modálne okná ----------
+
+  private welcomeLines: string[] = [];
+
+  private openModal(kind: NonNullable<UI['modalKind']>, lines: string[] = []): void {
+    this.modalKind = kind;
+    this.welcomeLines = lines;
+    this.selectedForVisit = null;
+    this.modal.hidden = false;
+    this.renderModal();
+  }
+
+  private closeModal(): void {
+    this.modal.hidden = true;
+    this.modalKind = null;
+    this.updateHud();
+  }
+
+  private renderModal(): void {
+    const box = el('div', { class: 'modal-box' });
+    const closeBtn = button(t('UI_CLOSE'), () => this.closeModal(), { class: 'btn' });
+    switch (this.modalKind) {
+      case 'reports':
+        box.append(...this.reportsContent(), closeBtn);
+        break;
+      case 'visitors':
+        box.append(...this.visitorContent());
+        break;
+      case 'postcards':
+        box.append(...this.postcardsContent(), closeBtn);
+        break;
+      case 'welcome':
+        box.append(
+          el('h2', {}, t('UI_WELCOME')),
+          ...(this.welcomeLines.length ? this.welcomeLines : [t('UI_WELCOME_NOTHING')]).map((l) =>
+            el('p', { style: 'margin:0' }, l),
+          ),
+          button('OK', () => this.closeModal(), { class: 'btn primary' }),
+        );
+        break;
+      default:
+        return;
+    }
+    this.modal.replaceChildren(box);
+  }
+
+  private reportsContent(): HTMLElement[] {
+    const s = this.state;
+    const out: HTMLElement[] = [
+      el('h2', {}, t('UI_REPORTS')),
+      el('p', { class: 'hint' }, t('UI_FREE_CAGES', { free: s.freeCages, total: s.cageCount })),
+    ];
+    if (s.reports.length === 0) out.push(el('p', { class: 'muted' }, t('UI_NO_REPORTS')));
+    if (s.reports.length > 0 && s.freeCages <= 0)
+      out.push(el('p', { class: 'warning' }, t('UI_NO_CAGE')));
+    for (const r of s.reports) {
+      const def = s.data.reports.find((d) => d.id === r.defId);
+      if (!def) continue;
+      out.push(
+        el(
+          'div',
+          { class: 'report' },
+          el('strong', {}, t(def.name_key)),
+          el(
+            'span',
+            { class: 'muted' },
+            `${t('UI_DIFFICULTY')}: `,
+            el('span', { class: 'paws' }, paws(def.difficulty)),
+          ),
+          el(
+            'div',
+            { class: 'btns' },
+            button(
+              t('UI_ACCEPT'),
+              () => {
+                const cat = s.acceptReport(r.id);
+                if (cat) {
+                  this.closeModal();
+                  this.game.playSound('mew', 0.6);
+                  this.game.select(cat.id);
+                }
+              },
+              { class: 'btn primary', disabled: s.freeCages <= 0 },
+            ),
+            button(t('UI_DECLINE'), () => {
+              s.declineReport(r.id);
+              this.renderModal();
+            }),
+          ),
+        ),
+      );
+    }
+    return out;
+  }
+
+  private visitorContent(): HTMLElement[] {
+    const s = this.state;
+    const visit = s.adopters[0];
+    const def = visit && s.adopterDef(visit.id);
+    const close = button(t('UI_CLOSE'), () => this.closeModal(), { class: 'btn' });
+    if (!visit || !def)
+      return [el('h2', {}, t('UI_VISITORS')), el('p', { class: 'muted' }, t('UI_NO_READY')), close];
+
+    const head = el(
+      'div',
+      { class: 'visitor-head' },
+      personPortrait(visit.sprite),
+      el(
+        'div',
+        {},
+        el('div', { class: 'sub' }, t('UI_VISITOR_TITLE')),
+        el('h2', {}, t(def.name_key)),
+        el('p', { style: 'margin:4px 0' }, t(def.desc_key)),
+        el(
+          'div',
+          {},
+          ...def.tags.map((tag) =>
+            el('span', { class: 'chip', style: 'margin-right:4px' }, t(`TAG_${tag}`)),
+          ),
+        ),
+      ),
+    );
+
+    const ready = s.cats.filter((c) => s.isReady(c));
+    const list = el('div', { class: 'list' });
+    let chosen: MatchResult | null = null;
+    for (const cat of ready) {
+      const m = s.matchFor(cat.id, visit.id);
+      if (!m) continue;
+      if (cat.id === this.selectedForVisit) chosen = m;
+      const quality = { perfect: 'good', good: 'info', poor: 'warn', blocked: 'bad' }[m.quality];
+      const row = el(
+        'button',
+        {
+          class: `btn row match-row${cat.id === this.selectedForVisit ? ' selected' : ''}`,
+          type: 'button',
+          disabled: m.quality === 'blocked',
+        },
+        catPortrait(cat, 1.5),
+        el(
+          'span',
+          { style: 'flex:1' },
+          cat.name,
+          el('br'),
+          el('small', {}, m.uncertain ? t('UI_MATCH_UNCERTAIN') : ''),
+        ),
+        el(
+          'span',
+          {},
+          el('span', { class: 'match-score' }, m.quality === 'blocked' ? '–' : `${m.score} %`),
+          el('br'),
+          el('span', { class: `chip ${quality}` }, t(`MATCH_${m.quality.toUpperCase()}`)),
+        ),
+      );
+      row.addEventListener('click', () => {
+        this.selectedForVisit = cat.id;
+        this.renderModal();
+      });
+      list.append(row);
+    }
+
+    const adopt = button(
+      t('UI_ADOPT'),
+      () => {
+        if (!this.selectedForVisit) return;
+        const rec = s.adopt(this.selectedForVisit, visit.id);
+        if (!rec) return;
+        this.toast(t('UI_ADOPTED', { cat: rec.cat.name, fee: rec.fee }));
+        this.game.playSound('mewPurr', 0.7);
+        this.selectedForVisit = null;
+        if (s.adopters.length > 0) this.renderModal();
+        else this.closeModal();
+      },
+      { class: 'btn primary', disabled: !chosen || chosen.quality === 'blocked' },
+    );
+
+    const notNow = button(t('UI_NOT_NOW'), () => {
+      s.dismissAdopter(visit.id);
+      this.selectedForVisit = null;
+      if (s.adopters.length > 0) this.renderModal();
+      else this.closeModal();
+    });
+
+    const parts: (HTMLElement | null)[] = [
+      head,
+      el('h3', { style: 'margin:0;color:var(--ui-accent)' }, t('UI_PICK_CAT')),
+      ready.length ? list : el('p', { class: 'muted' }, t('UI_NO_READY')),
+      chosen?.quality === 'poor' ? el('p', { class: 'warning' }, t('UI_POOR_WARNING')) : null,
+      el('div', { class: 'footer' }, notNow, adopt),
+      close,
+    ];
+    return parts.filter((x): x is HTMLElement => x !== null);
+  }
+
+  private postcardsContent(): HTMLElement[] {
+    const cards = this.state.adoptions.filter((a) => a.postcardDelivered).reverse();
+    const out: HTMLElement[] = [el('h2', {}, t('UI_POSTCARDS'))];
+    if (cards.length === 0) out.push(el('p', { class: 'muted' }, t('UI_NO_POSTCARDS')));
+    for (const rec of cards) {
+      out.push(this.postcard(rec));
+      this.state.markPostcardSeen(rec);
+    }
+    return out;
+  }
+
+  private postcard(rec: AdoptionRecord): HTMLElement {
+    const def = this.state.data.adopters.find((d) => d.id === rec.adopterDefId);
+    const person = personPortrait(rec.adopterSprite, 3);
+    person.style.left = '30%';
+    const cat = catPortrait(rec.cat, 3);
+    cat.style.left = '48%';
+    cat.style.filter = '';
+    const key =
+      rec.score >= this.state.data.balance.match.perfect ? 'POSTCARD_PERFECT' : 'POSTCARD_GOOD';
+    return el(
+      'div',
+      { class: 'postcard' },
+      el('div', { class: 'scene' }, person, cat),
+      el('p', {}, t(key, { cat: rec.cat.name })),
+      el('p', { class: 'from' }, t('UI_POSTCARD_FROM', { who: t(def?.name_key ?? '') })),
+    );
+  }
+}

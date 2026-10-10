@@ -9,6 +9,11 @@ export class Rng {
     this.state = seed >>> 0;
   }
 
+  /** Vnútorný stav – ukladá sa do savu, aby náhoda pokračovala rovnako. */
+  getState(): number {
+    return this.state;
+  }
+
   /** Číslo v intervale [0, 1). */
   next(): number {
     this.state = (this.state + 0x6d2b79f5) >>> 0;

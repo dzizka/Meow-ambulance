@@ -14,8 +14,9 @@ Verzie (M0, október 2026): Phaser 4.2, TypeScript 6.0, Vite 8.3, Vitest 5.0, ES
 - Mriežka **32×32 px**, herný svet garáže **480×270 px** (`src/scenes/layout.ts`).
 - Plátno má veľkosť okna (`Phaser.Scale.RESIZE`, `pixelArt: true`, `roundPixels: true`). Kamera sveta si sama vypočíta priblíženie (`computeLayout`).
 - **Na šírku:** garáž cez celú obrazovku, karta mačky sa zobrazí vpravo.
-- **Na výšku:** garáž v hornej polovici, väčšia ako displej – posúva sa ťahaním prstom; karta mačky pod ňou, ovládanie rýchlosti pod garážou.
-- UI (scéna `UI`) sa kreslí v pixeloch obrazovky bez priblíženia a s `resolution = devicePixelRatio`, aby bol text ostrý aj na mobile.
+- **Na výšku:** garáž v hornej polovici, väčšia ako displej – posúva sa ťahaním prstom; karta mačky a zoznam mačiek pod ňou.
+- **Rozhranie je HTML/CSS** (`src/ui/`) položené nad plátnom – karty, zoznamy, dialógy, oznámenia. Phaser kreslí iba svet a minihry (`MinigameScene`). Počas minihry sa HTML rozhranie skryje (trieda `body.minigame`).
+- Portréty mačiek a ľudí v HTML sú výrezy zo sprite hárkov cez CSS (`background-position`, `image-rendering: pixelated`).
 - Statické pozadie (podlaha, steny, výzdoba) sa skladá raz do jednej canvas textúry – žiadne škáry medzi dlaždicami pri neceločíselnom priblížení.
 - Výrezy nábytku z hárkov sú v `src/data/frames.ts`.
 
@@ -56,10 +57,11 @@ docs/                   dizajn a plánovanie
 ## Konvencie kódu
 - Súbory s triedami `PascalCase.ts`, ostatné `camelCase.ts`; premenné a funkcie `camelCase`, konštanty `UPPER_SNAKE_CASE`.
 - Žiadne `any`. Herné dáta majú typy v `src/data/`.
-- Udalosti v minulom čase: `catAdopted`, `dayEnded`.
+- Udalosti v minulom čase: `catAdopted`, `reportAdded`.
 - Žiadne „magické čísla" – balans patrí do `public/data/*.json`.
 - Žiadny text v kóde – iba kľúče prekladu: `t('TRAIT_SHY')`.
-- **`src/core/` nesmie importovať Phaser.** Scény čítajú stav z `core` a volajú jeho akcie.
+- **`src/core/` nesmie importovať Phaser ani DOM.** Scény a HTML rozhranie čítajú stav z `core` a volajú jeho akcie.
+- Pozor na mená polí v Phaser scénach: nesmú prekryť metódy `Scene` (napr. `init`, `create`, `update`).
 - Formátovanie: Prettier, kontrola: ESLint (nastaví sa v M0).
 
 ## Minihry – rozhranie
@@ -72,11 +74,14 @@ export interface MinigameResult { stars: 1 | 2 | 3 }   // nikdy 0 – liečba v�
 Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesnicu ani multi-touch.
 
 ## Ukladanie
-- Web a Tauri: `localStorage` (kľúč `meow-ambulance:save:<slot>`); Capacitor: plugin Preferences/Filesystem – za spoločným rozhraním `SaveStorage`.
+- Web a Tauri: `localStorage` (kľúč `meow-ambulance:save:1`); Capacitor: plugin Preferences/Filesystem – za spoločným rozhraním `SaveStorage` (`src/core/SaveManager.ts`).
+- Ukladá sa každých 15 s, po dôležitých udalostiach a pri skrytí/zatvorení stránky. Pri načítaní sa dopočíta offline čas (`GameState.applyOffline`).
+- Adresa končiaca `#novahra` zmaže uloženú hru (na testovanie).
 - Pole `saveVersion`; pri zmene formátu sa pridá migračná funkcia, staré savy nesmú prestať fungovať.
 
 ## Testy a CI
-- Vitest pre `src/core/`: generovanie mačky, výpočet zhody, ekonomika, migrácie savov.
+- Vitest pre `src/core/`: generovanie mačky, starostlivosť, výpočet zhody, hlásenia a adoptéri v čase, offline, ukladanie.
+- Pri testovaní v headless Chromiu s emuláciou mobilu môže byť plátno WebGL na snímke čierne, ak je nad ním vysoký rolovací HTML panel – je to obmedzenie softvérového vykresľovania, nie chyba hry. Overiť na skutočnom zariadení.
 - GitHub Actions: `npm ci && npm run lint && npm test && npm run build` pri každom PR.
 - Po merge do `main`: nasadenie na GitHub Pages → hrateľná verzia na odkaze aj na mobile.
 - Minihry a UI sa testujú ručne podľa checklistu v PR – **vždy aj na telefóne**.
