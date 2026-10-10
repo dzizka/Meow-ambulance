@@ -11,6 +11,7 @@ import { CatSprite } from '../objects/CatSprite';
 import { UI, type GameBridge, type MinigameRequest } from '../ui/UI';
 import type { MinigameInit } from './MinigameScene';
 import { WORLD_H, WORLD_W, computeLayout } from './layout';
+import { DPR } from './dpr';
 
 /** Rozmery miestnosti v garáži (pixely pixel-artu). */
 const ROOM = { x: 16, y: 6, w: 448, wallH: 64, floorH: 192 };
@@ -380,10 +381,16 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   // ---------- Kamera ----------
 
   private applyLayout(): void {
-    const l = computeLayout(this.scale.width, this.scale.height);
+    // Rozloženie v CSS pixeloch (rovnaké ako HTML rozhranie), plátno je × DPR
+    const l = computeLayout(this.scale.width / DPR, this.scale.height / DPR);
     const cam = this.cameras.main;
-    cam.setViewport(0, 0, l.width, l.portrait ? l.worldScreenH : l.height);
-    cam.setZoom(l.zoom);
+    cam.setViewport(
+      0,
+      0,
+      Math.round(l.width * DPR),
+      Math.round((l.portrait ? l.worldScreenH : l.height) * DPR),
+    );
+    cam.setZoom(l.zoom * DPR);
     cam.setBounds(0, 0, WORLD_W, WORLD_H, true);
     cam.centerOn(WORLD_W / 2, WORLD_H / 2);
   }

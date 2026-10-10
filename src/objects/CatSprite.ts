@@ -14,6 +14,11 @@ type Behaviour = 'idle' | 'walking' | 'fleeing' | 'sitting' | 'laying' | 'leavin
 
 const WALK_SPEED = 22; // px za sekundu
 const FLEE_SPEED = 70;
+/**
+ * Labky sú v snímke 32×32 na riadku ~24–26, bod mačky (origin 0.85) je na 27.
+ * Tieň preto kreslíme o kúsok vyššie, aby mačka stála na zemi a nevznášala sa.
+ */
+const FEET_OFFSET = -2.5;
 
 /**
  * Mačka v útulku: zobrazuje CatData a sama sa prechádza.
@@ -46,7 +51,7 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     ensureCatAnims(scene.anims, cat.sprite);
     this.setOrigin(0.5, 0.85);
 
-    this.shadow = scene.add.ellipse(x, y, 18, 6, 0x000000, 0.22);
+    this.shadow = scene.add.ellipse(x, y + FEET_OFFSET, 17, 5, 0x000000, 0.3);
     this.ring = scene.add.ellipse(x, y, 24, 9).setStrokeStyle(1, 0xfff4d6, 1).setVisible(false);
     ensurePixelIcons(scene);
     this.badge = scene.add.image(x, y, 'badge_exam').setOrigin(0.5, 1).setVisible(false);
@@ -240,8 +245,8 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     }
 
     this.setDepth(this.y);
-    this.shadow.setPosition(this.x, this.y + 1).setDepth(this.y - 1);
-    this.ring.setPosition(this.x, this.y + 1).setDepth(this.y - 0.5);
+    this.shadow.setPosition(this.x, this.y + FEET_OFFSET).setDepth(this.y - 1);
+    this.ring.setPosition(this.x, this.y + FEET_OFFSET).setDepth(this.y - 0.5);
     if (this.badge.visible) {
       const bob = Math.round(Math.sin(time / 300) * 1);
       const top = this.behaviour === 'laying' ? 18 : 27;
