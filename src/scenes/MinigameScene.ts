@@ -89,6 +89,9 @@ export class MinigameScene extends Phaser.Scene {
       case 'syrup':
         this.syrup();
         break;
+      case 'breath':
+        this.breath();
+        break;
       default:
         this.hold();
     }
@@ -302,6 +305,86 @@ export class MinigameScene extends Phaser.Scene {
       duration: 800,
       onComplete: () => txt.destroy(),
     });
+  }
+
+  // ---------- Inhalácia (nádcha) ----------
+
+  /**
+   * Kruh okolo mačky sa zväčšuje (nádych) a zmenšuje (výdych).
+   * Hráč drží prst pri nádychu a pustí pri výdychu – tri dychy.
+   */
+  private breath(): void {
+    this.hintText.setText(t('MG_BREATH_HINT'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const half = 1700; // ms nádych, rovnako výdych
+    const cycles = 3;
+    const { height: H } = this.scale;
+    // kruh sa nesmie dotknúť nápovedy hore ani počítadla dychov dole
+    const rMax = Math.max(S * 8, Math.min(S * 15, cy - S * 9, H - cy - S * 9));
+    const rMin = rMax * 0.55;
+    const ring = this.add.graphics().setDepth(5);
+    const label = this.text(cx, cy + rMax + S * 2.6, '', S * 2.2, '#f4e6d0', true)
+      .setOrigin(0.5)
+      .setDepth(6);
+    let elapsed = -600; // krátka pauza na začiatku
+    let good = 0;
+    let total = 0;
+    let puffTimer = 0;
+    let lastInhale: boolean | null = null;
+
+    this.updater = (dt) => {
+      elapsed += dt;
+      ring.clear();
+      if (elapsed < 0) {
+        ring.lineStyle(S * 0.8, 0xf4e6d0, 0.5).strokeCircle(cx, cy, rMin);
+        return;
+      }
+      const phase = (elapsed % (half * 2)) / (half * 2); // 0..1
+      const inhale = phase < 0.5;
+      const k = inhale ? phase * 2 : 2 - phase * 2; // 0..1..0
+      const r = rMin + (rMax - rMin) * Phaser.Math.Easing.Sine.InOut(k);
+      const holding = this.input.activePointer.isDown;
+      const ok = holding === inhale;
+      total += dt;
+      if (ok) good += dt;
+
+      if (inhale !== lastInhale) {
+        lastInhale = inhale;
+        label.setText(t(inhale ? 'MG_BREATH_IN' : 'MG_BREATH_OUT'));
+      }
+      ring.fillStyle(0xb8d8ff, 0.12).fillCircle(cx, cy, r);
+      ring.lineStyle(S * 0.9, ok ? 0x9ad17b : 0xe86a6a, 0.9).strokeCircle(cx, cy, r);
+      // dychy, ktoré ešte zostávajú
+      const done = Math.floor(elapsed / (half * 2));
+      for (let i = 0; i < cycles; i++) {
+        ring
+          .fillStyle(i < done ? 0x9ad17b : 0x5a4a63, 1)
+          .fillCircle(cx + (i - 1) * S * 3, cy + rMax + S * 6, S * 0.9);
+      }
+
+      // pára z inhalátora pri správnom nádychu
+      puffTimer -= dt;
+      if (inhale && holding && puffTimer <= 0) {
+        puffTimer = 160;
+        const p = this.add
+          .circle(cx + Phaser.Math.Between(-S * 6, S * 6), cy + S * 8, S * 1.2, 0xffffff, 0.5)
+          .setDepth(4);
+        this.tweens.add({
+          targets: p,
+          y: cy - S * 4,
+          scale: 2,
+          alpha: 0,
+          duration: 900,
+          onComplete: () => p.destroy(),
+        });
+      }
+
+      if (elapsed >= half * 2 * cycles) {
+        const ratio = good / Math.max(1, total);
+        this.finish((ratio >= 0.8 ? 3 : ratio >= 0.6 ? 2 : 1) as Stars);
+      }
+    };
   }
 
   // ---------- Hra s perom ----------

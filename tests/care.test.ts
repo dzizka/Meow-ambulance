@@ -28,12 +28,34 @@ const adopter = (id: string) => {
   return a;
 };
 
+describe('Značka nad mačkou', () => {
+  it('nevyšetrená → ?, odhalená choroba → liečiť, zdravá a dôverčivá → pripravená', () => {
+    const cat = makeCat();
+    expect(Care.badgeFor(cat, data)).toBe('exam');
+    Care.examine(cat, 'hand', data);
+    expect(Care.badgeFor(cat, data)).toBe('treat');
+    cat.conditions = [];
+    expect(Care.badgeFor(cat, data)).toBe(null);
+    cat.stats = { health: 100, cleanliness: 100, trust: 100, satisfaction: 100 };
+    expect(Care.badgeFor(cat, data)).toBe('ready');
+    cat.resident = true;
+    expect(Care.badgeFor(cat, data)).toBe(null);
+  });
+});
+
 describe('Starostlivosť', () => {
   it('ruka odhalí kliešte, teplomer horúčku', () => {
     const cat = makeCat();
     expect(Care.examine(cat, 'hand', data)).toEqual(['ticks']);
     expect(Care.examine(cat, 'thermometer', data)).toEqual(['fever']);
     expect(cat.examined).toEqual(['hand', 'thermometer']);
+  });
+
+  it('stetoskop odhalí nádchu', () => {
+    const cat = makeCat({ conditions: [{ id: 'cold', revealed: false, treated: false }] });
+    expect(Care.examine(cat, 'hand', data)).toEqual([]);
+    expect(Care.examine(cat, 'stethoscope', data)).toEqual(['cold']);
+    expect(Care.treat(cat, 'cold', 3, data)).toBe(true);
   });
 
   it('ošetriť sa dá iba odhalená a neošetrená diagnóza', () => {

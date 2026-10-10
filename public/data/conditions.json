@@ -1,5 +1,5 @@
 {
-  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush).",
+  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush, inhalation).",
   "conditions": [
     {
       "id": "ticks",
@@ -41,6 +41,14 @@
       "health_gain": 0,
       "cleanliness_gain": 50,
       "weight": 40
+    },
+    {
+      "id": "cold",
+      "name_key": "COND_COLD",
+      "reveal_tool": "stethoscope",
+      "minigame": "inhalation",
+      "health_gain": 30,
+      "weight": 20
     }
   ]
 }
