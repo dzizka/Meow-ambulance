@@ -1,0 +1,10 @@
+{
+  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí.",
+  "conditions": [
+    {"id": "ticks",       "name_key": "COND_TICKS",       "reveal_tool": "hand",        "minigame": "tick_removal", "health_gain": 25, "weight": 30},
+    {"id": "paw_injury",  "name_key": "COND_PAW_INJURY",  "reveal_tool": "hand",        "minigame": "bandage",      "health_gain": 30, "weight": 20},
+    {"id": "ear_infect",  "name_key": "COND_EAR_INFECT",  "reveal_tool": "thermometer", "minigame": "ear_cleaning", "health_gain": 25, "weight": 20},
+    {"id": "fever",       "name_key": "COND_FEVER",       "reveal_tool": "thermometer", "minigame": "syrup",        "health_gain": 30, "weight": 15},
+    {"id": "dirty",       "name_key": "COND_DIRTY",       "reveal_tool": "hand",        "minigame": "brush",        "health_gain": 0,  "cleanliness_gain": 50, "weight": 40}
+  ]
+}

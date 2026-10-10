@@ -1,0 +1,19 @@
+{
+  "_comment": "Plemená MVP (6) a farby (6) = 36 slotov albumu (GDD §7.1). rarity: 1 bežná – 5 legendárna.",
+  "breeds": [
+    {"id": "domestic_short", "name_key": "BREED_DOMESTIC_SHORT", "rarity": 1},
+    {"id": "domestic_long",  "name_key": "BREED_DOMESTIC_LONG",  "rarity": 1},
+    {"id": "european_short", "name_key": "BREED_EUROPEAN_SHORT", "rarity": 2},
+    {"id": "persian",        "name_key": "BREED_PERSIAN",        "rarity": 3},
+    {"id": "maine_coon",     "name_key": "BREED_MAINE_COON",     "rarity": 3},
+    {"id": "siamese",        "name_key": "BREED_SIAMESE",        "rarity": 4}
+  ],
+  "coats": [
+    {"id": "black",      "name_key": "COAT_BLACK",      "rarity": 1},
+    {"id": "orange",     "name_key": "COAT_ORANGE",     "rarity": 1},
+    {"id": "tabby",      "name_key": "COAT_TABBY",      "rarity": 1},
+    {"id": "tuxedo",     "name_key": "COAT_TUXEDO",     "rarity": 2},
+    {"id": "calico",     "name_key": "COAT_CALICO",     "rarity": 2},
+    {"id": "white",      "name_key": "COAT_WHITE",      "rarity": 3}
+  ]
+}

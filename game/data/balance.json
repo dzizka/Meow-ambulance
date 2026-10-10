@@ -1,0 +1,10 @@
+{
+  "_comment": "Štartovacie hodnoty balansu (GDD §2, §3.3, §5.2, §6.1). Meniť tu, nie v kóde.",
+  "day": {"start_hour": 7, "end_hour": 20, "real_seconds_per_game_hour": 30},
+  "stats_decay_per_hour": {"cleanliness": 1, "satisfaction": 2, "trust": 0},
+  "adoption_ready": {"min_health": 80, "min_trust": 60},
+  "match": {"base": 50, "trait_good": 15, "trait_bad": -20, "age_match": 10, "look_match": 5, "perfect": 80, "good": 50},
+  "rewards": {"adoption_fee_min": 50, "adoption_fee_max": 150, "rep_perfect": 15, "rep_good": 8, "postcard_delay_days": [2, 5]},
+  "costs": {"food_per_cat_per_day": 3, "medicine_per_treatment": 5},
+  "phase_1": {"starting_money": 200, "cages": 2, "max_cages": 4, "cage_price": 120}
+}

@@ -1,0 +1,21 @@
+# Godot 4
+.godot/
+*.translation
+export_presets.cfg.bak
+
+# Buildy
+build/
+exports/
+*.exe
+*.pck
+*.apk
+*.aab
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editory
+.vscode/
+.idea/
+*.swp
