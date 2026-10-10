@@ -138,3 +138,27 @@ describe('Mačacia kaviareň (GDD §5.5)', () => {
     expect(migrated.counters.served).toBe(0);
   });
 });
+
+describe('Vývojárske menu', () => {
+  it('príkazy vytvoria hlásenie, vyliečia mačku, privolajú záujemcu a hosťa', () => {
+    const s = new GameState(data, 9);
+    expect(s.devSpawnReport()).toBe(true);
+    const cat = s.acceptReport(s.reports[0]!.id)!;
+    expect(s.devSpawnAdopter()).toBe(false); // nikto nie je pripravený
+    s.devHeal(cat.id);
+    expect(s.isReady(cat)).toBe(true);
+    expect(s.devSpawnAdopter()).toBe(true);
+    s.makeResident(cat.id);
+    expect(s.devOpenCafe()).toBe(true);
+    expect(s.devSpawnGuest()).toBe(true);
+    const money = s.money;
+    s.devGuestsLeave();
+    expect(s.cafe.guests).toHaveLength(0);
+    expect(s.money).toBeGreaterThan(money);
+    s.devCompleteChallenges();
+    expect(s.claimableChallenges).toBe(s.challenges.length);
+    const phase = s.dayPhase;
+    s.devShiftClock(12);
+    expect(s.dayPhase).not.toBe(phase);
+  });
+});

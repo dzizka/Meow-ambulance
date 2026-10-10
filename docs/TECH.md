@@ -108,6 +108,12 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Hostia sú postavičky G5 (`personAnims.ts`, hárky sa načítajú podľa `cafe.guest_sprites`). „Sedenie": stolička má väčšiu hĺbku ako hosť, takže mu zakryje nohy.
 - Save v3 pridal `cafe` a `counters.served` (migrácia `MIGRATIONS[2]`).
 
+## Vývojárske menu (tajné, na testovanie)
+- **Otvorenie:** 5× rýchlo ťuknúť na hodiny v hornom paneli · na PC kláves `` ` `` (na slovenskej klávesnici `;`) · adresa končiaca `#dev`.
+- Peniaze/★, okamžité hlásenie/záujemca/hosť, vyliečenie mačky, rýchlosť času 1×/5×/20×, posun hodín a dennej doby, simulácia offline (1 h / 8 h), splnenie výziev, pohľadnice hneď, kaviareň zadarmo, tutoriál odznova, uloženie, nová hra.
+- Kód: `src/ui/DevMenu.ts` (rozhranie) a metódy `dev*` v `GameState` (logika, test v `tests/cafe.test.ts`). Texty menu sú výnimočne priamo v kóde a iba po slovensky – hráč ho nevidí.
+- Je aj vo verejnej verzii (kto nevie o gestách, nenájde ho). Pred vydaním na obchody ho skryť za `import.meta.env.DEV`.
+
 ## Zvuky
 - Základné zvuky sú v `AUDIO` (`src/assets.ts`) – vždy OGG + MP3.
 - Voliteľné zvuky (`src/sfx.ts`) sa hľadajú v `public/assets/audio/sfx/extra/` pri štarte Vite / builde (`define __EXTRA_SFX__` vo `vite.config.ts`) – načítajú sa iba existujúce, takže žiadne chyby 404. Po pridaní súboru treba reštartovať `npm run dev`.

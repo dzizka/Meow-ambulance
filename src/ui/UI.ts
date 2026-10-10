@@ -11,6 +11,8 @@ import type {
   SocialActivity,
 } from '../data/types';
 import { t } from '../i18n/t';
+import { button, el } from './dom';
+import { DevMenu } from './DevMenu';
 import { computeLayout, type Room } from '../scenes/layout';
 
 /** Čo rozhranie potrebuje od hernej scény. */
@@ -25,6 +27,10 @@ export interface GameBridge {
   /** Miestnosť, ktorú vidí kamera, a prepnutie do inej (GDD §5.5). */
   readonly room: Room;
   showRoom(room: Room): void;
+  /** Vývojárske menu: rýchlosť času a okamžité uloženie. */
+  readonly speed: number;
+  setSpeed(speed: number): void;
+  saveNow(): void;
 }
 
 export type MinigameKind =
@@ -76,36 +82,8 @@ const STAT_KEYS: Record<keyof CatStats, string> = {
   satisfaction: 'STAT_SATISFACTION',
 };
 
-type Attrs = Record<string, string | number | boolean | undefined>;
 type CardTab = 'health' | 'care' | 'about';
 type MenuTab = 'challenges' | 'album' | 'postcards' | 'garage';
-
-/** Malý pomocník na tvorbu DOM prvkov. */
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  attrs: Attrs = {},
-  ...children: (Node | string | null | undefined | false)[]
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === undefined || v === false) continue;
-    if (k === 'class') node.className = String(v);
-    else if (k === 'text') node.textContent = String(v);
-    else if (k === 'style') node.setAttribute('style', String(v));
-    else node.setAttribute(k, v === true ? '' : String(v));
-  }
-  for (const c of children) if (c) node.append(c);
-  return node;
-}
-
-function button(label: string, onClick: () => void, attrs: Attrs = {}): HTMLButtonElement {
-  const b = el('button', { class: 'btn', type: 'button', ...attrs }, label);
-  b.addEventListener('click', (e) => {
-    e.stopPropagation();
-    onClick();
-  });
-  return b;
-}
 
 /** Portrét mačky: snímka „sedí, pozerá na hráča" (riadok 1, stĺpec 0) z hárka 768×512. */
 function catPortrait(cat: CatData, scale = 3): HTMLElement {
@@ -166,6 +144,7 @@ export class UI {
   private menuTab: MenuTab = 'challenges';
   private confirmReset = false;
   private selectedForVisit: string | null = null;
+  private dev: DevMenu;
 
   constructor(
     private state: GameState,
@@ -177,6 +156,20 @@ export class UI {
       /* úložisko nemusí byť dostupné */
     }
     this.game.setMuted(this.muted);
+    const bridge = this.game;
+    this.dev = new DevMenu(state, {
+      get speed() {
+        return bridge.speed;
+      },
+      setSpeed: (n) => bridge.setSpeed(n),
+      selectedCatId: () => this.selectedId,
+      toast: (msg) => this.toast(msg),
+      saveNow: () => bridge.saveNow(),
+      resetGame: () => bridge.resetGame(),
+    });
+    // Tajné: 5× rýchlo ťuknúť na hodiny otvorí vývojárske menu
+    this.clockPill.addEventListener('pointerdown', () => this.dev.secretTap());
+    this.clockPill.style.touchAction = 'manipulation';
     this.buildHud();
     this.root.append(this.hud, this.sheet, this.zuzka, this.modal, this.toasts);
     document.body.append(this.root);

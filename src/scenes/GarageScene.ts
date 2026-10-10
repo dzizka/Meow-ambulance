@@ -75,6 +75,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private sinceSparkle = 0;
   /** Miestnosť, ktorú práve vidí kamera. */
   room: Room = 'garage';
+  /** Rýchlosť herného času – iba vývojárske menu. */
+  speed = 1;
   private cafe: CafeRoom | null = null;
   private ui!: UI;
 
@@ -128,7 +130,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   override update(_time: number, delta: number): void {
     // Po dlhšom uspaní karty prehliadača sa čas dopočíta ako offline (beží iba to dobré)
     if (delta > 5000) this.state.applyOffline(delta);
-    else this.state.tick(delta);
+    else this.state.tick(delta * this.speed);
 
     this.sinceSave += delta;
     if (this.sinceSave > AUTOSAVE_MS) {
@@ -221,6 +223,14 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     const x = Phaser.Math.Between(CAFE_AREA.left + 20, CAFE_AREA.right - 20);
     const y = Phaser.Math.Between(CAFE_AREA.top + 10, CAFE_AREA.bottom - 10);
     sprite.teleport(x, y, CAFE_AREA);
+  }
+
+  setSpeed(speed: number): void {
+    this.speed = speed;
+  }
+
+  saveNow(): void {
+    this.save();
   }
 
   setMuted(muted: boolean): void {
