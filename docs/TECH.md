@@ -8,13 +8,16 @@
 - Obal pre PC: **Tauri**; pre mobil: **Capacitor** (pridajú sa v M2, kód hry sa kvôli nim nemení)
 - Node.js LTS, správca balíkov `npm`
 
-Presné verzie sa zafixujú v `package.json` pri M0.
+Verzie (M0, október 2026): Phaser 4.2, TypeScript 6.0, Vite 8.3, Vitest 5.0, ESLint 10 – presne v `package.json` / `package-lock.json`.
 
 ## Zobrazenie (pixel-art)
-- Mriežka **32×32 px**.
-- Základné rozlíšenie hernej plochy **480×270** (16:9), škálovanie celočíselným násobkom (`Phaser.Scale.FIT` + `pixelArt: true`, `roundPixels: true`).
-- Na výšku (mobil) sa UI preskladá – HUD dole, karty ako vysúvacie panely. Herná plocha ostáva 16:9 s možnosťou posúvania a priblíženia prstami.
-- UI text (karty, dialógy) sa vykresľuje vo vyššom rozlíšení než herná plocha, aby bol čitateľný na mobile.
+- Mriežka **32×32 px**, herný svet garáže **480×270 px** (`src/scenes/layout.ts`).
+- Plátno má veľkosť okna (`Phaser.Scale.RESIZE`, `pixelArt: true`, `roundPixels: true`). Kamera sveta si sama vypočíta priblíženie (`computeLayout`).
+- **Na šírku:** garáž cez celú obrazovku, karta mačky sa zobrazí vpravo.
+- **Na výšku:** garáž v hornej polovici, väčšia ako displej – posúva sa ťahaním prstom; karta mačky pod ňou, ovládanie rýchlosti pod garážou.
+- UI (scéna `UI`) sa kreslí v pixeloch obrazovky bez priblíženia a s `resolution = devicePixelRatio`, aby bol text ostrý aj na mobile.
+- Statické pozadie (podlaha, steny, výzdoba) sa skladá raz do jednej canvas textúry – žiadne škáry medzi dlaždicami pri neceločíselnom priblížení.
+- Výrezy nábytku z hárkov sú v `src/data/frames.ts`.
 
 ## Štruktúra repozitára
 ```
