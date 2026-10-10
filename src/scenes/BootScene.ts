@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { EXTRA_SFX } from '../sfx';
 import { AUDIO, DATA_FILES, IMAGES, ZUZKA_SHEET, catSheetPath, personSheetPath } from '../assets';
 import type { GameData } from '../data/types';
 import { t } from '../i18n/t';
@@ -35,7 +36,8 @@ export class BootScene extends Phaser.Scene {
       frameWidth: 20,
       frameHeight: 32,
     });
-    for (const [key, urls] of Object.entries(AUDIO)) this.load.audio(key, [...urls]);
+    for (const [key, urls] of Object.entries({ ...AUDIO, ...EXTRA_SFX }))
+      this.load.audio(key, [...urls]);
 
     // Hárky mačiek sa načítajú až keď vieme, ktoré farby existujú (z breeds.json)
     this.load.once(Phaser.Loader.Events.FILE_COMPLETE + '-json-breeds', () => {

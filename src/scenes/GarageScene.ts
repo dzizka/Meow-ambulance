@@ -150,8 +150,9 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     });
   }
 
-  playSound(key: string, volume = 0.6): void {
+  playSound(key: string, volume = 0.6, fallback?: string): void {
     if (this.cache.audio.exists(key)) this.sound.play(key, { volume });
+    else if (fallback && this.cache.audio.exists(fallback)) this.sound.play(fallback, { volume });
   }
 
   setMuted(muted: boolean): void {
@@ -248,7 +249,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     const sprite = new CatSprite(this, x, y, cat, area, this.obstacles);
     sprite.on('pointerdown', () => {
       const reaction = sprite.react();
-      this.playSound(reaction === 'fled' ? 'mew' : 'mewPurr', 0.6);
+      if (reaction === 'fled') this.playSound('hiss', 0.5, 'mew');
+      else this.playSound('mewPurr', 0.6);
       this.select(sprite.cat.id);
     });
     this.sprites.set(cat.id, sprite);

@@ -75,7 +75,7 @@ Overené k 10. 10. 2026. **Mriežka hry: 32×32 px.** Pri „Name your own price
 | S1 | **Pradenie (2 slučky) a mňaukanie (4)** | [Cat Purr & Meow](https://opengameart.org/content/cat-purr-meow) | Kerzoven | **CC0** |
 | S2 | **Pradenie – kvalitnejšia nahrávka** | [Cat purr (S0436)](https://bigsoundbank.com/cat-purr-s0436.html) | BigSoundBank | **CC0** |
 | S3 | **UI zvuky** – kliky, potvrdenia (100 zvukov) | [Interface Sounds](https://kenney.nl/assets/interface-sounds) | Kenney | **CC0** |
-| S4 | Ďalšie mačacie zvuky (syčanie, mrnčanie) – dohľadať pri M2 | [Freesound.org](https://freesound.org) – filter *Creative Commons 0* | rôzni | CC0 |
+| S4 | Ďalšie zvuky (syčanie, zvonček, kroky…) – dopĺňa autor, pozri **§7** | [Freesound.org](https://freesound.org) – filter *Creative Commons 0* | rôzni | CC0 |
 
 ## 5. Štýlová konzistencia
 - Mačky (G1, G2), interiér (G3), klinika (G4) a ľudia (G5) sú v mierke 32 px – po stiahnutí to overíme a prípadne doladíme mierku.
@@ -100,4 +100,29 @@ Overené k 10. 10. 2026. **Mriežka hry: 32×32 px.** Pri „Name your own price
 | `audio/sfx/ui/` | S3 | CC0 | ✅ | nie | nie | ✅ | Claude / 10. 10. 2026 |
 | `audio/sfx/cats/` | S1 | CC0 | ✅ | nie | OGG + MP3 z WAV | ✅ | Claude / 10. 10. 2026 |
 
-**Ešte chýba (M2):** syčanie, mrnčanie, kroky – Freesound CC0 (S4). S2 (BigSoundBank) iba ak by S1 pradenie nestačilo.
+| `audio/sfx/extra/` | S4 | podľa súboru (CC0 / CC BY) | – | podľa licencie | – | doplniť | autor / dátum |
+
+## 7. Zvuky na doplnenie (autor dopĺňa sám)
+Hra je na tieto zvuky pripravená. Kým súbor chýba, zahrá sa náhradný zvuk (stĺpec *Kým chýba*) alebo nič – hra funguje aj bez nich. **Claude žiadne zvuky nevytvára.**
+
+**Kam:** súkromný repozitár **Meow-ambulance-offline** → priečinok **`audio/sfx/extra/`** (v hernom repozitári je to `public/assets/audio/sfx/extra/`).
+**Meno súboru:** presne podľa stĺpca *Súbor* (malými písmenami), prípona `.mp3`, `.ogg` alebo `.wav`. Najlepšie **MP3** (hrá všade vrátane iPhonu); ak dáš OGG aj MP3 s rovnakým menom, hra si vyberie sama.
+**Dĺžka:** krátke, do ~2 s (okrem `van` – do ~4 s). Hlasitosť nevadí, hra si ju stíši sama.
+
+| Súbor | Kedy zaznie | Kým chýba | Čo hľadať na Freesound (filter *Creative Commons 0*) |
+|---|---|---|---|
+| `hiss` | plachá mačka pri dotyku utečie | jemné mňauknutie | `cat hiss` |
+| `doorbell` | príde návšteva / adoptér | Kenney „bong" | `doorbell`, `shop bell` |
+| `van` | prijmeš hlásenie a ide sa po mačku | nič | `car door close`, `van start` |
+| `kibble` | nakŕmenie mačky (pred mňauknutím) | nič | `kibble bowl`, `dry food pour` |
+| `brush` | česanie v minihre (opakuje sa každých 0,7 s pri držaní) | nič | `brush fur`, `brushing` |
+| `coins` | poplatok za adopciu, odmena za výzvu | priadnutie / nič | `coins`, `cash register` |
+| `camera` | príde pohľadnica od adoptívnej rodiny | Kenney „bong" | `camera shutter`, `polaroid` |
+
+**Postup po nahratí:**
+1. Nahraj súbory na GitHub do `Meow-ambulance-offline/audio/sfx/extra/` (*Add file → Upload files*).
+2. Licenciu zapíš sem do tabuľky v §6 (riadok `audio/sfx/extra/`) a pri CC BY aj autora do `CREDITS.md` – alebo mi len napíš odkaz na zvuk a zapíšem to ja.
+3. V repozitári **Meow-ambulance** → *Actions* → **Deploy na GitHub Pages** → *Run workflow* (políčko „Použiť najnovšie assety" nechaj zaškrtnuté). Po pár minútach sú zvuky v hre.
+4. Pri ďalšom vývoji posuniem podmodul, aby boli zvuky aj v bežných buildoch (`git submodule update --remote public/assets`).
+
+Iné mená súborov hra ignoruje – nový typ zvuku treba najprv pridať do `src/sfx.ts` (`EXTRA_SFX_NAMES`) a na miesto v kóde, kde má zaznieť.

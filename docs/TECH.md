@@ -94,10 +94,16 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
    - Permissions: *Contents* → **Read-only** (nič viac)
    - Expirácia podľa uváženia (po vypršaní treba token obnoviť)
 3. Token uložiť do repozitára **Meow-ambulance**: Settings → Secrets and variables → Actions → *New repository secret* → názov **`ASSETS_TOKEN`**.
-4. Actions → *Deploy na GitHub Pages* → *Run workflow* (alebo ľubovoľný merge do `main`).
+4. Actions → *Deploy na GitHub Pages* → *Run workflow* (alebo ľubovoľný merge do `main`). Ručné spustenie má voľbu *latest_assets* – vezme najnovší stav súkromného repozitára namiesto zafixovaného podmodulu.
 
 Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `licenses/`). To je v súlade s licenciami – assety sú súčasťou hry, nešíria sa samostatne.
 - Minihry a UI sa testujú ručne podľa checklistu v PR – **vždy aj na telefóne**.
+
+## Zvuky
+- Základné zvuky sú v `AUDIO` (`src/assets.ts`) – vždy OGG + MP3.
+- Voliteľné zvuky (`src/sfx.ts`) sa hľadajú v `public/assets/audio/sfx/extra/` pri štarte Vite / builde (`define __EXTRA_SFX__` vo `vite.config.ts`) – načítajú sa iba existujúce, takže žiadne chyby 404. Po pridaní súboru treba reštartovať `npm run dev`.
+- Prehrávanie: `GameBridge.playSound(key, volume, fallback?)`; v minihrách `this.sfx(key, volume)`. Chýbajúci zvuk sa ticho preskočí.
+- Zoznam a postup doplnenia pre autora: `docs/ASSETS.md` §7.
 
 ## Podmodul s assetmi
 - Klonovanie: `git clone --recurse-submodules …`, aktualizácia: `git submodule update --remote public/assets`.

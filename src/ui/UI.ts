@@ -17,7 +17,8 @@ import { computeLayout } from '../scenes/layout';
 export interface GameBridge {
   select(catId: string | null): void;
   runMinigame(req: MinigameRequest): Promise<Stars | null>;
-  playSound(key: string, volume?: number): void;
+  /** Ak zvuk `key` nie je k dispozícii (voliteľné zvuky), zahrá sa `fallback`. */
+  playSound(key: string, volume?: number, fallback?: string): void;
   setMuted(muted: boolean): void;
   /** Zmaže uloženú hru a začne odznova. */
   resetGame(): void;
@@ -309,7 +310,7 @@ export class UI {
     });
     bus.on('adopterArrived', () => {
       this.toast(t('TOAST_VISITOR'));
-      this.game.playSound('notify', 0.5);
+      this.game.playSound('doorbell', 0.5, 'notify');
       if (this.modalKind === 'visitors') this.renderModal();
     });
     bus.on('catBecameReady', ({ cat }) => {
@@ -318,7 +319,7 @@ export class UI {
     });
     bus.on('postcardArrived', () => {
       this.toast(t('TOAST_POSTCARD'));
-      this.game.playSound('notify', 0.5);
+      this.game.playSound('camera', 0.5, 'notify');
     });
     bus.on('catAdopted', ({ record }) => {
       if (this.selectedId === record.cat.id) this.game.select(null);
@@ -688,7 +689,10 @@ export class UI {
   }
 
   private doFeed(cat: CatData): void {
-    if (this.state.feed(cat.id)) this.game.playSound('mewFood', 0.6);
+    if (this.state.feed(cat.id)) {
+      this.game.playSound('kibble', 0.5);
+      this.game.playSound('mewFood', 0.6);
+    }
   }
 
   private doKeep(cat: CatData): void {
@@ -800,6 +804,7 @@ export class UI {
                 const cat = s.acceptReport(r.id);
                 if (cat) {
                   this.closeModal();
+                  this.game.playSound('van', 0.5);
                   this.game.playSound('mew', 0.6);
                   this.game.select(cat.id);
                 }
@@ -891,6 +896,7 @@ export class UI {
         if (!rec) return;
         this.toast(t('UI_ADOPTED', { cat: rec.cat.name, fee: rec.fee }));
         this.game.playSound('mewPurr', 0.7);
+        this.game.playSound('coins', 0.4);
         this.selectedForVisit = null;
         if (s.adopters.length > 0) this.renderModal();
         else this.closeModal();
@@ -996,7 +1002,7 @@ export class UI {
                     const got = s.claimChallenge(def.id);
                     if (got) {
                       this.toast(t('TOAST_CLAIMED', { money: got.money, rep: got.rep }));
-                      this.game.playSound('mewPurr', 0.6);
+                      this.game.playSound('coins', 0.5, 'mewPurr');
                     }
                     this.renderModal();
                     this.updateHud();

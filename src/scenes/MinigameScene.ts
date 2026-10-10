@@ -94,6 +94,11 @@ export class MinigameScene extends Phaser.Scene {
     }
   }
 
+  /** Zahrá zvuk, iba ak je načítaný (voliteľné zvuky môžu chýbať). */
+  private sfx(key: string, volume: number): void {
+    if (this.cache.audio.exists(key)) this.sound.play(key, { volume });
+  }
+
   override update(_time: number, delta: number): void {
     if (!this.finished) this.updater?.(delta);
   }
@@ -134,8 +139,8 @@ export class MinigameScene extends Phaser.Scene {
       true,
     ).setOrigin(0.5);
     this.catSprite.play(catAnimKey(this.cfg.cat.sprite, 'look', 'down'));
-    this.sound.play('success', { volume: 0.5 });
-    this.sound.play('mewPurr', { volume: 0.6 });
+    this.sfx('success', 0.5);
+    this.sfx('mewPurr', 0.6);
     this.hearts(6);
     this.time.delayedCall(1300, () => this.close(stars));
   }
@@ -253,8 +258,8 @@ export class MinigameScene extends Phaser.Scene {
           this.input.setDragState(p, 0);
           tick.setPosition(home.x, home.y);
           this.flash(t('MG_SLIPPED'), home.x, home.y - S * 6, '#e86a6a');
-          this.sound.play('error', { volume: 0.5 });
-          this.sound.play('mew', { volume: 0.4 });
+          this.sfx('error', 0.5);
+          this.sfx('mew', 0.4);
           return;
         }
         tick.setPosition(p.x, p.y);
@@ -262,7 +267,7 @@ export class MinigameScene extends Phaser.Scene {
           meter.clear();
           tick.disableInteractive();
           this.input.setDragState(p, 0);
-          this.sound.play('pluck', { volume: 0.7 });
+          this.sfx('pluck', 0.7);
           this.tweens.add({
             targets: tick,
             x: this.scale.width - S * 6,
@@ -402,7 +407,11 @@ export class MinigameScene extends Phaser.Scene {
     let holding = false;
     let releases = 0;
 
-    this.input.on('pointerdown', () => (holding = true));
+    let brushTimer = 0;
+    this.input.on('pointerdown', () => {
+      holding = true;
+      brushTimer = 0;
+    });
     this.input.on('pointerup', () => {
       if (holding && progress > 0 && progress < duration) releases += 1;
       holding = false;
@@ -412,6 +421,11 @@ export class MinigameScene extends Phaser.Scene {
       if (holding) {
         progress = Math.min(duration, progress + dt);
         heartTimer += dt;
+        brushTimer -= dt;
+        if (brushTimer <= 0) {
+          brushTimer = 700;
+          this.sfx('brush', 0.45);
+        }
         if (heartTimer > 450) {
           heartTimer = 0;
           this.hearts(1);
@@ -481,7 +495,7 @@ export class MinigameScene extends Phaser.Scene {
       wraps
         .lineStyle(Math.max(1, S / 4), 0xd9cbb8, 1)
         .strokeRoundedRect(cx - R * 1.35, y, R * 2.7, R * 0.42, R * 0.12);
-      this.sound.play('click', { volume: 0.5 });
+      this.sfx('click', 0.5);
       this.hearts(2);
     };
 
@@ -494,7 +508,7 @@ export class MinigameScene extends Phaser.Scene {
           outside = true;
           slips += 1;
           this.flash(t('MG_SLIPPED'), cx, cy - outer, '#e86a6a');
-          this.sound.play('error', { volume: 0.4 });
+          this.sfx('error', 0.4);
         }
         lastAngle = null;
         return;
@@ -566,7 +580,7 @@ export class MinigameScene extends Phaser.Scene {
           b.g.setAlpha(Math.max(0, b.dirt) * 0.9);
           if (b.dirt <= 0) {
             b.g.destroy();
-            this.sound.play('drop', { volume: 0.45 });
+            this.sfx('drop', 0.45);
           }
         }
       }
@@ -614,14 +628,14 @@ export class MinigameScene extends Phaser.Scene {
           duration: 350,
           onComplete: () => spoon.destroy(),
         });
-        this.sound.play('mewFood', { volume: 0.5 });
+        this.sfx('mewFood', 0.5);
         this.hearts(2);
         zoneX = bx + Phaser.Math.FloatBetween(0, bw - zoneW);
         if (hits >= 3) this.finish((misses === 0 ? 3 : misses <= 2 ? 2 : 1) as Stars);
       } else {
         misses += 1;
         this.flash(t('MG_MISS'), mx, by - S * 3, '#e86a6a');
-        this.sound.play('error', { volume: 0.4 });
+        this.sfx('error', 0.4);
       }
     });
 
