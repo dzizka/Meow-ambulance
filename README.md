@@ -2,6 +2,8 @@
 
 Cozy manažmentová hra o záchrane mačiek pre PC a mobil. Zachráň vystrašenú mačku z ulice, vylieč ju, získaj jej dôveru, nájdi jej dokonalý domov – a z garáže postav národné centrum pre záchranu mačiek.
 
+https://dzizka.github.io/Meow-ambulance/
+
 > Stav: **predprodukcia** – pozri [ROADMAP](docs/ROADMAP.md)
 
 ## Dokumentácia
