@@ -98,5 +98,6 @@ Overené k 10. 10. 2026. **Mriežka hry: 32×32 px.** Pri „Name your own price
 | `audio/music/lofi_*` | M1 | vlastná (`Terms.txt`) – komerčné ✅, nešíriť | ❌ | **✅ „Kentaro"** | nie | ✅ | Claude / 10. 10. 2026 |
 | `audio/music/calm_*` | M2 | CC0 | ✅ | nie | MP3 kópia | ✅ | Claude / 10. 10. 2026 |
 | `audio/sfx/ui/` | S3 | CC0 | ✅ | nie | nie | ✅ | Claude / 10. 10. 2026 |
+| `audio/sfx/cats/` | S1 | CC0 | ✅ | nie | OGG + MP3 z WAV | ✅ | Claude / 10. 10. 2026 |
 
-**Ešte chýba:** S1/S2 mačacie zvuky (pradenie, mňaukanie).
+**Ešte chýba (M2):** syčanie, mrnčanie, kroky – Freesound CC0 (S4). S2 (BigSoundBank) iba ak by S1 pradenie nestačilo.

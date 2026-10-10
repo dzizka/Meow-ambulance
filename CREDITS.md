@@ -16,6 +16,7 @@
 
 ## Zvukové efekty
 - Interface Sounds – Kenney – www.kenney.nl (CC0)
+- Cat Purr & Meow – Kerzoven – https://opengameart.org/content/cat-purr-meow (CC0)
 
 ## Fonty
 - Pixelify Sans – The Pixelify Sans Project Authors (https://github.com/eifetx/Pixelify-Sans) – SIL Open Font License 1.1
