@@ -16,18 +16,23 @@ Každý míľnik = GitHub Milestone. Každá odrážka = GitHub Issue. Značky r
 - [ ] Nasadenie webovej verzie s assetmi (potrebuje token k súkromnému repozitáru) – zatiaľ ručne ako Claude artifact
 - [ ] GitHub Project (Kanban: Backlog → Todo → In progress → Review → Done)
 
-## M1 – Prototyp „šedé krabice" (2 týždne)
-Cieľ: overiť zábavnosť slučky s jednoduchou grafikou – **hrateľné na mobile cez odkaz**.
+## M1 – Hrateľná základná slučka (2–3 týždne)
+Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvorenom režime – **hrateľné na mobile cez odkaz**.
 - [x] Načítanie `public/data/*.json`, generovanie mačky (`CatGenerator`) + testy
 - [x] Garáž (zatiaľ poskladaná v kóde), klietky, ťuk na mačku → karta mačky; mačky sa prechádzajú v 8 smeroch
-- [ ] Garáž z Tiled mapy
-- [x] Karta mačky so štatistikami (Zdravie, Čistota, Dôvera, Spokojnosť)
-- [ ] Pokles štatistík v čase
-- [x] Herný deň (07:00–20:00), pauza, zrýchlenie
-- [ ] Súhrn dňa
-- [ ] 1 liečebná minihra (kliešte) + 1 socializačná (pero)
-- [ ] 1 adoptér, výpočet zhody (`MatchCalculator`) + testy, adopcia
-- [ ] Výber palety, test mierky assetov
+- [x] Karta mačky so štatistikami
+- [x] **Otvorený režim:** hodiny iba pre atmosféru (deň/noc), bez konca dňa (GDD §2.2)
+- [x] Hlásenia o mačkách v reálnom čase (max 3, nevypršia), prijatie do voľnej klietky
+- [x] Pokles čistoty a spokojnosti, zotavovanie zdravia (iba keď hra beží)
+- [x] Prehliadka (ruka, teplomer) odhaľuje diagnózy
+- [x] Minihra **vyťahovanie kliešťov** + univerzálna minihra „podrž" pre ostatné ošetrenia
+- [x] Socializácia: **hra s perom** (minihra), česanie, kŕmenie z ruky, tiché sedenie; odhaľovanie rysov
+- [x] Adoptéri v reálnom čase, výpočet zhody (`Match`) + testy, adopcia s príspevkom
+- [x] **Stálice:** nechať si mačku, kútik pre 2, dary od návštevníkov
+- [x] Pohľadnica po adopcii
+- [x] Ukladanie (localStorage) + offline príjem a privítanie po návrate (GDD §2.3)
+- [x] HTML rozhranie nad plátnom
+- [ ] Garáž z Tiled mapy, mačky obchádzajú nábytok (presunuté do M2)
 - [ ] **Playtest #1** na PC aj telefóne – je slučka zábavná?
 
 ## M2 – Vertikálny rez / MVP (6–8 týždňov)
@@ -38,9 +43,10 @@ Cieľ: overiť zábavnosť slučky s jednoduchou grafikou – **hrateľné na mo
 - [ ] 3 socializačné: pero, česanie, kŕmenie z ruky
 - [ ] 6 rysov, odhaľovanie rysov
 - [ ] 8 archetypov adoptérov
-- [ ] Pohľadnice + Album (36 slotov)
-- [ ] Ekonomika: €, ⭐, náklady na krmivo
-- [ ] Tutoriál so Zuzkou (prvé 3 dni skriptované)
+- [ ] Album (36 slotov) – stránky adoptovaných aj stálic
+- [ ] Nástenka výziev (3 aktívne úlohy)
+- [ ] Ekonomika: €, ★, nákup klietok a rozšírenie kútika
+- [ ] Tutoriál so Zuzkou (prvé 3 hlásenia skriptované)
 - [ ] Ukladanie (3 sloty, autosave)
 - [ ] Hudba (3 skladby) + SFX (~20)
 - [ ] SK + EN lokalizácia
@@ -51,7 +57,7 @@ Cieľ: overiť zábavnosť slučky s jednoduchou grafikou – **hrateľné na mo
 
 ## M3 – Komunitný útulok (Fáza 2)
 - [ ] Systém stavby miestností na mriežke
-- [ ] Karanténa, herňa pre verejnosť (návštevníci, dary), ambulancia
+- [ ] Karanténa, **mačacia kaviareň** pre stálice (návštevníci, väčšie dary), ambulancia
 - [ ] Nové minihry: kúpanie, očkovanie, pazúriky
 - [ ] Prvé udalosti: Zima prichádza, Deň otvorených dverí
 - [ ] Rozšírenie na 15 rysov, 12 plemien

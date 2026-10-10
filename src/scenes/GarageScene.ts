@@ -1,14 +1,35 @@
 import Phaser from 'phaser';
-import { GameState } from '../core/GameState';
-import type { GameData } from '../data/types';
+import type { GameState } from '../core/GameState';
+import { SaveManager, browserStorage } from '../core/SaveManager';
+import type { OfflineSummary } from '../core/EventBus';
+import type { Stars } from '../core/systems/Care';
+import type { CatData } from '../data/types';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { CatSprite } from '../objects/CatSprite';
-import type { UIScene } from './UIScene';
+import { UI, type GameBridge, type MinigameRequest } from '../ui/UI';
+import type { MinigameInit } from './MinigameScene';
 import { WORLD_H, WORLD_W, computeLayout } from './layout';
 
 /** Rozmery miestnosti v garáži (pixely pixel-artu). */
 const ROOM = { x: 16, y: 6, w: 448, wallH: 64, floorH: 192 };
 const FLOOR_TOP = ROOM.y + ROOM.wallH;
+const CAGES = [
+  { x: 348, y: FLOOR_TOP + 38 },
+  { x: 398, y: FLOOR_TOP + 38 },
+];
+/** Kde sa pohybujú pacienti a kde stálice (kútik pri gauči). */
+const PATIENT_AREA = new Phaser.Geom.Rectangle(70, FLOOR_TOP + 58, 210, 112);
+const RESIDENT_AREA = new Phaser.Geom.Rectangle(300, FLOOR_TOP + 60, 140, 112);
+const EXIT = { x: ROOM.x + 6, y: FLOOR_TOP + 176 };
+const AUTOSAVE_MS = 15_000;
+
+/** Farba „svetla" podľa dennej doby (GDD §2.2 – hodiny sú iba atmosféra). */
+const PHASE_TINT = {
+  night: { color: 0x14102a, alpha: 0.45 },
+  morning: { color: 0xffc98a, alpha: 0.08 },
+  day: { color: 0x000000, alpha: 0 },
+  evening: { color: 0x6a3a2a, alpha: 0.2 },
+} as const;
 
 type Sheet = 'interior' | 'clinic';
 const rect = (sheet: Sheet, name: string): FrameRect =>
@@ -17,95 +38,241 @@ const rect = (sheet: Sheet, name: string): FrameRect =>
     : CLINIC_FRAMES[name as keyof typeof CLINIC_FRAMES]) as FrameRect;
 
 /**
- * Fáza 1 – Garážová záchranka (GDD §6.2).
- * Statické pozadie (podlaha, steny, výzdoba) sa skladá raz do jednej textúry,
- * nábytok a postavy sú samostatné sprity zoradené podľa výšky (y).
+ * Fáza 1 – Garážová záchranka (GDD §6.2) v otvorenom režime.
+ * Zobrazuje stav z GameState, ukladá hru a spúšťa minihry pre HTML rozhranie.
  */
-export class GarageScene extends Phaser.Scene {
+export class GarageScene extends Phaser.Scene implements GameBridge {
   state!: GameState;
-  private cats: CatSprite[] = [];
+  private saves = new SaveManager(browserStorage);
+  private sprites = new Map<string, CatSprite>();
   private selected: CatSprite | null = null;
   private zuzka!: Phaser.GameObjects.Sprite;
-  private readonly walkArea = new Phaser.Geom.Rectangle(44, FLOOR_TOP + 46, 392, 132);
+  private nightOverlay!: Phaser.GameObjects.Rectangle;
+  private lampGlows: Phaser.GameObjects.Image[] = [];
+  private phase: keyof typeof PHASE_TINT | null = null;
+  private music?: Phaser.Sound.BaseSound;
+  private sinceSave = 0;
+  private sinceSparkle = 0;
 
   constructor() {
     super('Garage');
   }
 
   create(): void {
-    const data = this.registry.get('gameData') as GameData;
-    this.state = new GameState(data);
-    this.registry.set('state', this.state);
+    this.state = this.registry.get('state') as GameState;
+    const offline = this.registry.get('offline') as OfflineSummary | null;
 
     this.registerFrames();
     this.buildBackground();
     this.placeFurniture();
-    this.createCage(348, FLOOR_TOP + 38);
-    this.createCage(398, FLOOR_TOP + 38);
+    CAGES.forEach((c) => this.createCage(c.x, c.y));
     this.createZuzka();
+    this.createLighting();
+    this.makeSparkTexture();
 
-    this.state.admitCat();
-    this.state.admitCat();
-    this.state.cats.forEach((cat, i) => this.spawnCat(cat.id, 180 + i * 90, FLOOR_TOP + 120));
+    this.state.cats.forEach((cat, i) => {
+      const area = cat.resident ? RESIDENT_AREA : PATIENT_AREA;
+      this.spawnCat(cat, area.x + 30 + i * 40, area.centerY);
+    });
+    this.listen();
 
     this.enableDragPan();
     this.input.on(
       'pointerdown',
       (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
-        if (over.length === 0 && !this.isUiPointer(p)) this.select(null);
+        if (over.length === 0 && !this.isOutsideWorld(p)) this.select(null);
       },
     );
-
     this.scale.on('resize', this.applyLayout, this);
-    this.events.once('shutdown', () => this.scale.off('resize', this.applyLayout, this));
     this.applyLayout();
-    this.scene.launch('UI');
+
+    // Prehliadače dovolia zvuk až po prvom dotyku
+    document.addEventListener('pointerdown', () => this.startMusic(), { once: true });
+    const saveNow = () => this.saves.save(this.state);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveNow();
+    });
+    window.addEventListener('pagehide', saveNow);
+
+    new UI(this.state, this);
+    if (offline) this.state.bus.emit('welcomeBack', { summary: offline });
+    this.saves.save(this.state);
   }
 
   override update(_time: number, delta: number): void {
-    this.state.time.update(delta);
-    if (this.state.time.isDayOver && !this.dayRollPending) {
-      this.dayRollPending = true;
-      // M1: tu bude súhrn dňa. Zatiaľ nový deň po krátkej pauze.
-      this.time.delayedCall(2500, () => {
-        this.state.time.startNextDay();
-        this.dayRollPending = false;
-      });
+    // Po dlhšom uspaní karty prehliadača sa čas dopočíta ako offline (beží iba to dobré)
+    if (delta > 5000) this.state.applyOffline(delta);
+    else this.state.tick(delta);
+
+    this.sinceSave += delta;
+    if (this.sinceSave > AUTOSAVE_MS) {
+      this.sinceSave = 0;
+      this.saves.save(this.state);
     }
-  }
-  private dayRollPending = false;
-
-  /** Ďalšia mačka (ladiaca funkcia ukážky): najstaršia odíde, príde nová. */
-  replaceOldestCat(): void {
-    const oldest = this.cats.shift();
-    if (oldest) {
-      this.state.cats = this.state.cats.filter((c) => c.id !== oldest.cat.id);
-      if (this.selected === oldest) this.select(null);
-      oldest.destroy();
+    this.sinceSparkle += delta;
+    if (this.sinceSparkle > 1400) {
+      this.sinceSparkle = 0;
+      for (const sprite of this.sprites.values()) {
+        if (!sprite.cat.resident && this.state.isReady(sprite.cat)) this.sparkle(sprite);
+      }
     }
-    const cat = this.state.admitCat();
-    if (cat) this.spawnCat(cat.id, 380, FLOOR_TOP + 70);
+    this.updateLighting();
   }
 
-  private spawnCat(id: string, x: number, y: number): void {
-    const data = this.state.getCat(id);
-    if (!data) return;
-    const sprite = new CatSprite(this, x, y, data, this.walkArea);
-    sprite.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      if (this.isUiPointer(p)) return;
-      const reaction = sprite.react();
-      this.sound.play(reaction === 'fled' ? 'mew' : 'mewPurr', { volume: 0.6 });
-      this.select(sprite);
-    });
-    this.cats.push(sprite);
-  }
+  // ---------- GameBridge pre HTML rozhranie ----------
 
-  private select(sprite: CatSprite | null): void {
+  select(catId: string | null): void {
+    const sprite = catId ? (this.sprites.get(catId) ?? null) : null;
     this.selected?.setSelected(false);
     this.selected = sprite;
     sprite?.setSelected(true);
+    if (sprite)
+      this.cameras.main.pan(sprite.x, this.cameras.main.midPoint.y, 300, 'Sine.easeInOut');
     this.state.bus.emit('catSelected', { catId: sprite?.cat.id ?? null });
   }
+
+  runMinigame(req: MinigameRequest): Promise<Stars | null> {
+    return new Promise((resolve) => {
+      const init: MinigameInit = { ...req, done: resolve };
+      this.scene.launch('Minigame', init);
+      this.scene.bringToTop('Minigame');
+    });
+  }
+
+  playSound(key: string, volume = 0.6): void {
+    if (this.cache.audio.exists(key)) this.sound.play(key, { volume });
+  }
+
+  setMuted(muted: boolean): void {
+    this.sound.mute = muted;
+  }
+
+  // ---------- Udalosti stavu ----------
+
+  private listen(): void {
+    const bus = this.state.bus;
+    const save = () => this.saves.save(this.state);
+    bus.on('catAdmitted', ({ cat }) => {
+      const cage = CAGES[Math.min(CAGES.length - 1, this.state.cagedCats.length - 1)] ?? CAGES[0];
+      if (cage) this.spawnCat(cat, cage.x, cage.y + 8);
+      save();
+    });
+    bus.on('catChanged', ({ cat }) => this.sprites.get(cat.id)?.applyLook());
+    bus.on('catBecameResident', ({ cat }) => {
+      this.sprites.get(cat.id)?.setWalkArea(RESIDENT_AREA);
+      save();
+    });
+    bus.on('catAdopted', ({ record }) => {
+      const sprite = this.sprites.get(record.cat.id);
+      if (sprite) {
+        if (this.selected === sprite) this.selected = null;
+        this.sprites.delete(record.cat.id);
+        sprite.leave(EXIT.x, EXIT.y, () => undefined);
+      }
+      save();
+    });
+    bus.on('reportDeclined', save);
+    bus.on('postcardArrived', save);
+  }
+
+  private spawnCat(cat: CatData, x: number, y: number): void {
+    const area = cat.resident ? RESIDENT_AREA : PATIENT_AREA;
+    const sprite = new CatSprite(this, x, y, cat, area);
+    sprite.on('pointerdown', () => {
+      const reaction = sprite.react();
+      this.playSound(reaction === 'fled' ? 'mew' : 'mewPurr', 0.6);
+      this.select(sprite.cat.id);
+    });
+    this.sprites.set(cat.id, sprite);
+  }
+
+  /** Iskričky nad mačkou pripravenou na adopciu (GDD §7.4). */
+  private sparkle(sprite: CatSprite): void {
+    const s = this.add
+      .image(sprite.x + Phaser.Math.Between(-8, 8), sprite.y - 24, 'spark')
+      .setDepth(sprite.depth + 1);
+    this.tweens.add({
+      targets: s,
+      y: s.y - 10,
+      alpha: 0,
+      duration: 900,
+      onComplete: () => s.destroy(),
+    });
+  }
+
+  private makeSparkTexture(): void {
+    if (this.textures.exists('spark')) return;
+    const tex = this.textures.createCanvas('spark', 5, 5);
+    if (!tex) return;
+    const c = tex.getContext();
+    c.fillStyle = '#fff4d6';
+    c.fillRect(2, 0, 1, 5);
+    c.fillRect(0, 2, 5, 1);
+    c.fillStyle = '#f2c14e';
+    c.fillRect(2, 2, 1, 1);
+    tex.refresh();
+  }
+
+  // ---------- Svetlo a hudba ----------
+
+  private createLighting(): void {
+    this.nightOverlay = this.add
+      .rectangle(0, 0, WORLD_W, WORLD_H, 0x000000, 0)
+      .setOrigin(0)
+      .setDepth(5000);
+    // Mäkké svetlo lámp: radiálny prechod v textúre, sčítaný s obrazom
+    if (!this.textures.exists('glow')) {
+      const tex = this.textures.createCanvas('glow', 64, 64);
+      if (tex) {
+        const c = tex.getContext();
+        const g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0, 'rgba(255, 211, 138, 0.9)');
+        g.addColorStop(0.45, 'rgba(255, 190, 110, 0.35)');
+        g.addColorStop(1, 'rgba(255, 170, 90, 0)');
+        c.fillStyle = g;
+        c.fillRect(0, 0, 64, 64);
+        tex.refresh();
+      }
+    }
+    for (const [x, y, r] of [
+      [448, FLOOR_TOP + 132, 46],
+      [96, FLOOR_TOP + 136, 30],
+    ] as const) {
+      this.lampGlows.push(
+        this.add
+          .image(x, y, 'glow')
+          .setScale(r / 32)
+          .setAlpha(0)
+          .setDepth(5001)
+          .setBlendMode(Phaser.BlendModes.ADD),
+      );
+    }
+  }
+
+  private updateLighting(): void {
+    const phase = this.state.dayPhase;
+    if (phase === this.phase) return;
+    const first = this.phase === null;
+    this.phase = phase;
+    const tint = PHASE_TINT[phase];
+    this.nightOverlay.setFillStyle(tint.color, this.nightOverlay.fillAlpha);
+    this.tweens.add({
+      targets: this.nightOverlay,
+      fillAlpha: tint.alpha,
+      duration: first ? 0 : 4000,
+    });
+    const glow = phase === 'night' ? 0.9 : phase === 'evening' ? 0.5 : 0;
+    this.tweens.add({ targets: this.lampGlows, alpha: glow, duration: first ? 0 : 4000 });
+    for (const sprite of this.sprites.values()) sprite.sleepy = phase === 'night';
+  }
+
+  private startMusic(): void {
+    if (this.music) return;
+    this.music = this.sound.add('music', { loop: true, volume: 0.3 });
+    this.music.play();
+  }
+
+  // ---------- Kamera ----------
 
   private applyLayout(): void {
     const l = computeLayout(this.scale.width, this.scale.height);
@@ -116,12 +283,10 @@ export class GarageScene extends Phaser.Scene {
     cam.centerOn(WORLD_W / 2, WORLD_H / 2);
   }
 
-  /** Ťuknutie mimo garáže alebo na panel rozhrania sa v garáži ignoruje. */
-  isUiPointer(p: Phaser.Input.Pointer): boolean {
+  /** Ťuknutie pod garážou (mobil na výšku) – tam je HTML karta. */
+  private isOutsideWorld(p: Phaser.Input.Pointer): boolean {
     const cam = this.cameras.main;
-    if (p.y > cam.y + cam.height) return true;
-    const ui = this.scene.get('UI') as UIScene | null;
-    return ui?.scene.isActive() === true && ui.blocksPointer(p.x, p.y);
+    return p.y > cam.y + cam.height;
   }
 
   /** Posúvanie garáže ťahaním (keď je väčšia ako obrazovka, napr. mobil na výšku). */
@@ -132,7 +297,7 @@ export class GarageScene extends Phaser.Scene {
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       lastX = p.x;
       lastY = p.y;
-      dragging = !this.isUiPointer(p);
+      dragging = !this.isOutsideWorld(p);
     });
     this.input.on('pointerup', () => (dragging = false));
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {

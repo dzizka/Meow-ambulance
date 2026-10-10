@@ -14,6 +14,7 @@ export function loadTestData(): GameData {
     breeds: breeds.breeds,
     coats: breeds.coats,
     adopters: read<{ adopters: GameData['adopters'] }>('adopters.json').adopters,
+    reports: read<{ reports: GameData['reports'] }>('reports.json').reports,
     names: read<GameData['names']>('names.json'),
     balance: read<GameData['balance']>('balance.json'),
   };

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { GarageScene } from './scenes/GarageScene';
-import { UIScene } from './scenes/UIScene';
+import { MinigameScene } from './scenes/MinigameScene';
 
 /**
  * Konfigurácia hry. Veľkosť plátna = veľkosť okna (RESIZE); scény si samy
@@ -19,7 +19,7 @@ const game = new Phaser.Game({
     height: '100%',
   },
   input: { activePointers: 2 },
-  scene: [BootScene, GarageScene, UIScene],
+  scene: [BootScene, GarageScene, MinigameScene],
 });
 
 // Uľahčuje ladenie v konzole prehliadača

@@ -4,7 +4,7 @@
 > **Žáner:** Cozy manažment / simulácia útulku a veterinárnej kliniky
 > **Technológia:** TypeScript + Phaser (HTML5), Vite
 > **Platformy:** Web (demo) · PC cez Tauri (Windows / macOS / Linux, Steam) · Mobil cez Capacitor (Android / iOS)
-> **Verzia dokumentu:** 0.1 (živý dokument – každá zmena ide cez Pull Request)
+> **Verzia dokumentu:** 0.2 – otvorený režim bez konca dňa, stálice a mačacia kaviareň (živý dokument – každá zmena ide cez Pull Request)
 
 ---
 
@@ -32,8 +32,8 @@ Každá nová funkcia musí podporovať aspoň jeden pilier. Ak nepodporuje žia
 | **1. Každá mačka je osobnosť** | Meno, vzhľad, povaha, príbeh. Hráč si mačky pamätá, nie sú to čísla. |
 | **2. Viditeľná premena** | Špinavá a vystrašená → lesklá a priadúca. Pokrok musí byť *vidieť*, nie len čítať. |
 | **3. Malé uspokojivé dotyky** | Minihry sú krátke (5–20 s), hmatové a príjemné, nikdy frustrujúce. |
-| **4. Rast bez stresu** | Žiadne smrti mačiek, žiadny game over. Tlak existuje (udalosti, kapacita), ale vždy je cesta von. |
-| **5. Emocionálna odmena** | Pohľadnice z nového domova, album príbehov – dôvod vrátiť sa zajtra. |
+| **4. Rast bez stresu** | Žiadne smrti mačiek, žiadny game over, žiadny koniec dňa. Hráč robí, čo chce a kedy chce. Tlak existuje iba ako jemná motivácia (miesto, výzvy), nikdy ako trest. |
+| **5. Emocionálna odmena** | Pohľadnice z nového domova, album príbehov, mačky, ktoré si hráč nechal – dôvod vrátiť sa zajtra. |
 
 ### 1.3 Cieľová skupina
 - **Primárna:** milovníci mačiek a cozy hier, 16–40 rokov, hrajú Stardew Valley, Cats & Soup, Unpacking, Cat Cafe Manager.
@@ -44,8 +44,8 @@ Každá nová funkcia musí podporovať aspoň jeden pilier. Ak nepodporuje žia
 | Hra | Čo berieme |
 |---|---|
 | Two Point Hospital | Stavba miestností, diagnostika → liečba, najímanie personálu, humor |
-| Stardew Valley | Rytmus dňa, vzťahy, pocit „ešte jeden deň" |
-| Cats & Soup | Idle pohoda, roztomilé animácie, zberateľstvo |
+| Stardew Valley | Vzťahy, pocit „ešte jedna vec", striedanie dňa a noci ako atmosféra |
+| Cats & Soup | Otvorený režim bez konca dňa, príjem aj keď hráč nehrá, roztomilé animácie, zberateľstvo |
 | Good Pizza, Great Pizza | Zákazníci s požiadavkami (→ adoptéri), čitateľné postavy |
 | Pokémon (Pokédex) | Album na zbieranie plemien a variácií |
 
@@ -58,24 +58,43 @@ Každá nová funkcia musí podporovať aspoň jeden pilier. Ak nepodporuje žia
 
 ## 2. Herná slučka
 
-### 2.1 Makro slučka (session → týždne)
+### 2.1 Makro slučka
 ```
-Zachráň mačky → Vylieč a socializuj → Adoptuj do správnych rúk
-       ↑                                         ↓
-Rozšír útulok  ←  Peniaze + Reputácia + Pohľadnice + Album
+   Hlásenie o mačke → Záchrana → Liečba a socializácia
+                                        │
+                     ┌──────────────────┴──────────────────┐
+                     ↓                                     ↓
+           Adopcia do správnych rúk              Stálica (hráč si ju nechá)
+      (príspevok, pohľadnica, album)       (dary z mačacej kaviarne, pomoc)
+                     └──────────────────┬──────────────────┘
+                                        ↓
+                Peniaze + Reputácia → Rozšírenie útulku → viac miesta
 ```
 
-### 2.2 Štruktúra herného dňa 🟢 MVP
-Jeden herný deň trvá **cca 6–8 minút reálneho času** (nastaviteľné). Hra beží v reálnom čase s možnosťou pauzy a zrýchlenia (1×, 2×, 3×).
+### 2.2 Otvorený režim – bez konca dňa 🟢 MVP
+Hra **nemá herné dni ani obrazovku konca dňa**. Hráč robí, čo chce a kedy chce – môže sa aj len pozerať na svoje mačky.
 
-| Čas v hre | Fáza | Čo hráč robí |
-|---|---|---|
-| 07:00 | **Ranné hlásenia** | Na tabuli/telefóne prídu 1–3 hlásenia o nájdených mačkách. Hráč rozhodne, ktoré prijme (obmedzené kapacitou). |
-| 08:00–17:00 | **Starostlivosť** | Diagnostika, liečba, kŕmenie, socializácia. Adoptéri prichádzajú počas otváracích hodín. |
-| 17:00–19:00 | **Adopcie a návštevy** | Hlavný čas adopčných pohovorov, mačacia herňa pre verejnosť. |
-| 20:00 | **Súhrn dňa** | Prehľad: zarobené, adoptované, zlepšené mačky, nové pohľadnice. Rozhodnutia o stavbe. |
+- **Hodiny sú iba atmosféra.** Čas plynie (1 reálna minúta = 1 herná hodina), mení sa svetlo – ráno, deň, večer s lampami, noc, keď mačky spia. Na nič netlačí.
+- **Udalosti prichádzajú v reálnom čase:**
+  - **Hlásenia o mačkách** – nové každé ~4 minúty, čaká ich najviac 3. **Nevypršia.** Hráč ich prijme, keď má voľnú klietku a chuť.
+  - **Záujemcovia o adopciu** – prídu každé ~3 minúty, ak je aspoň jedna mačka pripravená na adopciu. Čakajú najviac 2 a **neodchádzajú**.
+  - **Dary z mačacej kaviarne** – priebežne podľa počtu stálic (§5.4).
+  - **Pohľadnice** – 2–5 minút po adopcii.
+- **Výzvy** (§7.3) dávajú smer, ale nemajú časový limit.
+- Rýchlosť času sa neprepína (nie je dôvod) – v M0 prepínanie bolo, v M1 zaniká.
 
-> **Pravidlo pohody:** ak hráč niečo nestihne, nič zlé sa nestane hneď. Potreby mačky klesajú pomaly a starosť preberú dobrovoľníci (menej efektívne).
+### 2.3 Keď hráč hru zavrie (offline) 🟢 MVP
+**Beží iba to dobré.**
+
+| Čo | Offline |
+|---|---|
+| Hlásenia o mačkách | nazbierajú sa (do limitu 3) |
+| Dary z kaviarne | nazbierajú sa, najviac za 8 hodín |
+| Pohľadnice | doručia sa |
+| Potreby mačiek (čistota, spokojnosť) | **neklesajú** |
+| Adoptéri | neprichádzajú (prídu po návrate) |
+
+Po návrate hráč uvidí krátke privítanie: „Kým si bol preč: 2 nové hlásenia, 34 € od návštevníkov kaviarne, 1 pohľadnica." Žiadne výčitky.
 
 ---
 
@@ -85,7 +104,7 @@ Jeden herný deň trvá **cca 6–8 minút reálneho času** (nastaviteľné). H
 Každé hlásenie je karta s:
 - **Miesto a situácia** – „Mačiatko v krabici pred obchodom", „Zranená divá mačka na stavbe"
 - **Odhad náročnosti** – 1 až 3 labky
-- **Čas vypršania** – hlásenie zmizne po X hodinách (mačku zachráni niekto iný – žiadny trest, len ušlá príležitosť)
+- **Hlásenie nevyprší** (§2.2) – čaká, kým ho hráč prijme. Zamietnuté hlásenie vybaví iný útulok (bez trestu).
 
 Po prijatí sa hrá krátka **záchranná scénka** (🟡 v1.0: minihra – nalákanie mačky do prepravky maškrtou; 🟢 MVP: iba animácia/ilustrácia).
 
@@ -113,6 +132,11 @@ Všetky na škále **0–100**:
 | **Spokojnosť** | Jedlo, hračky, prostredie | Ovisnuté uši → hra, poskakovanie |
 
 **Pripravená na adopciu** = všetky diagnózy vyliečené + Zdravie ≥ 80 + Dôvera ≥ 60.
+
+**Zmeny v čase (iba keď hra beží, §2.3):**
+- Čistota klesá o 0,5 a spokojnosť o 1 za minútu, nikdy však pod 15 – mačka nikdy nie je „zanedbaná".
+- Keď má mačka vyliečené všetky diagnózy, zdravie samo rastie o 2 za minútu (zotavovanie).
+- Zdravie ani dôvera samy neklesajú.
 
 ---
 
@@ -199,8 +223,22 @@ zhoda = základ 50
 |---|---|
 | **Adopčný príspevok** | Peniaze (napr. 50–150 € podľa zhody a fázy) |
 | **Reputácia** | Odomyká granty, väčšie hlásenia, lepších adoptérov |
-| **Pohľadnica** 🟢 MVP | Po 2–5 herných dňoch príde ilustrovaná pohľadnica: mačka v novom domove + krátky odkaz od majiteľa. Ukladá sa do albumu. |
+| **Pohľadnica** 🟢 MVP | 2–5 minút po adopcii príde ilustrovaná pohľadnica: mačka v novom domove + krátky odkaz od majiteľa. Ukladá sa do albumu. |
 | **Zápis do albumu** | Odomknutie plemena/farby/príbehu |
+
+### 5.4 Stálice – mačky, ktoré si hráč nechá 🟢 MVP
+Adopcia **nie je povinná**. Vyliečenú mačku si hráč môže nechať ako **stálicu**.
+
+- Stálica sa presťahuje z klietky do **mačacieho kútika** (Fáza 1) / **mačacej kaviarne** (od Fázy 2) a **uvoľní klietku** pre ďalšiu záchranu.
+- **Úžitok stálic:**
+  - **Dary od návštevníkov** – každá stálica prináša priebežný príjem (Fáza 1: 0,5 €/min, kaviareň ho násobí). Spokojnejšia stálica = viac darov.
+  - 🟡 **Pomocníčka** – stálica s rysom „maznavá" upokojuje nové plaché mačky (rýchlejšia dôvera).
+  - 🟡 Obliekanie, fotky, mená v kaviarni.
+- **Obmedzenie je iba miesto** – kútik má 2 miesta, kaviareň viac; rozširuje sa za peniaze. Žiadny trest za nechanie si mačky.
+- Stálicu je možné **kedykoľvek neskôr dať na adopciu** (napr. keď príde ideálny záujemca).
+- Stálica sa zapíše do albumu ako „Naša" – album sa dá dokončiť aj bez adopcií, ale pohľadnice existujú iba z adopcií.
+
+> Vzniká jemné napätie „chcem si ju nechať" vs. „chcem vidieť, ako je šťastná u babky" – emocionálne, nie stresujúce.
 
 ---
 
@@ -209,19 +247,21 @@ zhoda = základ 50
 ### 6.1 Ekonomika 🟢 MVP
 | Mena | Ako ju získať | Na čo ju míňať |
 |---|---|---|
-| **Peniaze (€)** | Adopcie, dary návštevníkov herne, granty, predaj v kaviarni | Vybavenie, miestnosti, krmivo, personál, lieky |
-| **Reputácia (⭐)** | Dobré adopcie, vyriešené udalosti, spokojní návštevníci | Odomykanie fáz, grantov a typov hlásení (nemíňa sa – je to úroveň) |
-| **Srdiečka (❤️)** 🟡 v1.0 | Pohľadnice, album, výzvy | Kozmetika: dekorácie, oblečenie pre personál, farby stien |
+| **Peniaze (€)** | Adopčné príspevky, **dary od návštevníkov kaviarne (stálice)**, granty za výzvy | Klietky, rozšírenie kútika/kaviarne, vybavenie, dekorácie, neskôr personál |
+| **Reputácia (★)** | Dobré adopcie, splnené výzvy | Odomykanie fáz a typov hlásení (nemíňa sa – je to úroveň) |
+| **Srdiečka (❤️)** 🟡 v1.0 | Pohľadnice, album, výzvy | Kozmetika: dekorácie, oblečenie mačiek, farby stien |
 
-**Prevádzkové náklady:** krmivo a lieky na mačku/deň + mzdy personálu. Ak dôjdu peniaze → prídu dobrovoľníci a núdzová zbierka (žiadny bankrot).
+**Dva zdroje príjmu, dva štýly hrania:** kto rád adoptuje, zarába hlavne príspevkami a zbiera pohľadnice; kto si mačky necháva, zarába pomalšie, ale stabilne z kaviarne – aj keď nehrá.
+
+**Bez prevádzkových nákladov v MVP.** Krmivo a bežná starostlivosť sú zadarmo – peniaze sa míňajú iba na rast. (Neskôr personál so mzdou, ale nikdy nie bankrot.)
 
 ### 6.2 Fázy rastu útulku
 | Fáza | Názov | Podmienka odomknutia | Kapacita | Nové prvky |
 |---|---|---|---|---|
-| **1** 🟢 | Garážová záchranka | štart | 2 klietky → max 4 | Stôl, misky, teplomer, ruka, stetoskop. Pomocníčka: dobrovoľníčka **Zuzka** (tutoriál). |
-| **2** 🟡 | Komunitný útulok | 10 adopcií, ⭐ 100 | 8–12 | Prenajatý domček: karanténa, mačacia herňa pre verejnosť (príjem z darov), ambulancia na očkovanie, otoskop |
-| **3** 🟡 | Špecializovaná klinika | 40 adopcií, ⭐ 500 | 20–30 | Personál (veterinár, ošetrovateľ, správca sociálnych sietí), laboratórium, röntgen, operačná sála, catio (vonkajší výbeh) |
-| **4** 🔵 | Národné centrum felíd | 120 adopcií, ⭐ 2000 | 50+ | Viac poschodí, CT, rehabilitačný bazén, mačací hotel, edukačné centrum (školské výlety) |
+| **1** 🟢 | Garážová záchranka | štart | 2 klietky → max 4, kútik pre 2 stálice | Stôl, misky, teplomer, ruka, stetoskop. Pomocníčka: dobrovoľníčka **Zuzka** (tutoriál). |
+| **2** 🟡 | Komunitný útulok | 10 záchran, ★ 100 | 8–12 | Prenajatý domček: karanténa, **mačacia kaviareň** pre stálice (násobí dary), ambulancia na očkovanie, otoskop |
+| **3** 🟡 | Špecializovaná klinika | 40 záchran, ★ 500 | 20–30 | Personál (veterinár, ošetrovateľ, správca sociálnych sietí), laboratórium, röntgen, operačná sála, catio (vonkajší výbeh) |
+| **4** 🔵 | Národné centrum felíd | 120 záchran, ★ 2000 | 50+ | Viac poschodí, CT, rehabilitačný bazén, mačací hotel, edukačné centrum (školské výlety) |
 
 > **MVP obsahuje iba Fázu 1** a „okno" do Fázy 2 (zamknutá budova, ktorú hráč vidí na mape – motivácia).
 
@@ -255,14 +295,20 @@ zhoda = základ 50
 - Vzácne farby (napr. dymová, čokoládová), heterochrómia, polydaktylia („palčiaky"), bezsrsté, trojfarebný kocúr (ultra vzácny).
 - Šanca na výskyt rastie s reputáciou a vybavením.
 
-### 7.3 Udalosti a výzvy 🟡 v1.0
-| Udalosť | Trvanie | Mechanika | Odmena |
-|---|---|---|---|
-| **Zima prichádza** | 5 dní | 2× viac hlásení, mačky prichádzajú podchladené (nová diagnóza), treba vyhrievané pelechy | Zimné dekorácie, album strana |
-| **Záchrana z množiarne** | 3 dni | 15 mačiatok naraz, dočasné klietky, pomoc susedov | Veľký grant, ⭐ |
-| **Mačací deň otvorených dverí** | 1 deň | 3× viac návštevníkov a adoptérov | Peniaze, ⭐ |
-| **Povodne** | 4 dni | Mokré, vystrašené mačky, núdzová kapacita | Unikátne pohľadnice |
-| **Sezónne** (Vianoce, Halloween…) 🔵 | týždeň | Kozmetika, tematické mačky | Dekorácie |
+### 7.3 Výzvy a udalosti
+**Nástenka výziev** 🟢 MVP – 3 aktívne úlohy bez časového limitu, po splnení príde nová. Príklady:
+- „Zachráň 3 mačiatka", „Nájdi domov pre plachú mačku", „Maj 2 stálice naraz", „Vylieč 5 kliešťových pacientov"
+- Odmena: peniaze, ★, neskôr srdiečka a dekorácie.
+
+**Udalosti** 🟡 v1.0 – prídu ako ponuka, hráč ich môže prijať alebo odložiť. Majú voliteľný časovač s bonusom navyše, **nikdy nezlyhajú**:
+
+| Udalosť | Mechanika | Odmena |
+|---|---|---|
+| **Zima prichádza** | 2× viac hlásení, podchladené mačky (nová diagnóza), vyhrievané pelechy | Zimné dekorácie, strana albumu |
+| **Záchrana z množiarne** | 15 mačiatok naraz, dočasné klietky, pomoc susedov | Veľký grant, ★ |
+| **Deň otvorených dverí** | 3× viac návštevníkov kaviarne a adoptérov | Peniaze, ★ |
+| **Povodne** | Mokré, vystrašené mačky, núdzová kapacita | Unikátne pohľadnice |
+| **Sezónne** (Vianoce, Halloween…) 🔵 | Kozmetika, tematické mačky | Dekorácie |
 
 ### 7.4 Vizuálna spätná väzba 🟢 MVP
 Každá mačka má **3 vizuálne stavy** (pre MVP stačí kombinácia sprite + overlay):
@@ -273,7 +319,7 @@ Každá mačka má **3 vizuálne stavy** (pre MVP stačí kombinácia sprite + o
 Pri prechode stavu: krátka „premena" s efektom a zvukom (dopamínový moment).
 
 ### 7.5 Ďalšie háčiky
-- 🟡 **Denné maličkosti:** ranná maškrta pre všetky mačky (bonus spokojnosti), denné „mačacie prekvapenie" (mačka spí na nečakanom mieste).
+- 🟡 **Denné maličkosti (podľa skutočného dátumu):** prvá maškrta dňa pre všetky mačky (bonus spokojnosti), „mačacie prekvapenie" (mačka spí na nečakanom mieste).
 - 🟡 **Fotografický režim:** odfoť mačky v herni, ulož do albumu.
 - 🔵 **Návštevy adoptovaných mačiek:** občas sa bývalý majiteľ zastaví s mačkou na kontrolu.
 
@@ -339,24 +385,24 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 ### 10.2 Architektúra (vysoká úroveň)
 ```
 src/
-  core/        (čistá logika – bez Phaseru, testovateľná)
-    GameState      – peniaze, reputácia, deň, fáza útulku
-    TimeManager    – herný čas, pauza, zrýchlenie, udalosti dayStarted/dayEnded
-    CatRegistry    – všetky mačky v útulku (dáta)
+  core/        (čistá logika – bez Phaseru a bez DOM, testovateľná)
+    GameState      – mačky, stálice, peniaze, reputácia, hlásenia, adoptéri, pohľadnice
+    Clock          – hodiny pre atmosféru (deň/noc)
+    systems/       – CatGenerator, Care (prehliadka, liečba, socializácia), Match, Simulation (čas, offline)
+    SaveManager    – ukladanie/načítanie (JSON, verzovaný formát, migrácie)
     EventBus       – typované globálne udalosti (catAdmitted, catAdopted, postcardArrived…)
-    SaveManager    – ukladanie/načítanie (JSON, verzovaný formát)
-    systems/       – CatGenerator, MatchCalculator, Economy
-  data/        typy: CatData, ConditionData, TraitData, AdopterData, RoomData
-  scenes/      (Phaser scény – iba zobrazenie a vstup)
-    BootScene, PreloadScene, WorldScene (útulok), UIScene (HUD, karty),
-    minigames/ (jedna scéna = jedna minihra), AlbumScene, DaySummaryScene
-  audio/       AudioManager
+  data/        typy a výrezy spritov
+  scenes/      (Phaser – herný svet a minihry)
+    BootScene, GarageScene, minigames/ (jedna scéna = jedna minihra)
+  ui/          (HTML/CSS nad plátnom – panel, karty, dialógy, zoznamy)
   i18n/        sk.json, en.json
 ```
+**Rozhranie je HTML/CSS** položené nad plátnom Phaseru: karty, zoznamy a dialógy sa tak robia rýchlo, text je ostrý na každom displeji a rozloženie sa ľahko prispôsobí mobilu. Phaser kreslí iba svet (garáž, mačky) a minihry.
+
 **Zásada:** všetka herná logika žije v `src/core/` a nezávisí od Phaseru. Phaser scény iba zobrazujú stav a posielajú akcie hráča. Vďaka tomu sa logika dá testovať, ukladať a v prípade potreby preniesť inam bez prepisovania.
 
 ### 10.3 Ukladanie hry 🟢 MVP
-- Automatické uloženie na konci každého dňa + manuálne v menu.
+- Automatické uloženie každých 15 s, po každej dôležitej akcii a pri zatvorení/skrytí hry (aj na mobile). Ukladá sa aj čas uloženia kvôli offline príjmu (§2.3).
 - Formát JSON s poľom `save_version` (migrácie pri zmene formátu).
 - 3 sloty.
 
@@ -378,8 +424,8 @@ Cieľ: **15–20 minút hrania**, ktoré dokážu, že slučka je zábavná.
 | Diagnózy | 5: kliešte, zranená labka, infekcia uší, horúčka, špina |
 | Minihry | 4 liečebné + 3 socializačné |
 | Adoptéri | 8 archetypov s variáciami |
-| Systémy | Herný deň, ekonomika (€, ⭐), adopčná zhoda, pohľadnice, album, ukladanie |
-| Naratív | Tutoriál so Zuzkou, prvé 3 dni so skriptovanými hláseniami |
+| Systémy | Otvorený režim s hodinami pre atmosféru, hlásenia a adoptéri v reálnom čase, offline príjem, stálice a dary, ekonomika (€, ★), adopčná zhoda, pohľadnice, album, výzvy, ukladanie |
+| Naratív | Tutoriál so Zuzkou, prvé 3 skriptované hlásenia |
 | Audio | 3 skladby, ~20 SFX |
 | Jazyky | SK + EN |
 
@@ -416,5 +462,7 @@ Cieľ: **15–20 minút hrania**, ktoré dokážu, že slučka je zábavná.
 | Rys | Povahová vlastnosť mačky |
 | Zhoda | Percento vhodnosti mačky pre adoptéra |
 | Pohľadnica | Odmena po úspešnej adopcii – obrázok z nového domova |
+| Stálica | Vyliečená mačka, ktorú si hráč nechal; býva v kútiku/kaviarni a prináša dary |
+| Offline | Čas, keď je hra zatvorená – beží iba to dobré (§2.3) |
 | Album | Kniha záchranárskych príbehov (kolekcia) |
 | Fáza | Veľkostný stupeň útulku (1–4) |

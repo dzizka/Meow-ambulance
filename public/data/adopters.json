@@ -1,13 +1,148 @@
 {
-  "_comment": "Archetypy adoptérov MVP (GDD §5). tags = domácnosť, dealbreakers = zhoda 0.",
+  "_comment": "Archetypy adoptérov MVP (GDD §5). tags = domácnosť, dealbreakers = zhoda 0 (id rysu, 'kitten' alebo 'senior_cat'). sprites = postavy G5 (public/assets/sprites/people/gbtl).",
   "adopters": [
-    {"id": "grandma",      "name_key": "ADOPT_GRANDMA",      "tags": ["senior", "flat", "home_often", "quiet_home"], "age_pref": "adult",  "dealbreakers": ["kitten"]},
-    {"id": "family_kids",  "name_key": "ADOPT_FAMILY_KIDS",  "tags": ["kids", "garden", "active"],                    "age_pref": "kitten", "dealbreakers": ["wild"]},
-    {"id": "farmer",       "name_key": "ADOPT_FARMER",       "tags": ["garden", "experienced", "other_pets"],         "age_pref": "adult",  "dealbreakers": []},
-    {"id": "student",      "name_key": "ADOPT_STUDENT",      "tags": ["flat", "rarely_home"],                         "age_pref": "adult",  "dealbreakers": ["senior_cat"]},
-    {"id": "homeworker",   "name_key": "ADOPT_HOMEWORKER",   "tags": ["flat", "home_often", "quiet_home", "no_kids"], "age_pref": "any",    "dealbreakers": []},
-    {"id": "young_couple", "name_key": "ADOPT_YOUNG_COUPLE", "tags": ["flat", "active"],                              "age_pref": "kitten", "dealbreakers": []},
-    {"id": "retired_vet",  "name_key": "ADOPT_RETIRED_VET",  "tags": ["experienced", "home_often", "garden"],         "age_pref": "senior", "dealbreakers": []},
-    {"id": "dog_owner",    "name_key": "ADOPT_DOG_OWNER",    "tags": ["garden", "other_pets", "active"],              "age_pref": "any",    "dealbreakers": ["shy"]}
+    {
+      "id": "grandma",
+      "name_key": "ADOPT_GRANDMA",
+      "tags": [
+        "senior",
+        "flat",
+        "home_often",
+        "quiet_home"
+      ],
+      "age_pref": "adult",
+      "dealbreakers": [
+        "kitten"
+      ],
+      "sprites": [
+        "015",
+        "008"
+      ],
+      "desc_key": "ADOPT_GRANDMA_DESC"
+    },
+    {
+      "id": "family_kids",
+      "name_key": "ADOPT_FAMILY_KIDS",
+      "tags": [
+        "kids",
+        "garden",
+        "active"
+      ],
+      "age_pref": "kitten",
+      "dealbreakers": [
+        "wild"
+      ],
+      "sprites": [
+        "010",
+        "013",
+        "024"
+      ],
+      "desc_key": "ADOPT_FAMILY_KIDS_DESC"
+    },
+    {
+      "id": "farmer",
+      "name_key": "ADOPT_FARMER",
+      "tags": [
+        "garden",
+        "experienced",
+        "other_pets"
+      ],
+      "age_pref": "adult",
+      "dealbreakers": [],
+      "sprites": [
+        "003",
+        "019",
+        "025"
+      ],
+      "desc_key": "ADOPT_FARMER_DESC"
+    },
+    {
+      "id": "student",
+      "name_key": "ADOPT_STUDENT",
+      "tags": [
+        "flat",
+        "rarely_home"
+      ],
+      "age_pref": "adult",
+      "dealbreakers": [
+        "senior_cat"
+      ],
+      "sprites": [
+        "000",
+        "014",
+        "017"
+      ],
+      "desc_key": "ADOPT_STUDENT_DESC"
+    },
+    {
+      "id": "homeworker",
+      "name_key": "ADOPT_HOMEWORKER",
+      "tags": [
+        "flat",
+        "home_often",
+        "quiet_home",
+        "no_kids"
+      ],
+      "age_pref": "any",
+      "dealbreakers": [],
+      "sprites": [
+        "009",
+        "022",
+        "026"
+      ],
+      "desc_key": "ADOPT_HOMEWORKER_DESC"
+    },
+    {
+      "id": "young_couple",
+      "name_key": "ADOPT_YOUNG_COUPLE",
+      "tags": [
+        "flat",
+        "active"
+      ],
+      "age_pref": "kitten",
+      "dealbreakers": [],
+      "sprites": [
+        "001",
+        "011",
+        "016"
+      ],
+      "desc_key": "ADOPT_YOUNG_COUPLE_DESC"
+    },
+    {
+      "id": "retired_vet",
+      "name_key": "ADOPT_RETIRED_VET",
+      "tags": [
+        "experienced",
+        "home_often",
+        "garden"
+      ],
+      "age_pref": "senior",
+      "dealbreakers": [],
+      "sprites": [
+        "002",
+        "020",
+        "028"
+      ],
+      "desc_key": "ADOPT_RETIRED_VET_DESC"
+    },
+    {
+      "id": "dog_owner",
+      "name_key": "ADOPT_DOG_OWNER",
+      "tags": [
+        "garden",
+        "other_pets",
+        "active"
+      ],
+      "age_pref": "any",
+      "dealbreakers": [
+        "shy"
+      ],
+      "sprites": [
+        "018",
+        "021",
+        "004"
+      ],
+      "desc_key": "ADOPT_DOG_OWNER_DESC"
+    }
   ]
 }

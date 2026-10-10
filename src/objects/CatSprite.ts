@@ -8,7 +8,7 @@ import {
   type CatDir,
 } from '../scenes/catAnims';
 
-type Behaviour = 'idle' | 'walking' | 'fleeing' | 'sitting' | 'laying';
+type Behaviour = 'idle' | 'walking' | 'fleeing' | 'sitting' | 'laying' | 'leaving';
 
 const WALK_SPEED = 22; // px za sekundu
 const FLEE_SPEED = 70;
@@ -31,7 +31,7 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     x: number,
     y: number,
     cat: CatData,
-    private readonly walkArea: Phaser.Geom.Rectangle,
+    private walkArea: Phaser.Geom.Rectangle,
   ) {
     super(scene, x, y, cat.sprite, 0);
     this.cat = cat;
@@ -58,12 +58,38 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     else this.clearTint();
   }
 
+  /** V noci mačky viac spia (GDD §2.2 – hodiny ako atmosféra). */
+  sleepy = false;
+  private onLeft: (() => void) | null = null;
+
+  /** Presun do inej časti garáže (napr. stálica do kútika). */
+  setWalkArea(area: Phaser.Geom.Rectangle): void {
+    this.walkArea = area;
+    this.goTo(
+      Phaser.Math.Between(area.left, area.right),
+      Phaser.Math.Between(area.top, area.bottom),
+      'walking',
+    );
+  }
+
+  /** Odchod z garáže (adopcia) – dôjde k dverám a zmizne. */
+  leave(x: number, y: number, onLeft: () => void): void {
+    this.disableInteractive();
+    this.ring.setVisible(false);
+    this.onLeft = onLeft;
+    this.target = new Phaser.Math.Vector2(x, y);
+    this.behaviour = 'leaving';
+    this.dir = dirFromVector(x - this.x, y - this.y);
+    this.setAnim('walk');
+  }
+
   setSelected(selected: boolean): void {
     this.ring.setVisible(selected);
   }
 
   /** Reakcia na ťuknutie: plachá mačka uteká, dôverčivá sa posadí a pradie. */
   react(): 'fled' | 'purred' {
+    if (this.behaviour === 'leaving') return 'purred';
     if (this.cat.stats.trust < 15) {
       const away = new Phaser.Math.Vector2(
         this.x - this.scene.input.activePointer.worldX,
@@ -102,7 +128,8 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     // Unavená/nespokojná mačka viac leží, hravá viac chodí
     const lazy = this.cat.traits.some((t) => t.id === 'lazy');
     const playful = this.cat.traits.some((t) => t.id === 'playful');
-    const walkChance = playful ? 0.65 : lazy ? 0.25 : 0.45;
+    const walkChance = this.sleepy ? 0.1 : playful ? 0.65 : lazy ? 0.25 : 0.45;
+    const layChance = this.sleepy ? 0.75 : 0.2;
 
     if (roll < walkChance) {
       const a = this.walkArea;
@@ -113,7 +140,7 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
       );
       return;
     }
-    if (roll < walkChance + 0.2) {
+    if (roll < walkChance + layChance) {
       this.behaviour = 'laying';
       this.setAnim('lay');
       this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
@@ -134,12 +161,26 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     super.preUpdate(time, delta);
 
     if (this.target) {
-      const speed = this.behaviour === 'fleeing' ? FLEE_SPEED : WALK_SPEED;
+      const speed =
+        this.behaviour === 'fleeing'
+          ? FLEE_SPEED
+          : WALK_SPEED * (this.behaviour === 'leaving' ? 1.6 : 1);
       const step = (speed * delta) / 1000;
       const dx = this.target.x - this.x;
       const dy = this.target.y - this.y;
       const dist = Math.hypot(dx, dy);
-      if (dist <= step) {
+      if (dist <= step && this.behaviour === 'leaving') {
+        this.target = null;
+        this.scene.tweens.add({
+          targets: [this, this.shadow],
+          alpha: 0,
+          duration: 400,
+          onComplete: () => {
+            this.onLeft?.();
+            this.destroy();
+          },
+        });
+      } else if (dist <= step) {
         this.setPosition(this.target.x, this.target.y);
         this.target = null;
         this.behaviour = 'idle';
@@ -152,7 +193,7 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
         this.x += (dx / dist) * step;
         this.y += (dy / dist) * step;
       }
-    } else if (time >= this.nextDecisionAt) {
+    } else if (this.behaviour !== 'leaving' && time >= this.nextDecisionAt) {
       this.decide(time);
     }
 
