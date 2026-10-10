@@ -83,7 +83,18 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - Vitest pre `src/core/`: generovanie mačky, starostlivosť, výpočet zhody, hlásenia a adoptéri v čase, offline, ukladanie.
 - Pri testovaní v headless Chromiu s emuláciou mobilu môže byť plátno WebGL na snímke čierne, ak je nad ním vysoký rolovací HTML panel – je to obmedzenie softvérového vykresľovania, nie chyba hry. Overiť na skutočnom zariadení.
 - GitHub Actions: `npm ci && npm run lint && npm test && npm run build` pri každom PR.
-- Po merge do `main`: nasadenie na GitHub Pages → hrateľná verzia na odkaze aj na mobile.
+- Po merge do `main`: nasadenie na GitHub Pages (`.github/workflows/deploy.yml`) → https://dzizka.github.io/Meow-ambulance/
+
+### Nasadenie – jednorazové nastavenie
+1. **Pages:** Settings → Pages → *Build and deployment* → Source: **GitHub Actions**.
+2. **Token k assetom:** GitHub → Settings (profil) → Developer settings → Personal access tokens → *Fine-grained tokens* → Generate new token
+   - Repository access: *Only select repositories* → **Meow-ambulance-offline**
+   - Permissions: *Contents* → **Read-only** (nič viac)
+   - Expirácia podľa uváženia (po vypršaní treba token obnoviť)
+3. Token uložiť do repozitára **Meow-ambulance**: Settings → Secrets and variables → Actions → *New repository secret* → názov **`ASSETS_TOKEN`**.
+4. Actions → *Deploy na GitHub Pages* → *Run workflow* (alebo ľubovoľný merge do `main`).
+
+Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `licenses/`). To je v súlade s licenciami – assety sú súčasťou hry, nešíria sa samostatne.
 - Minihry a UI sa testujú ručne podľa checklistu v PR – **vždy aj na telefóne**.
 
 ## Podmodul s assetmi

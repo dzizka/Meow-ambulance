@@ -13,7 +13,8 @@ Každý míľnik = GitHub Milestone. Každá odrážka = GitHub Issue. Značky r
 - [x] Konfigurácia Phaseru pre pixel-art (svet 480×270, na výšku aj na šírku, posúvanie prstom)
 - [x] `src/core/`: GameState, TimeManager, EventBus, Rng, CatGenerator + testy (SaveManager v M1)
 - [x] GitHub Actions: lint + testy + build pri PR
-- [ ] Nasadenie webovej verzie s assetmi (potrebuje token k súkromnému repozitáru) – zatiaľ ručne ako Claude artifact
+- [x] Workflow na nasadenie na GitHub Pages (`deploy.yml`)
+- [ ] Zapnúť Pages a pridať secret `ASSETS_TOKEN` (TECH.md – Nasadenie)
 - [ ] GitHub Project (Kanban: Backlog → Todo → In progress → Review → Done)
 
 ## M1 – Hrateľná základná slučka (2–3 týždne)
