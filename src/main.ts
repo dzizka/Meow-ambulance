@@ -1,4 +1,11 @@
 import Phaser from 'phaser';
+// Čitateľné písmo pre texty a čísla – iba latinka a latinka rozšírená (slovenčina)
+import '@fontsource/nunito/latin-600.css';
+import '@fontsource/nunito/latin-ext-600.css';
+import '@fontsource/nunito/latin-700.css';
+import '@fontsource/nunito/latin-ext-700.css';
+import '@fontsource/nunito/latin-800.css';
+import '@fontsource/nunito/latin-ext-800.css';
 import { BootScene } from './scenes/BootScene';
 import { GarageScene } from './scenes/GarageScene';
 import { MinigameScene } from './scenes/MinigameScene';

@@ -36,7 +36,10 @@ export const AUDIO = {
   music: audio('assets/audio/music/lofi_home'),
 } as const satisfies Record<string, string[]>;
 
-export const FONT_FAMILY = '"Pixelify Sans", monospace';
+/** Písmo textov a čísel – dobre čitateľné (Nunito, OFL). */
+export const FONT_FAMILY = '"Nunito", system-ui, sans-serif';
+/** Pixelové písmo iba na nadpisy – dodáva hre charakter (Pixelify Sans, OFL). */
+export const DISPLAY_FONT = '"Pixelify Sans", monospace';
 
 /** Postava dobrovoľníčky Zuzky (G5, hárok 012). */
 export const ZUZKA_SHEET = '012';
