@@ -80,6 +80,15 @@ export class MinigameScene extends Phaser.Scene {
       case 'quiet':
         this.quiet();
         break;
+      case 'bandage':
+        this.bandage();
+        break;
+      case 'ears':
+        this.ears();
+        break;
+      case 'syrup':
+        this.syrup();
+        break;
       default:
         this.hold();
     }
@@ -158,12 +167,13 @@ export class MinigameScene extends Phaser.Scene {
   }
 
   /** Náhodný bod na srsti mačky (nepriehľadný pixel aktuálnej snímky). */
-  private pointOnCat(): Phaser.Math.Vector2 {
+  private pointOnCat(minY = 10, maxY = 30): Phaser.Math.Vector2 {
     const frame = this.catSprite.frame;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 80; i++) {
       const px = Phaser.Math.Between(6, 26);
-      const py = Phaser.Math.Between(10, 30);
-      const c = this.textures.getPixel(frame.cutX + px, frame.cutY + py, this.cfg.cat.sprite);
+      const py = Phaser.Math.Between(minY, maxY);
+      // Súradnice v rámci snímky – vzorkovanie cez celý hárok v Phaseri 4 nefunguje
+      const c = this.textures.getPixel(px, py, this.cfg.cat.sprite, frame.name);
       if (c && c.alpha > 200) {
         return new Phaser.Math.Vector2(this.cx + (px - 16) * this.S, this.cy + (py - 16) * this.S);
       }
@@ -418,6 +428,219 @@ export class MinigameScene extends Phaser.Scene {
       );
       ring.strokePath();
       if (progress >= duration) this.finish(Math.max(1, 3 - releases) as Stars);
+    };
+  }
+
+  // ---------- Obväzovanie labky ----------
+
+  /** Hráč krúži prstom okolo labky; každé otočenie = jedna vrstva obväzu. */
+  private bandage(): void {
+    this.hintText.setText(t('MG_BANDAGE_HINT'));
+    this.catSprite.setVisible(false);
+    const S = this.S;
+    const R = S * 5;
+    const { cx, cy } = this;
+    const inner = R * 0.8;
+    const outer = R * 2.6;
+
+    // Labka: veľký vankúšik a štyri prstíky
+    const paw = this.add.graphics();
+    const fur = 0xd9b38c;
+    const pad = 0xe8a0a0;
+    paw.fillStyle(fur, 1).fillCircle(cx, cy + R * 0.25, R);
+    for (const [dx, dy] of [
+      [-0.95, -0.85],
+      [-0.33, -1.25],
+      [0.33, -1.25],
+      [0.95, -0.85],
+    ] as const) {
+      paw.fillStyle(fur, 1).fillCircle(cx + dx * R, cy + dy * R, R * 0.42);
+      paw.fillStyle(pad, 1).fillCircle(cx + dx * R, cy + dy * R + R * 0.05, R * 0.24);
+    }
+    paw.fillStyle(pad, 1).fillEllipse(cx, cy + R * 0.4, R * 1.1, R * 0.8);
+
+    const guide = this.add.graphics();
+    guide.lineStyle(Math.max(2, S / 2), 0xf4e6d0, 0.18).strokeCircle(cx, cy, (inner + outer) / 2);
+    const wraps = this.add.graphics().setDepth(2);
+    const progressArc = this.add.graphics().setDepth(3);
+
+    let lastAngle: number | null = null;
+    let turned = 0;
+    let layers = 0;
+    let slips = 0;
+    let outside = false;
+
+    const addLayer = () => {
+      layers += 1;
+      const y = cy - R * 0.9 + layers * R * 0.45;
+      wraps
+        .fillStyle(0xfdfaf2, 0.95)
+        .fillRoundedRect(cx - R * 1.35, y, R * 2.7, R * 0.42, R * 0.12);
+      wraps
+        .lineStyle(Math.max(1, S / 4), 0xd9cbb8, 1)
+        .strokeRoundedRect(cx - R * 1.35, y, R * 2.7, R * 0.42, R * 0.12);
+      this.sound.play('click', { volume: 0.5 });
+      this.hearts(2);
+    };
+
+    this.input.on('pointerup', () => (lastAngle = null));
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown || this.finished) return;
+      const dist = Phaser.Math.Distance.Between(cx, cy, p.x, p.y);
+      if (dist < inner || dist > outer) {
+        if (!outside) {
+          outside = true;
+          slips += 1;
+          this.flash(t('MG_SLIPPED'), cx, cy - outer, '#e86a6a');
+        }
+        lastAngle = null;
+        return;
+      }
+      outside = false;
+      const angle = Math.atan2(p.y - cy, p.x - cx);
+      if (lastAngle !== null) {
+        let d = angle - lastAngle;
+        if (d > Math.PI) d -= Math.PI * 2;
+        if (d < -Math.PI) d += Math.PI * 2;
+        turned += Math.abs(d);
+      }
+      lastAngle = angle;
+      while (turned >= Math.PI * 2 && layers < 3) {
+        turned -= Math.PI * 2;
+        addLayer();
+      }
+      progressArc.clear();
+      progressArc.lineStyle(Math.max(3, S * 0.8), ACCENT, 1);
+      progressArc.beginPath();
+      progressArc.arc(cx, cy, (inner + outer) / 2, -Math.PI / 2, -Math.PI / 2 + turned);
+      progressArc.strokePath();
+      if (layers >= 3) {
+        progressArc.clear();
+        this.finish(Math.max(1, 3 - Math.floor(slips / 2)) as Stars);
+      }
+    });
+  }
+
+  // ---------- Čistenie ušiek ----------
+
+  /** Hráč stiera prstom špinu z ušiek, kým nezmizne všetka. */
+  private ears(): void {
+    this.hintText.setText(t('MG_EAR_HINT'));
+    this.catSprite.anims.stop();
+    this.catSprite.setFrame(24);
+    const S = this.S;
+    const blobs: { g: Phaser.GameObjects.Ellipse; dirt: number }[] = [];
+    for (let i = 0; i < 7; i++) {
+      const pt = this.pointOnCat(3, 13);
+      const g = this.add
+        .ellipse(
+          pt.x,
+          pt.y,
+          S * Phaser.Math.FloatBetween(1.6, 2.4),
+          S * Phaser.Math.FloatBetween(1.2, 1.8),
+          0x6b4a2e,
+          0.9,
+        )
+        .setDepth(5);
+      blobs.push({ g, dirt: 1 });
+    }
+    let elapsed = 0;
+    let lastX = 0;
+    let lastY = 0;
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      lastX = p.x;
+      lastY = p.y;
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown || this.finished) return;
+      const moved = Phaser.Math.Distance.Between(lastX, lastY, p.x, p.y);
+      lastX = p.x;
+      lastY = p.y;
+      for (const b of blobs) {
+        if (b.dirt <= 0) continue;
+        if (Phaser.Math.Distance.Between(b.g.x, b.g.y, p.x, p.y) < S * 3) {
+          b.dirt -= moved / (S * 12);
+          b.g.setAlpha(Math.max(0, b.dirt) * 0.9);
+          if (b.dirt <= 0) {
+            b.g.destroy();
+            this.sound.play('click', { volume: 0.35 });
+          }
+        }
+      }
+      if (blobs.every((b) => b.dirt <= 0)) {
+        this.finish((elapsed < 5000 ? 3 : elapsed < 9000 ? 2 : 1) as Stars);
+      }
+    });
+    this.updater = (dt) => (elapsed += dt);
+  }
+
+  // ---------- Sirup ----------
+
+  /** Ťuknúť, keď je ukazovateľ v zelenom poli – tri lyžičky sirupu. */
+  private syrup(): void {
+    this.hintText.setText(t('MG_SYRUP_HINT'));
+    const S = this.S;
+    const { width: W, height: H } = this.scale;
+    const bw = Math.min(W * 0.8, S * 50);
+    const bx = (W - bw) / 2;
+    const by = Math.min(H * 0.82, this.cy + S * 18);
+    const bh = S * 2.4;
+    const bar = this.add.graphics().setDepth(5);
+    const zoneW = bw * 0.22;
+    let zoneX = bx + Phaser.Math.FloatBetween(0, bw - zoneW);
+    let pos = 0; // 0..1
+    let dir = 1;
+    let hits = 0;
+    let misses = 0;
+    const speed = 1 / 1300; // celá dĺžka za 1,3 s
+
+    this.input.on('pointerdown', () => {
+      if (this.finished) return;
+      const mx = bx + pos * bw;
+      if (mx >= zoneX && mx <= zoneX + zoneW) {
+        hits += 1;
+        this.flash(t('MG_GULP'), this.cx, this.cy - S * 14, '#9ad17b');
+        const spoon = this.text(mx, by, '🥄', S * 3, '#ffffff')
+          .setOrigin(0.5)
+          .setDepth(6);
+        this.tweens.add({
+          targets: spoon,
+          x: this.cx,
+          y: this.cy + S * 2,
+          alpha: 0,
+          duration: 350,
+          onComplete: () => spoon.destroy(),
+        });
+        this.sound.play('mewFood', { volume: 0.5 });
+        this.hearts(2);
+        zoneX = bx + Phaser.Math.FloatBetween(0, bw - zoneW);
+        if (hits >= 3) this.finish((misses === 0 ? 3 : misses <= 2 ? 2 : 1) as Stars);
+      } else {
+        misses += 1;
+        this.flash(t('MG_MISS'), mx, by - S * 3, '#e86a6a');
+      }
+    });
+
+    this.updater = (dt) => {
+      pos += dir * dt * speed;
+      if (pos > 1) {
+        pos = 1;
+        dir = -1;
+      } else if (pos < 0) {
+        pos = 0;
+        dir = 1;
+      }
+      bar.clear();
+      bar.fillStyle(0x3b2f45, 1).fillRoundedRect(bx, by, bw, bh, bh / 2);
+      bar.fillStyle(0x9ad17b, 1).fillRoundedRect(zoneX, by, zoneW, bh, bh / 2);
+      const mx = bx + pos * bw;
+      bar.fillStyle(0xf4e6d0, 1).fillRect(mx - S * 0.4, by - S, S * 0.8, bh + S * 2);
+      // lyžičky, ktoré ešte treba podať
+      for (let i = 0; i < 3; i++) {
+        bar
+          .fillStyle(i < hits ? 0x9ad17b : 0x5a4a63, 1)
+          .fillCircle(this.cx + (i - 1) * S * 3, by + bh + S * 3, S * 0.9);
+      }
     };
   }
 

@@ -62,6 +62,7 @@ docs/                   dizajn a plánovanie
 - Žiadny text v kóde – iba kľúče prekladu: `t('TRAIT_SHY')`.
 - **`src/core/` nesmie importovať Phaser ani DOM.** Scény a HTML rozhranie čítajú stav z `core` a volajú jeho akcie.
 - Pozor na mená polí v Phaser scénach: nesmú prekryť metódy `Scene` (napr. `init`, `create`, `update`).
+- `textures.getPixel` v Phaseri 4 volať so súradnicami v rámci snímky a s menom snímky (`getPixel(x, y, key, frame)`); vzorkovanie cez celý hárok vracia `null`.
 - Formátovanie: Prettier, kontrola: ESLint (nastaví sa v M0).
 
 ## Minihry – rozhranie

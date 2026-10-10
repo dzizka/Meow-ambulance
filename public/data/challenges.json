@@ -1,15 +1,105 @@
 {
   "_comment": "Výzvy na nástenke (GDD §7.3). kind = čo sa počíta; cieľ = base + step × koľkokrát už bola splnená. Bez časového limitu.",
   "challenges": [
-    { "id": "rescue", "kind": "rescued", "name_key": "CH_RESCUE", "base": 2, "step": 2, "money": 40, "rep": 5, "weight": 3 },
-    { "id": "kittens", "kind": "kittens", "name_key": "CH_KITTENS", "base": 1, "step": 1, "money": 35, "rep": 4, "weight": 2 },
-    { "id": "adopt", "kind": "adopted", "name_key": "CH_ADOPT", "base": 1, "step": 1, "money": 60, "rep": 8, "weight": 3 },
-    { "id": "perfect", "kind": "perfect", "name_key": "CH_PERFECT", "base": 1, "step": 1, "money": 80, "rep": 12, "weight": 1 },
-    { "id": "shy", "kind": "shy_homed", "name_key": "CH_SHY", "base": 1, "step": 1, "money": 70, "rep": 10, "weight": 1 },
-    { "id": "ticks", "kind": "ticks", "name_key": "CH_TICKS", "base": 2, "step": 2, "money": 30, "rep": 3, "weight": 2 },
-    { "id": "treat", "kind": "treated", "name_key": "CH_TREAT", "base": 3, "step": 3, "money": 40, "rep": 4, "weight": 2 },
-    { "id": "social", "kind": "social", "name_key": "CH_SOCIAL", "base": 4, "step": 4, "money": 30, "rep": 3, "weight": 2 },
-    { "id": "feed", "kind": "fed", "name_key": "CH_FEED", "base": 3, "step": 3, "money": 25, "rep": 2, "weight": 2 },
-    { "id": "residents", "kind": "residents", "name_key": "CH_RESIDENTS", "base": 1, "step": 1, "money": 50, "rep": 6, "weight": 1 }
+    {
+      "id": "rescue",
+      "kind": "rescued",
+      "name_key": "CH_RESCUE",
+      "base": 2,
+      "step": 2,
+      "money": 40,
+      "rep": 5,
+      "weight": 3
+    },
+    {
+      "id": "kittens",
+      "kind": "kittens",
+      "name_key": "CH_KITTENS",
+      "base": 1,
+      "step": 1,
+      "money": 35,
+      "rep": 4,
+      "weight": 2
+    },
+    {
+      "id": "adopt",
+      "kind": "adopted",
+      "name_key": "CH_ADOPT",
+      "base": 1,
+      "step": 1,
+      "money": 60,
+      "rep": 8,
+      "weight": 3
+    },
+    {
+      "id": "perfect",
+      "kind": "perfect",
+      "name_key": "CH_PERFECT",
+      "base": 1,
+      "step": 1,
+      "money": 80,
+      "rep": 12,
+      "weight": 1
+    },
+    {
+      "id": "shy",
+      "kind": "shy_homed",
+      "name_key": "CH_SHY",
+      "base": 1,
+      "step": 1,
+      "money": 70,
+      "rep": 10,
+      "weight": 1
+    },
+    {
+      "id": "ticks",
+      "kind": "ticks",
+      "name_key": "CH_TICKS",
+      "base": 2,
+      "step": 2,
+      "money": 30,
+      "rep": 3,
+      "weight": 2
+    },
+    {
+      "id": "treat",
+      "kind": "treated",
+      "name_key": "CH_TREAT",
+      "base": 3,
+      "step": 3,
+      "money": 40,
+      "rep": 4,
+      "weight": 2
+    },
+    {
+      "id": "social",
+      "kind": "social",
+      "name_key": "CH_SOCIAL",
+      "base": 4,
+      "step": 4,
+      "money": 30,
+      "rep": 3,
+      "weight": 2
+    },
+    {
+      "id": "feed",
+      "kind": "fed",
+      "name_key": "CH_FEED",
+      "base": 3,
+      "step": 3,
+      "money": 25,
+      "rep": 2,
+      "weight": 2
+    },
+    {
+      "id": "residents",
+      "kind": "residents",
+      "name_key": "CH_RESIDENTS",
+      "base": 1,
+      "step": 1,
+      "money": 50,
+      "rep": 6,
+      "weight": 1
+    }
   ]
 }

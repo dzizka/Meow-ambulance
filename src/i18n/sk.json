@@ -200,5 +200,10 @@
   "TOAST_CLAIMED": "+{money} € · ★ +{rep}",
   "TOAST_BOUGHT_CAGE": "Nová klietka je pripravená!",
   "TOAST_BOUGHT_SLOT": "Kútik pre stálice je väčší!",
-  "UI_SKIP_TUTORIAL": "Skryť rady"
+  "UI_SKIP_TUTORIAL": "Skryť rady",
+  "MG_BANDAGE_HINT": "Krúž prstom okolo labky – omotaj ju trikrát. Drž sa blízko obväzu.",
+  "MG_EAR_HINT": "Utri prstom všetku špinu z ušiek.",
+  "MG_SYRUP_HINT": "Ťukni, keď je ukazovateľ v zelenom poli. Treba tri lyžičky.",
+  "MG_MISS": "Vedľa!",
+  "MG_GULP": "Mňam!"
 }
