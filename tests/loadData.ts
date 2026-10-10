@@ -9,6 +9,7 @@ const read = <T>(name: string): T =>
 export function loadTestData(): GameData {
   const breeds = read<{ breeds: GameData['breeds']; coats: GameData['coats'] }>('breeds.json');
   return {
+    challenges: read<{ challenges: GameData['challenges'] }>('challenges.json').challenges,
     traits: read<{ traits: GameData['traits'] }>('traits.json').traits,
     conditions: read<{ conditions: GameData['conditions'] }>('conditions.json').conditions,
     breeds: breeds.breeds,

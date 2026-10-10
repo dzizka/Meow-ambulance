@@ -13,9 +13,12 @@ import { WORLD_H, WORLD_W, computeLayout } from './layout';
 /** Rozmery miestnosti v garáži (pixely pixel-artu). */
 const ROOM = { x: 16, y: 6, w: 448, wallH: 64, floorH: 192 };
 const FLOOR_TOP = ROOM.y + ROOM.wallH;
+/** Miesta pre klietky – prvé dve od začiatku, ďalšie sa dokupujú (GDD §6.1). */
 const CAGES = [
   { x: 348, y: FLOOR_TOP + 38 },
   { x: 398, y: FLOOR_TOP + 38 },
+  { x: 298, y: FLOOR_TOP + 38 },
+  { x: 248, y: FLOOR_TOP + 38 },
 ];
 /** Kde sa pohybujú pacienti a kde stálice (kútik pri gauči). */
 const PATIENT_AREA = new Phaser.Geom.Rectangle(70, FLOOR_TOP + 58, 210, 112);
@@ -52,6 +55,9 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private phase: keyof typeof PHASE_TINT | null = null;
   private music?: Phaser.Sound.BaseSound;
   private sinceSave = 0;
+  private cagesDrawn = 0;
+  /** Po „Nová hra" sa už nesmie uložiť (inak by sa stará hra zapísala späť). */
+  private noSave = false;
   private sinceSparkle = 0;
 
   constructor() {
@@ -65,7 +71,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.registerFrames();
     this.buildBackground();
     this.placeFurniture();
-    CAGES.forEach((c) => this.createCage(c.x, c.y));
+    this.drawCages(false);
     this.createZuzka();
     this.createLighting();
     this.makeSparkTexture();
@@ -88,7 +94,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
     // Prehliadače dovolia zvuk až po prvom dotyku
     document.addEventListener('pointerdown', () => this.startMusic(), { once: true });
-    const saveNow = () => this.saves.save(this.state);
+    const saveNow = () => this.save();
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') saveNow();
     });
@@ -107,7 +113,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.sinceSave += delta;
     if (this.sinceSave > AUTOSAVE_MS) {
       this.sinceSave = 0;
-      this.saves.save(this.state);
+      this.save();
     }
     this.sinceSparkle += delta;
     if (this.sinceSparkle > 1400) {
@@ -147,13 +153,56 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.sound.mute = muted;
   }
 
+  resetGame(): void {
+    this.noSave = true;
+    this.saves.clear();
+    location.reload();
+  }
+
+  private save(): void {
+    if (!this.noSave) this.saves.save(this.state);
+  }
+
+  /** Nakreslí klietky podľa počtu v stave; nové sa objavia s malou animáciou. */
+  private drawCages(animate: boolean): void {
+    const want = Math.min(CAGES.length, this.state.cageCount);
+    for (; this.cagesDrawn < want; this.cagesDrawn++) {
+      const c = CAGES[this.cagesDrawn];
+      if (!c) continue;
+      const img = this.createCage(c.x, c.y);
+      if (animate) {
+        img.setScale(0.2);
+        this.tweens.add({ targets: img, scale: 1, ease: 'Back.easeOut', duration: 500 });
+        this.burst(c.x, c.y - 16, 8);
+      }
+    }
+  }
+
+  /** Iskričky do kruhu – moment premeny a nová klietka (GDD §7.4). */
+  private burst(x: number, y: number, count: number): void {
+    for (let i = 0; i < count; i++) {
+      const a = (Math.PI * 2 * i) / count;
+      const sp = this.add.image(x, y, 'spark').setDepth(4000);
+      this.tweens.add({
+        targets: sp,
+        x: x + Math.cos(a) * 22,
+        y: y + Math.sin(a) * 16,
+        alpha: 0,
+        duration: 700,
+        ease: 'Quad.easeOut',
+        onComplete: () => sp.destroy(),
+      });
+    }
+  }
+
   // ---------- Udalosti stavu ----------
 
   private listen(): void {
     const bus = this.state.bus;
-    const save = () => this.saves.save(this.state);
+    const save = () => this.save();
     bus.on('catAdmitted', ({ cat }) => {
-      const cage = CAGES[Math.min(CAGES.length - 1, this.state.cagedCats.length - 1)] ?? CAGES[0];
+      const cage =
+        CAGES[Math.min(this.cagesDrawn - 1, this.state.cagedCats.length - 1)] ?? CAGES[0];
       if (cage) this.spawnCat(cat, cage.x, cage.y + 8);
       save();
     });
@@ -172,6 +221,20 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       save();
     });
     bus.on('reportDeclined', save);
+    bus.on('upgradeBought', ({ kind }) => {
+      if (kind === 'cage') this.drawCages(true);
+      save();
+    });
+    bus.on('challengeCompleted', save);
+    // Moment premeny: mačka je zdravá a dôverčivá
+    bus.on('catBecameReady', ({ cat }) => {
+      const sprite = this.sprites.get(cat.id);
+      if (!sprite) return;
+      this.burst(sprite.x, sprite.y - 12, 12);
+      sprite.applyLook();
+      this.tweens.add({ targets: sprite, scaleX: 1.25, scaleY: 1.25, yoyo: true, duration: 180 });
+      save();
+    });
     bus.on('postcardArrived', save);
   }
 
@@ -404,7 +467,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   }
 
   /** Klietka nakreslená kódom (v balíkoch nie je) – farby ladia s paletou interiéru. */
-  private createCage(x: number, bottomY: number): void {
+  private createCage(x: number, bottomY: number): Phaser.GameObjects.Image {
     const key = 'cage';
     if (!this.textures.exists(key)) {
       const w = 42;
@@ -429,7 +492,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
         tex.refresh();
       }
     }
-    this.add.image(x, bottomY, key).setOrigin(0.5, 1).setDepth(bottomY);
+    return this.add.image(x, bottomY, key).setOrigin(0.5, 1).setDepth(bottomY);
   }
 
   private createZuzka(): void {

@@ -1,20 +1,48 @@
 {
   "_comment": "Štartovacie hodnoty balansu (GDD §2–§6). Časy sú v reálnych sekundách. Meniť tu, nie v kóde.",
-  "clock": { "real_seconds_per_game_hour": 60, "start_hour": 8 },
-  "rescue": { "interval_s": 240, "first_delay_s": 4, "max_waiting": 3 },
-  "adopters": { "interval_s": 180, "first_delay_s": 20, "max_waiting": 2 },
-  "decay_per_min": { "cleanliness": 0.5, "satisfaction": 1 },
+  "clock": {
+    "real_seconds_per_game_hour": 60,
+    "start_hour": 8
+  },
+  "rescue": {
+    "interval_s": 240,
+    "first_delay_s": 4,
+    "max_waiting": 3
+  },
+  "adopters": {
+    "interval_s": 180,
+    "first_delay_s": 20,
+    "max_waiting": 2
+  },
+  "decay_per_min": {
+    "cleanliness": 0.5,
+    "satisfaction": 1
+  },
   "stat_floor": 15,
   "recovery_health_per_min": 2,
-  "adoption_ready": { "min_health": 80, "min_trust": 60 },
-  "match": { "base": 50, "trait_good": 15, "trait_bad": -20, "age_match": 10, "age_any": 5, "perfect": 80, "good": 50 },
+  "adoption_ready": {
+    "min_health": 80,
+    "min_trust": 60
+  },
+  "match": {
+    "base": 50,
+    "trait_good": 15,
+    "trait_bad": -20,
+    "age_match": 10,
+    "age_any": 5,
+    "perfect": 80,
+    "good": 50
+  },
   "rewards": {
     "adoption_fee_min": 50,
     "adoption_fee_max": 150,
     "rep_perfect": 15,
     "rep_good": 8,
     "rep_poor": 2,
-    "postcard_delay_s": [120, 300],
+    "postcard_delay_s": [
+      120,
+      300
+    ],
     "postcard_chance_good": 0.5
   },
   "care": {
@@ -26,6 +54,26 @@
     "brush_cleanliness": 30,
     "treat_satisfaction_per_star": 3
   },
-  "residents": { "slots": 2, "donation_per_min": 0.5, "offline_cap_h": 8 },
-  "phase_1": { "starting_money": 200, "cages": 2, "max_cages": 4, "cage_price": 120 }
+  "residents": {
+    "slots": 2,
+    "donation_per_min": 0.5,
+    "offline_cap_h": 8
+  },
+  "phase_1": {
+    "starting_money": 200,
+    "cages": 2
+  },
+  "upgrades": {
+    "cage_prices": [
+      120,
+      180
+    ],
+    "slot_prices": [
+      150,
+      220
+    ]
+  },
+  "challenges": {
+    "active": 3
+  }
 }

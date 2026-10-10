@@ -558,3 +558,108 @@ body.minigame #ui > :not(.toasts) {
   bottom: auto;
   max-height: calc(100% - var(--world-h) - 18px - env(safe-area-inset-bottom));
 }
+
+/* ---------- Zuzka – rady pre začiatočníka ---------- */
+.zuzka {
+  position: absolute;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--ui-text);
+  color: var(--ui-bg-deep);
+  border-radius: var(--ui-radius);
+  padding: 6px 4px 6px 8px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+  animation: toast-in 0.3s ease-out;
+}
+.zuzka[hidden] {
+  display: none;
+}
+.zuzka p {
+  margin: 0;
+  font-size: 13px;
+  flex: 1;
+  min-width: 0;
+}
+.zuzka .close {
+  color: var(--ui-bg);
+  align-self: center;
+}
+.landscape .zuzka {
+  left: 10px;
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  width: min(420px, 50vw);
+}
+.portrait .zuzka {
+  left: 10px;
+  right: 10px;
+  bottom: calc(100% - var(--world-h) + 6px);
+}
+
+/* ---------- Menu ---------- */
+.menu-tabs {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.challenge {
+  background: var(--ui-bg-deep);
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+.challenge.done {
+  outline: 2px solid var(--ui-good);
+}
+.upgrade {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--ui-bg-deep);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+/* Album: 6 farieb v riadku, nad každým riadkom názov plemena */
+.album {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+}
+.album-breed {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--ui-accent);
+  margin-top: 4px;
+}
+.album-cell {
+  position: relative;
+  aspect-ratio: 1;
+  max-width: 100%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--ui-bg-deep);
+  border: 1px solid #5a4a63;
+  border-radius: 6px;
+  color: #5a4a63;
+  font: inherit;
+  font-size: 18px;
+  padding: 0;
+  cursor: pointer;
+}
+.album-cell.empty {
+  cursor: default;
+}
+.album-cell .sprite {
+  transform: translateY(-4px);
+}
+.album-count {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  font-size: 10px;
+  color: var(--ui-dim);
+}

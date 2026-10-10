@@ -93,6 +93,7 @@ describe('Lokalizácia', () => {
       ...data.coats.map((x) => x.name_key),
       ...data.reports.map((x) => x.name_key),
       ...data.adopters.flatMap((x) => [x.name_key, x.desc_key]),
+      ...data.challenges.map((x) => x.name_key),
     ];
     for (const k of keys) expect(sk, k).toHaveProperty(k);
   });

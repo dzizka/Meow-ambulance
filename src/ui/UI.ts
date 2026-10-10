@@ -1,6 +1,6 @@
 import './ui.css';
 import { catSheetPath, personSheetPath } from '../assets';
-import type { GameState } from '../core/GameState';
+import { GameState } from '../core/GameState';
 import type { Stars } from '../core/systems/Care';
 import type { MatchResult } from '../core/systems/Match';
 import type {
@@ -19,6 +19,8 @@ export interface GameBridge {
   runMinigame(req: MinigameRequest): Promise<Stars | null>;
   playSound(key: string, volume?: number): void;
   setMuted(muted: boolean): void;
+  /** Zmaže uloženú hru a začne odznova. */
+  resetGame(): void;
 }
 
 export type MinigameKind = 'tick_removal' | 'feather' | 'hold' | 'quiet';
@@ -70,6 +72,7 @@ const STAT_KEYS: Record<keyof CatStats, string> = {
 
 type Attrs = Record<string, string | number | boolean | undefined>;
 type CardTab = 'health' | 'care' | 'about';
+type MenuTab = 'challenges' | 'album' | 'postcards' | 'garage';
 
 /** Malý pomocník na tvorbu DOM prvkov. */
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -137,9 +140,10 @@ export class UI {
   private badges = {
     reports: el('span', { class: 'badge', hidden: true }),
     visitors: el('span', { class: 'badge', hidden: true }),
-    postcards: el('span', { class: 'badge', hidden: true }),
+    menu: el('span', { class: 'badge', hidden: true }),
   };
-  private soundBtn!: HTMLButtonElement;
+  private zuzka = el('div', { class: 'zuzka', hidden: true, role: 'status' });
+  private zuzkaKey: string | null = null;
   private sheet = el('aside', { class: 'sheet empty', 'aria-live': 'polite' });
   private modal = el('div', { class: 'modal', hidden: true, role: 'dialog', 'aria-modal': 'true' });
   private toasts = el('div', { class: 'toasts' });
@@ -148,7 +152,9 @@ export class UI {
   private tabFor: string | null = null;
   private busy = false;
   private muted = false;
-  private modalKind: 'reports' | 'visitors' | 'postcards' | 'welcome' | null = null;
+  private modalKind: 'reports' | 'visitors' | 'menu' | 'welcome' | null = null;
+  private menuTab: MenuTab = 'challenges';
+  private confirmReset = false;
   private selectedForVisit: string | null = null;
 
   constructor(
@@ -162,7 +168,7 @@ export class UI {
     }
     this.game.setMuted(this.muted);
     this.buildHud();
-    this.root.append(this.hud, this.sheet, this.modal, this.toasts);
+    this.root.append(this.hud, this.sheet, this.zuzka, this.modal, this.toasts);
     document.body.append(this.root);
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.closeModal();
@@ -202,7 +208,6 @@ export class UI {
       b.addEventListener('click', onClick);
       return b;
     };
-    this.soundBtn = iconBtn('', t('UI_SOUND'), null, () => this.toggleMute());
     this.hud.append(
       this.clockPill,
       this.moneyPill,
@@ -210,8 +215,7 @@ export class UI {
       el('div', { class: 'spacer' }),
       iconBtn('📋', t('UI_REPORTS'), this.badges.reports, () => this.openModal('reports')),
       iconBtn('🚪', t('UI_VISITORS'), this.badges.visitors, () => this.openModal('visitors')),
-      iconBtn('💌', t('UI_POSTCARDS'), this.badges.postcards, () => this.openModal('postcards')),
-      this.soundBtn,
+      iconBtn('☰', t('UI_MENU'), this.badges.menu, () => this.openMenu()),
     );
   }
 
@@ -227,11 +231,36 @@ export class UI {
     this.repPill.textContent = `★ ${s.reputation}`;
     this.setBadge(this.badges.reports, s.reports.length);
     this.setBadge(this.badges.visitors, s.adopters.length);
-    this.setBadge(
-      this.badges.postcards,
-      s.adoptions.filter((a) => a.postcardDelivered && !a.postcardSeen).length,
+    this.setBadge(this.badges.menu, s.claimableChallenges + this.unseenPostcards);
+    this.updateZuzka();
+  }
+
+  private get unseenPostcards(): number {
+    return this.state.adoptions.filter((a) => a.postcardDelivered && !a.postcardSeen).length;
+  }
+
+  /** Bublina s radou od Zuzky (tutoriál) – mení sa podľa postupu hráča. */
+  private updateZuzka(): void {
+    const key = this.state.tutorialHint;
+    const hide = key === null || this.modalKind !== null;
+    this.zuzka.hidden = hide;
+    if (hide || key === this.zuzkaKey) return;
+    this.zuzkaKey = key;
+    const skip = el(
+      'button',
+      {
+        class: 'close',
+        type: 'button',
+        'aria-label': t('UI_SKIP_TUTORIAL'),
+        title: t('UI_SKIP_TUTORIAL'),
+      },
+      '✕',
     );
-    this.soundBtn.textContent = this.muted ? '🔇' : '🔊';
+    skip.addEventListener('click', () => {
+      this.state.dismissTutorial();
+      this.updateZuzka();
+    });
+    this.zuzka.replaceChildren(personPortrait('012', 1.5), el('p', {}, t(key)), skip);
   }
 
   private setBadge(b: HTMLElement, n: number): void {
@@ -248,6 +277,7 @@ export class UI {
     }
     this.game.setMuted(this.muted);
     this.updateHud();
+    if (this.modalKind === 'menu') this.renderModal();
   }
 
   private tick(): void {
@@ -294,6 +324,17 @@ export class UI {
       this.renderSheet();
     });
     bus.on('catBecameResident', ({ cat }) => this.toast(t('TOAST_RESIDENT', { cat: cat.name })));
+    bus.on('challengeCompleted', () => {
+      this.toast(t('TOAST_CHALLENGE'));
+      this.game.playSound('select', 0.6);
+      this.updateHud();
+      if (this.modalKind === 'menu') this.renderModal();
+    });
+    bus.on('albumAdded', () => this.toast(t('TOAST_ALBUM')));
+    bus.on('upgradeBought', ({ kind }) => {
+      this.toast(t(kind === 'cage' ? 'TOAST_BOUGHT_CAGE' : 'TOAST_BOUGHT_SLOT'));
+      this.game.playSound('select', 0.6);
+    });
     bus.on('welcomeBack', ({ summary }) => {
       if (summary.minutes < 1) return;
       this.openModal(
@@ -680,7 +721,20 @@ export class UI {
   private closeModal(): void {
     this.modal.hidden = true;
     this.modalKind = null;
+    this.confirmReset = false;
     this.updateHud();
+  }
+
+  private openMenu(tab?: MenuTab): void {
+    // Najprv to, čo čaká: splnená výzva, potom nová pohľadnica
+    this.menuTab =
+      tab ??
+      (this.state.claimableChallenges > 0
+        ? 'challenges'
+        : this.unseenPostcards > 0
+          ? 'postcards'
+          : this.menuTab);
+    this.openModal('menu');
   }
 
   private renderModal(): void {
@@ -693,8 +747,8 @@ export class UI {
       case 'visitors':
         box.append(...this.visitorContent());
         break;
-      case 'postcards':
-        box.append(...this.postcardsContent(), closeBtn);
+      case 'menu':
+        box.append(...this.menuContent(), closeBtn);
         break;
       case 'welcome':
         box.append(
@@ -859,9 +913,226 @@ export class UI {
     return parts.filter((x): x is HTMLElement => x !== null);
   }
 
+  // ---------- Menu: výzvy, album, pohľadnice, garáž ----------
+
+  private menuContent(): HTMLElement[] {
+    const tabs: { id: MenuTab; label: string; badge: number }[] = [
+      {
+        id: 'challenges',
+        label: `🎯 ${t('MENU_CHALLENGES')}`,
+        badge: this.state.claimableChallenges,
+      },
+      { id: 'album', label: `📖 ${t('MENU_ALBUM')}`, badge: 0 },
+      { id: 'postcards', label: `💌 ${t('MENU_POSTCARDS')}`, badge: this.unseenPostcards },
+      { id: 'garage', label: `🔨 ${t('MENU_GARAGE')}`, badge: 0 },
+    ];
+    const bar = el('div', { class: 'tabs menu-tabs', role: 'tablist' });
+    for (const tb of tabs) {
+      const b = el(
+        'button',
+        {
+          class: `tab${this.menuTab === tb.id ? ' active' : ''}`,
+          type: 'button',
+          role: 'tab',
+          'aria-selected': this.menuTab === tb.id ? 'true' : 'false',
+        },
+        tb.label,
+        tb.badge > 0 && this.menuTab !== tb.id ? el('span', { class: 'dot' }) : '',
+      );
+      b.addEventListener('click', () => {
+        this.menuTab = tb.id;
+        this.confirmReset = false;
+        this.renderModal();
+      });
+      bar.append(b);
+    }
+    const body =
+      this.menuTab === 'challenges'
+        ? this.challengesContent()
+        : this.menuTab === 'album'
+          ? this.albumContent()
+          : this.menuTab === 'postcards'
+            ? this.postcardsContent()
+            : this.garageContent();
+    return [bar, ...body];
+  }
+
+  private challengesContent(): HTMLElement[] {
+    const s = this.state;
+    const out: HTMLElement[] = [el('p', { class: 'hint' }, t('UI_CHALLENGES_HINT'))];
+    for (const ch of s.challenges) {
+      const def = s.challengeDef(ch.defId);
+      if (!def) continue;
+      const progress = Math.min(ch.target, s.challengeProgress(ch));
+      const pct = Math.round((progress / ch.target) * 100);
+      out.push(
+        el(
+          'div',
+          { class: `challenge${ch.completed ? ' done' : ''}` },
+          el(
+            'div',
+            { class: 'row' },
+            el('strong', {}, t(def.name_key)),
+            el('span', { class: 'match-score' }, `${progress} / ${ch.target}`),
+          ),
+          el(
+            'div',
+            { class: 'bar' },
+            el('i', {
+              style: `width:${pct}%;background:${ch.completed ? 'var(--ui-good)' : 'var(--ui-accent)'}`,
+            }),
+          ),
+          el(
+            'div',
+            { class: 'row' },
+            el('span', { class: 'muted' }, `${t('UI_REWARD')}: ${def.money} € · ★ ${def.rep}`),
+            ch.completed
+              ? button(
+                  `🎁 ${t('UI_CLAIM')}`,
+                  () => {
+                    const got = s.claimChallenge(def.id);
+                    if (got) {
+                      this.toast(t('TOAST_CLAIMED', { money: got.money, rep: got.rep }));
+                      this.game.playSound('mewPurr', 0.6);
+                    }
+                    this.renderModal();
+                    this.updateHud();
+                  },
+                  { class: 'btn primary' },
+                )
+              : '',
+          ),
+        ),
+      );
+    }
+    return out;
+  }
+
+  private albumContent(): HTMLElement[] {
+    const s = this.state;
+    const data = s.data;
+    const filled = Object.keys(s.album).length;
+    const grid = el('div', { class: 'album' });
+    for (const breed of data.breeds) {
+      grid.append(el('div', { class: 'album-breed' }, t(breed.name_key)));
+      for (const coat of data.coats) {
+        const entry = s.album[GameState.albumKey(breed.id, coat.id)];
+        const label = `${t(breed.name_key)} · ${t(coat.name_key)}`;
+        if (!entry) {
+          grid.append(
+            el('div', { class: 'album-cell empty', title: label, 'aria-label': label }, '?'),
+          );
+          continue;
+        }
+        const cell = el(
+          'button',
+          {
+            class: 'album-cell',
+            type: 'button',
+            title: `${entry.name} – ${label}`,
+            'aria-label': `${entry.name} – ${label}`,
+          },
+          catPortrait(
+            { sprite: entry.sprite, name: entry.name, stats: { cleanliness: 100 } } as CatData,
+            1.4,
+          ),
+          entry.count > 1 ? el('span', { class: 'album-count' }, `×${entry.count}`) : '',
+        );
+        cell.addEventListener('click', () =>
+          this.toast(
+            `${t(entry.how === 'adopted' ? 'UI_ALBUM_ADOPTED' : 'UI_ALBUM_RESIDENT', { cat: entry.name })} (${t(coat.name_key)})`,
+          ),
+        );
+        grid.append(cell);
+      }
+    }
+    return [
+      el(
+        'div',
+        { class: 'row' },
+        el('strong', {}, t('UI_ALBUM_PROGRESS', { n: filled, total: s.albumSize })),
+      ),
+      el(
+        'div',
+        { class: 'bar' },
+        el('i', { style: `width:${(filled / s.albumSize) * 100}%;background:var(--ui-accent)` }),
+      ),
+      el('p', { class: 'hint' }, t('UI_ALBUM_HINT')),
+      grid,
+    ];
+  }
+
+  private garageContent(): HTMLElement[] {
+    const s = this.state;
+    const cagePrice = s.nextCagePrice;
+    const slotPrice = s.nextSlotPrice;
+    const out: HTMLElement[] = [
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_STATS_LINE', { r: s.counters.rescued, a: s.counters.adopted }),
+      ),
+      el(
+        'div',
+        { class: 'upgrade' },
+        el('strong', {}, `🐈 ${t('UI_CAGES', { n: s.cageCount })}`),
+        cagePrice === null
+          ? el('span', { class: 'muted' }, t('UI_MAXED'))
+          : button(
+              t('UI_BUY_CAGE', { price: cagePrice }),
+              () => {
+                s.buyCage();
+                this.renderModal();
+              },
+              { class: 'btn primary', disabled: s.money < cagePrice },
+            ),
+      ),
+      el(
+        'div',
+        { class: 'upgrade' },
+        el('strong', {}, `🛋️ ${t('UI_SLOTS', { n: s.residentSlots })}`),
+        slotPrice === null
+          ? el('span', { class: 'muted' }, t('UI_MAXED'))
+          : button(
+              t('UI_BUY_SLOT', { price: slotPrice }),
+              () => {
+                s.buySlot();
+                this.renderModal();
+              },
+              { class: 'btn primary', disabled: s.money < slotPrice },
+            ),
+      ),
+      button(this.muted ? `🔇 ${t('UI_SOUND_OFF')}` : `🔊 ${t('UI_SOUND_ON')}`, () =>
+        this.toggleMute(),
+      ),
+    ];
+    if (!this.confirmReset) {
+      out.push(
+        button(`↺ ${t('UI_NEW_GAME')}`, () => {
+          this.confirmReset = true;
+          this.renderModal();
+        }),
+      );
+    } else {
+      out.push(
+        el('p', { class: 'warning' }, t('UI_NEW_GAME_CONFIRM')),
+        el(
+          'div',
+          { class: 'footer' },
+          button(t('UI_CANCEL'), () => {
+            this.confirmReset = false;
+            this.renderModal();
+          }),
+          button(t('UI_YES_DELETE'), () => this.game.resetGame(), { class: 'btn primary' }),
+        ),
+      );
+    }
+    return out;
+  }
+
   private postcardsContent(): HTMLElement[] {
     const cards = this.state.adoptions.filter((a) => a.postcardDelivered).reverse();
-    const out: HTMLElement[] = [el('h2', {}, t('UI_POSTCARDS'))];
+    const out: HTMLElement[] = [];
     if (cards.length === 0) out.push(el('p', { class: 'muted' }, t('UI_NO_POSTCARDS')));
     for (const rec of cards) {
       out.push(this.postcard(rec));

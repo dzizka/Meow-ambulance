@@ -95,11 +95,60 @@ export interface BalanceData {
     treat_satisfaction_per_star: number;
   };
   residents: { slots: number; donation_per_min: number; offline_cap_h: number };
-  phase_1: { starting_money: number; cages: number; max_cages: number; cage_price: number };
+  phase_1: { starting_money: number; cages: number };
+  /** Ceny ďalších klietok a miest v kútiku – dĺžka poľa = koľko sa dá dokúpiť. */
+  upgrades: { cage_prices: number[]; slot_prices: number[] };
+  challenges: { active: number };
+}
+
+/** Čo sa v hre počíta (pre výzvy a štatistiky). */
+export interface Counters {
+  rescued: number;
+  kittens: number;
+  adopted: number;
+  perfect: number;
+  shy_homed: number;
+  treated: number;
+  ticks: number;
+  social: number;
+  fed: number;
+}
+
+export type ChallengeKind = keyof Counters | 'residents';
+
+export interface ChallengeDef {
+  id: string;
+  kind: ChallengeKind;
+  name_key: string;
+  base: number;
+  step: number;
+  money: number;
+  rep: number;
+  weight: number;
+}
+
+/** Výzva na nástenke (GDD §7.3). */
+export interface ActiveChallenge {
+  defId: string;
+  target: number;
+  /** Stav počítadla pri zadaní výzvy – počíta sa iba to, čo pribudne. */
+  start: number;
+  completed: boolean;
+}
+
+/** Záznam v albume príbehov (GDD §7.1) – jedno políčko = plemeno × farba. */
+export interface AlbumEntry {
+  name: string;
+  sprite: string;
+  how: 'adopted' | 'resident';
+  at: number;
+  /** Koľko mačiek tohto plemena a farby už prešlo útulkom. */
+  count: number;
 }
 
 /** Všetky statické dáta hry pohromade. */
 export interface GameData {
+  challenges: ChallengeDef[];
   traits: TraitDef[];
   conditions: ConditionDef[];
   breeds: BreedDef[];
