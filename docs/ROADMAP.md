@@ -38,14 +38,16 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [ ] **Playtest #1** na PC aj telefóne – je slučka zábavná?
 
 ## M2 – Vertikálny rez / MVP (6–8 týždňov)
-- [ ] Grafika garáže a mačiek z vybraných free assetov
+- [x] Grafika garáže a mačiek z vybraných free assetov
 - [x] Efekt premeny (iskričky, pradenie), špinavá mačka tmavšia
-- [ ] 3 plné vizuálne stavy mačky (obväzy, lesk)
-- [ ] Diagnostika so skrytými diagnózami (ruka, teplomer, stetoskop)
+- [x] Stav mačky v garáži: značka nad hlavou (? nevyšetrená, ✚ liečiť, ♥ pripravená), lesk čistej srsti, „z" pri spánku
+- [ ] Obväz na labke po ošetrení (potrebuje sprite alebo prekreslenie)
+- [x] Diagnostika so skrytými diagnózami (ruka, teplomer)
+- [ ] Stetoskop + nová diagnóza
 - [x] 4 liečebné minihry: kliešte, obväz (krúženie), uši (stieranie), sirup (načasovanie)
-- [ ] 3 socializačné: pero, česanie, kŕmenie z ruky
-- [ ] 6 rysov, odhaľovanie rysov
-- [ ] 8 archetypov adoptérov
+- [x] 3 socializačné: pero, česanie, kŕmenie z ruky
+- [x] 6 rysov, odhaľovanie rysov
+- [x] 8 archetypov adoptérov
 - [x] Album (36 slotov) – adoptované aj stálice, pohľadnice v albume
 - [x] Nástenka výziev (3 aktívne úlohy, 10 typov, rastúce ciele)
 - [x] Ekonomika: €, ★, nákup 3. a 4. klietky a rozšírenie kútika (menu ☰ → Garáž)
@@ -53,8 +55,9 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Ukladanie v2 s migráciou starých savov, „Nová hra" v menu
 - [ ] Ukladanie (3 sloty, autosave)
 - [x] Hudba: 6 skladieb – lo-fi cez deň, pokojné večer a v noci, načítanie na pozadí
-- [ ] Ďalšie SFX (syčanie, kroky)
-- [ ] SK + EN lokalizácia
+- [x] UI zvuky (Kenney) v rozhraní aj minihrách
+- [x] Hra pripravená na voliteľné zvuky – **dopĺňa autor** (ASSETS.md §7)
+- [x] SK + EN lokalizácia (rovnaké kľúče, kontroluje test)
 - [ ] Rozloženie UI na výšku aj na šírku, test na lacnom Android telefóne
 - [ ] **Playtest #2** (5–10 externých hráčov), metriky z GDD §13
 - [ ] Zverejniť webové demo na itch.io

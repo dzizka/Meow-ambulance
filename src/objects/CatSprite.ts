@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import type { CatData } from '../data/types';
+import type { CatBadge } from '../core/systems/Care';
+import { ensurePixelIcons } from '../scenes/pixelIcons';
 import {
   catAnimKey,
   dirFromVector,
@@ -25,6 +27,10 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   private nextDecisionAt = 0;
   private readonly shadow: Phaser.GameObjects.Ellipse;
   private readonly ring: Phaser.GameObjects.Ellipse;
+  private readonly badge: Phaser.GameObjects.Image;
+  private badgeKind: CatBadge = null;
+  /** Kedy pustiť ďalšie „z" (spánok) alebo iskričku (čistá srsť). */
+  private nextFxAt = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -42,6 +48,8 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
 
     this.shadow = scene.add.ellipse(x, y, 18, 6, 0x000000, 0.22);
     this.ring = scene.add.ellipse(x, y, 24, 9).setStrokeStyle(1, 0xfff4d6, 1).setVisible(false);
+    ensurePixelIcons(scene);
+    this.badge = scene.add.image(x, y, 'badge_exam').setOrigin(0.5, 1).setVisible(false);
     scene.add.existing(this);
 
     // Väčšia plocha na ťuknutie, aby sa mačka dala ľahko trafiť prstom
@@ -58,6 +66,19 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     if (c < 30) this.setTint(0xa89a8c);
     else if (c < 60) this.setTint(0xd8cfc4);
     else this.clearTint();
+  }
+
+  /**
+   * Značka nad hlavou: „?" nevyšetrená, krížik = treba liečiť, srdiečko = pripravená.
+   * Pri zmene značka poskočí, aby si ju hráč všimol.
+   */
+  setBadge(kind: CatBadge): void {
+    if (kind === this.badgeKind) return;
+    this.badgeKind = kind;
+    this.badge.setVisible(kind !== null);
+    if (!kind) return;
+    this.badge.setTexture(`badge_${kind}`).setScale(0.2);
+    this.scene.tweens.add({ targets: this.badge, scale: 1, ease: 'Back.easeOut', duration: 350 });
   }
 
   /** V noci mačky viac spia (GDD §2.2 – hodiny ako atmosféra). */
@@ -78,6 +99,7 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   leave(x: number, y: number, onLeft: () => void): void {
     this.disableInteractive();
     this.ring.setVisible(false);
+    this.setBadge(null);
     this.onLeft = onLeft;
     this.target = new Phaser.Math.Vector2(x, y);
     this.behaviour = 'leaving';
@@ -220,11 +242,53 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     this.setDepth(this.y);
     this.shadow.setPosition(this.x, this.y + 1).setDepth(this.y - 1);
     this.ring.setPosition(this.x, this.y + 1).setDepth(this.y - 0.5);
+    if (this.badge.visible) {
+      const bob = Math.round(Math.sin(time / 300) * 1);
+      const top = this.behaviour === 'laying' ? 18 : 27;
+      this.badge.setPosition(Math.round(this.x), Math.round(this.y - top + bob)).setDepth(4500);
+    }
+    if (time >= this.nextFxAt) this.ambientFx(time);
+  }
+
+  /** Spiaca mačka vypúšťa „z", čistá a spokojná mačka sa ligoce. */
+  private ambientFx(time: number): void {
+    this.nextFxAt = time + Phaser.Math.Between(1400, 2600);
+    if (this.behaviour === 'leaving') return;
+    if (this.behaviour === 'laying' && this.sleepy) {
+      const z = this.scene.add
+        .image(this.x + 6, this.y - 16, 'zzz')
+        .setDepth(4500)
+        .setAlpha(0.9);
+      this.scene.tweens.add({
+        targets: z,
+        x: z.x + 6,
+        y: z.y - 12,
+        alpha: 0,
+        scale: 1.6,
+        duration: 1800,
+        onComplete: () => z.destroy(),
+      });
+      return;
+    }
+    if (this.cat.stats.cleanliness >= 90 && this.scene.textures.exists('spark')) {
+      const sp = this.scene.add
+        .image(this.x + Phaser.Math.Between(-7, 7), this.y - Phaser.Math.Between(6, 18), 'spark')
+        .setDepth(this.y + 1)
+        .setScale(0.4);
+      this.scene.tweens.add({
+        targets: sp,
+        scale: 0.9,
+        alpha: 0,
+        duration: 700,
+        onComplete: () => sp.destroy(),
+      });
+    }
   }
 
   override destroy(fromScene?: boolean): void {
     this.shadow.destroy();
     this.ring.destroy();
+    this.badge.destroy();
     super.destroy(fromScene);
   }
 }

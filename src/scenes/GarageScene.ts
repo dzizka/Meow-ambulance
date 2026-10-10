@@ -3,6 +3,7 @@ import { MUSIC_DAY, MUSIC_NIGHT } from '../assets';
 import type { GameState } from '../core/GameState';
 import { SaveManager, browserStorage } from '../core/SaveManager';
 import type { OfflineSummary } from '../core/EventBus';
+import * as Care from '../core/systems/Care';
 import type { Stars } from '../core/systems/Care';
 import type { CatData } from '../data/types';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
@@ -212,9 +213,10 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       if (cage) this.spawnCat(cat, cage.x, cage.y + 8);
       save();
     });
-    bus.on('catChanged', ({ cat }) => this.sprites.get(cat.id)?.applyLook());
+    bus.on('catChanged', ({ cat }) => this.refreshCat(cat));
     bus.on('catBecameResident', ({ cat }) => {
       this.sprites.get(cat.id)?.setWalkArea(RESIDENT_AREA);
+      this.refreshCat(cat);
       save();
     });
     bus.on('catAdopted', ({ record }) => {
@@ -237,11 +239,19 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       const sprite = this.sprites.get(cat.id);
       if (!sprite) return;
       this.burst(sprite.x, sprite.y - 12, 12);
-      sprite.applyLook();
+      this.refreshCat(cat);
       this.tweens.add({ targets: sprite, scaleX: 1.25, scaleY: 1.25, yoyo: true, duration: 180 });
       save();
     });
     bus.on('postcardArrived', save);
+  }
+
+  /** Vzhľad a značka mačky podľa jej stavu. */
+  private refreshCat(cat: CatData): void {
+    const sprite = this.sprites.get(cat.id);
+    if (!sprite) return;
+    sprite.applyLook();
+    sprite.setBadge(Care.badgeFor(cat, this.state.data));
   }
 
   private spawnCat(cat: CatData, x: number, y: number): void {
@@ -254,6 +264,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       this.select(sprite.cat.id);
     });
     this.sprites.set(cat.id, sprite);
+    this.refreshCat(cat);
   }
 
   /** Iskričky nad mačkou pripravenou na adopciu (GDD §7.4). */

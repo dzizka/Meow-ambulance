@@ -109,6 +109,17 @@ export function isReady(cat: CatData, data: GameData): boolean {
   return allTreated(cat) && cat.stats.health >= r.min_health && cat.stats.trust >= r.min_trust;
 }
 
+/** Značka nad mačkou v garáži – čo práve potrebuje (GDD §7.4). */
+export type CatBadge = 'treat' | 'exam' | 'ready' | null;
+
+export function badgeFor(cat: CatData, data: GameData): CatBadge {
+  if (cat.resident) return null;
+  if (cat.conditions.some((c) => c.revealed && !c.treated)) return 'treat';
+  if (cat.examined.length === 0) return 'exam';
+  if (isReady(cat, data)) return 'ready';
+  return null;
+}
+
 /** Zmeny štatistík za `minutes` hry, iba keď hra beží (GDD §3.3). */
 export function passTime(cat: CatData, minutes: number, data: GameData): void {
   const b = data.balance;

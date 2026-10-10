@@ -28,6 +28,21 @@ const adopter = (id: string) => {
   return a;
 };
 
+describe('Značka nad mačkou', () => {
+  it('nevyšetrená → ?, odhalená choroba → liečiť, zdravá a dôverčivá → pripravená', () => {
+    const cat = makeCat();
+    expect(Care.badgeFor(cat, data)).toBe('exam');
+    Care.examine(cat, 'hand', data);
+    expect(Care.badgeFor(cat, data)).toBe('treat');
+    cat.conditions = [];
+    expect(Care.badgeFor(cat, data)).toBe(null);
+    cat.stats = { health: 100, cleanliness: 100, trust: 100, satisfaction: 100 };
+    expect(Care.badgeFor(cat, data)).toBe('ready');
+    cat.resident = true;
+    expect(Care.badgeFor(cat, data)).toBe(null);
+  });
+});
+
 describe('Starostlivosť', () => {
   it('ruka odhalí kliešte, teplomer horúčku', () => {
     const cat = makeCat();
