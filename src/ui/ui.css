@@ -43,6 +43,14 @@
 body.minigame #ui > :not(.toasts) {
   display: none;
 }
+/* Počas minihry oznámenia neprekrývajú nápovedu – iba posledné, dole */
+body.minigame .toasts {
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+}
+body.minigame .toast:not(:last-child) {
+  display: none;
+}
 
 /* ---------- Horný panel ---------- */
 .hud {

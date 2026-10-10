@@ -205,5 +205,11 @@
   "MG_EAR_HINT": "Utri prstom všetku špinu z ušiek.",
   "MG_SYRUP_HINT": "Ťukni, keď je ukazovateľ v zelenom poli. Treba tri lyžičky.",
   "MG_MISS": "Vedľa!",
-  "MG_GULP": "Mňam!"
+  "MG_GULP": "Mňam!",
+  "COND_COLD": "nádcha",
+  "UI_TOOL_STETHOSCOPE": "Stetoskop",
+  "MG_BREATH_TITLE": "Inhalácia",
+  "MG_BREATH_HINT": "Drž prst, keď sa kruh zväčšuje (nádych). Pusti, keď sa zmenšuje (výdych).",
+  "MG_BREATH_IN": "Nádych",
+  "MG_BREATH_OUT": "Výdych"
 }

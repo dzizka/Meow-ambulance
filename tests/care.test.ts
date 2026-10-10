@@ -51,6 +51,13 @@ describe('Starostlivosť', () => {
     expect(cat.examined).toEqual(['hand', 'thermometer']);
   });
 
+  it('stetoskop odhalí nádchu', () => {
+    const cat = makeCat({ conditions: [{ id: 'cold', revealed: false, treated: false }] });
+    expect(Care.examine(cat, 'hand', data)).toEqual([]);
+    expect(Care.examine(cat, 'stethoscope', data)).toEqual(['cold']);
+    expect(Care.treat(cat, 'cold', 3, data)).toBe(true);
+  });
+
   it('ošetriť sa dá iba odhalená a neošetrená diagnóza', () => {
     const cat = makeCat();
     expect(Care.treat(cat, 'ticks', 3, data)).toBe(false);

@@ -42,9 +42,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Efekt premeny (iskričky, pradenie), špinavá mačka tmavšia
 - [x] Stav mačky v garáži: značka nad hlavou (? nevyšetrená, ✚ liečiť, ♥ pripravená), lesk čistej srsti, „z" pri spánku
 - [ ] Obväz na labke po ošetrení (potrebuje sprite alebo prekreslenie)
-- [x] Diagnostika so skrytými diagnózami (ruka, teplomer)
-- [ ] Stetoskop + nová diagnóza
-- [x] 4 liečebné minihry: kliešte, obväz (krúženie), uši (stieranie), sirup (načasovanie)
+- [x] Diagnostika so skrytými diagnózami (ruka, teplomer, stetoskop)
+- [x] 5 liečebných minihier: kliešte, obväz (krúženie), uši (stieranie), sirup (načasovanie), inhalácia (dýchanie v rytme)
 - [x] 3 socializačné: pero, česanie, kŕmenie z ruky
 - [x] 6 rysov, odhaľovanie rysov
 - [x] 8 archetypov adoptérov

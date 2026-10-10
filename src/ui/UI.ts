@@ -25,7 +25,7 @@ export interface GameBridge {
 }
 
 export type MinigameKind =
-  'tick_removal' | 'bandage' | 'ears' | 'syrup' | 'feather' | 'hold' | 'quiet';
+  'tick_removal' | 'bandage' | 'ears' | 'syrup' | 'breath' | 'feather' | 'hold' | 'quiet';
 export interface MinigameRequest {
   kind: MinigameKind;
   cat: CatData;
@@ -39,6 +39,7 @@ const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> 
   ear_cleaning: { kind: 'ears', titleKey: 'HOLD_EAR' },
   syrup: { kind: 'syrup', titleKey: 'HOLD_SYRUP' },
   hold_brush: { kind: 'hold', titleKey: 'HOLD_BRUSH' },
+  inhalation: { kind: 'breath', titleKey: 'MG_BREATH_TITLE' },
 };
 const SOCIAL: {
   id: SocialActivity;
@@ -430,7 +431,7 @@ export class UI {
     // Záložky namiesto jedného dlhého zoznamu – karta sa vojde bez rolovania
     const needsHealth =
       !cat.resident &&
-      (cat.conditions.some((c) => c.revealed && !c.treated) || cat.examined.length < 2 || ready);
+      (cat.conditions.some((c) => c.revealed && !c.treated) || cat.examined.length < 3 || ready);
     const tabs: { id: CardTab; label: string; dot: boolean }[] = [
       { id: 'health', label: `🩺 ${t('TAB_HEALTH')}`, dot: needsHealth },
       { id: 'care', label: `❤️ ${t('TAB_CARE')}`, dot: false },
@@ -538,6 +539,7 @@ export class UI {
     const tools: [DiagnosticTool, string, string][] = [
       ['hand', '✋', 'UI_TOOL_HAND'],
       ['thermometer', '🌡️', 'UI_TOOL_THERMOMETER'],
+      ['stethoscope', '🩺', 'UI_TOOL_STETHOSCOPE'],
     ];
     const pending = tools.filter(([tool]) => !cat.examined.includes(tool));
     if (pending.length > 0) {

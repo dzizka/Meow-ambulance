@@ -1,7 +1,7 @@
 /** Typy herných dát. Statické definície zodpovedajú súborom v public/data/*.json. */
 
 export type SocialActivity = 'feather' | 'brush' | 'hand_feed' | 'sit_quietly';
-export type DiagnosticTool = 'hand' | 'thermometer';
+export type DiagnosticTool = 'hand' | 'thermometer' | 'stethoscope';
 export type AgeGroup = 'kitten' | 'adult' | 'senior';
 
 export interface TraitDef {

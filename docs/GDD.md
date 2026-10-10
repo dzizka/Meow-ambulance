@@ -149,7 +149,7 @@ Diagnózy sú pri príchode **skryté** (zobrazené ako „?"). Hráč ich odha�
 |---|---|---|
 | Ruka (prehliadka) | Viditeľné: kliešte, zranenie, špina | Fáza 1 |
 | Teplomer | Horúčka / infekcia | Fáza 1 |
-| Stetoskop | Srdce, pľúca (minihra: ťuknúť v rytme) | Fáza 1 |
+| Stetoskop | Pľúca: nádcha (liečba: inhalácia) | Fáza 1 |
 | Otoskop | Ušné infekcie, roztoče | Fáza 2 |
 | Laboratórium (krv) | Parazity, choroby | Fáza 3 |
 | Röntgen | Zlomeniny, prehltnuté predmety | Fáza 3 |
@@ -164,6 +164,7 @@ Každá minihra: **5–20 sekúnd**, ovládanie myšou/dotykom, hodnotenie 1–3
 | **Obväzovanie labky** | Krúživý pohyb okolo labky, správny počet otočení | 🟢 MVP |
 | **Čistenie ušiek** | Utieraj tampónom, kým nie je čisto (stieranie masky) | 🟢 MVP |
 | **Podávanie sirupu** | Načasuj stlačenie, keď mačka otvorí papuľku | 🟢 MVP |
+| **Inhalácia** | Drž prst pri nádychu (kruh rastie), pusti pri výdychu – 3 dychy | 🟢 MVP |
 | **Kúpanie** | Penenie, splachovanie, sušenie uterákom | 🟡 v1.0 |
 | **Očkovanie** | Nájdi správne miesto, odvráť pozornosť maškrtou | 🟡 v1.0 |
 | **Strihanie pazúrikov** | Strihaj len špičku (nie ružovú časť) | 🟡 v1.0 |

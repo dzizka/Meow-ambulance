@@ -205,5 +205,11 @@
   "MG_EAR_HINT": "Wipe all the dirt from the ears with your finger.",
   "MG_SYRUP_HINT": "Tap when the marker is in the green zone. Three spoonfuls.",
   "MG_MISS": "Missed!",
-  "MG_GULP": "Yum!"
+  "MG_GULP": "Yum!",
+  "COND_COLD": "cold",
+  "UI_TOOL_STETHOSCOPE": "Stethoscope",
+  "MG_BREATH_TITLE": "Inhalation",
+  "MG_BREATH_HINT": "Hold your finger while the circle grows (breathe in). Let go while it shrinks (breathe out).",
+  "MG_BREATH_IN": "Breathe in",
+  "MG_BREATH_OUT": "Breathe out"
 }
