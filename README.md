@@ -18,11 +18,11 @@ Cozy manažmentová hra o záchrane mačiek pre PC a mobil. Zachráň vystrašen
 ## Technológie
 - **TypeScript + Phaser** (HTML5), build cez **Vite**
 - PC cez **Tauri**, mobil (Android/iOS) cez **Capacitor**
-- Git + **Git LFS** pre obrázky a zvuk
+- Git + GitHub; assety v súkromnom podmodule
 - GitHub Issues + Projects na úlohy, GitHub Actions na testy a nasadenie
 
 ## Spustenie (od míľnika M0)
-1. Nainštaluj [Node.js LTS](https://nodejs.org) a [Git LFS](https://git-lfs.com) (`git lfs install`).
+1. Nainštaluj [Node.js LTS](https://nodejs.org) a [Git](https://git-scm.com).
 2. `git clone --recurse-submodules https://github.com/dzizka/Meow-ambulance.git && cd Meow-ambulance`
    (assety sú v súkromnom repozitári *Meow-ambulance-offline* – bez prístupu k nemu sa hra nespustí)
 3. `npm install`

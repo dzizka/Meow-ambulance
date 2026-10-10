@@ -4,14 +4,21 @@
 - *(doplniť)*
 
 ## Grafika
-*(Doplniť pri pridaní assetu – formát: Názov – Autor – Zdroj – Licencia)*
+- Cats – Pixel Asset Pack – Pop Shop Packs – https://pop-shop-packs.itch.io/
+- House Interior Tileset 32x32 (LITE) – graduation-cat – https://graduation-cat.itch.io/house-interior-tileset-32x32
+- Pixel Hospital Tileset – jackburton84 – https://jackburton84.itch.io/pixel-hospital-tileset-modern-medical-pixel-art-32x32
+- 2D Top-Down Pixel Art Characters – Jephed, Game Between The Lines – https://gamebetweenthelines.com/
+- Pixel UI Pack – Kenney – www.kenney.nl (CC0)
 
 ## Hudba
-*(Príklad pre CC BY 4.0: „Názov skladby" Kevin MacLeod (incompetech.com) – Licensed under Creative Commons: By Attribution 4.0 License – http://creativecommons.org/licenses/by/4.0/)*
+- Analog Café Lofi Background Music – **Kentaro** (Kento Games) – https://kento-games.itch.io/ *(credit povinný)*
+- JRPG Pack 4 – Calm – Juhani Junkala – https://juhanijunkala.com/ (CC0)
 
 ## Zvukové efekty
+- Interface Sounds – Kenney – www.kenney.nl (CC0)
 
 ## Fonty
+- Pixelify Sans – Stefie Justprince – SIL Open Font License 1.1
 
 ## Nástroje
 - [Phaser](https://phaser.io) – MIT License

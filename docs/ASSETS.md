@@ -19,7 +19,8 @@ Väčšina balíkov z itch.io má podmienku **„nesmie sa šíriť ani predáva
 - **Všetky** assety tretích strán (aj CC0 – kvôli jednoduchosti na jednom mieste) a texty licencií → súkromný repozitár **Meow-ambulance-offline**, pripojený ako Git podmodul na ceste `public/assets/`.
 - Kto nemá prístup k súkromnému repozitáru, vidí kód, ale hru bez assetov nespustí.
 - Verejne nasadený build (itch.io, GitHub Pages) je v poriadku – je to hotová hra, nie šírenie samostatných súborov. CI na to bude potrebovať prístupový token k súkromnému repozitáru (nastaví sa v M0).
-- Hudbu ukladať ako **OGG** (WAV iba ako záloha v `_source/`).
+- Hudba sa ukladá v dvoch formátoch: **OGG + MP3** (Safari na iPhone OGG spoľahlivo neprehrá; Phaser si vyberie podporovaný). Konverzia: `ffmpeg -i x.ogg -q:a 4 x.mp3`.
+- Git LFS sa nepoužíva (súbory sú malé, najväčší ~5 MB).
 
 ## 3. Povolené a zakázané licencie
 | Licencia | Komerčné použitie | Uvedenie autora | Poznámka |
@@ -64,7 +65,7 @@ Overené k 10. 10. 2026. **Mriežka hry: 32×32 px.** Pri „Name your own price
 ### 4.3 Hudba
 | # | Na čo | Balík | Autor | Licencia | Credit |
 |---|---|---|---|---|---|
-| M1 | **Hlavná hudba dňa** – lo-fi, útulná (7 skladieb, OGG/MP3/WAV) | [Analog Café – Lofi Background Music (Free)](https://kento-games.itch.io/lo-fi-background-music) | Kento Games | „Royalty free", komerčné potvrdené autorom v komentároch → **uložiť snímku komentára** | dobrovoľný |
+| M1 | **Hlavná hudba dňa** – lo-fi, útulná (free verzia: 3 skladby, OGG/MP3) | [Analog Café – Lofi Background Music (Free)](https://kento-games.itch.io/lo-fi-background-music) | Kento Games | „Royalty free", komerčné potvrdené autorom v komentároch → **uložiť snímku komentára** | dobrovoľný |
 | M2 | **Pokojná hudba** – menu, album, večer (6 skladieb) | [JRPG Pack 4 – Calm](https://opengameart.org/content/jrpg-pack-4-calm) | Juhani Junkala (SubspaceAudio) | **CC0** | nepovinný |
 | M3 | **Rezerva / udalosti** – jemná, s napätím v neskorších skladbách (10 skladieb) | [Indie Meditations – Free Music Pack](https://opengameart.org/content/indie-meditations-free-music-pack) | YannZ | **CC BY 4.0** | ✅ povinný |
 
@@ -87,4 +88,15 @@ Overené k 10. 10. 2026. **Mriežka hry: 32×32 px.** Pri „Name your own price
 
 | Priečinok v `public/assets/` | Balík (#) | Licencia | Smie byť verejne? | Credit povinný | Upravené? | Licencia uložená | Pridal / dátum |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| `sprites/cats/popshop/` | G1 | vlastná – komerčné ✅, nešíriť, nie AI/NFT | ❌ | nie | orezané (bez riadku s nadpismi) | ✅ | Claude / 10. 10. 2026 |
+| `_source/` iba | G2 | vlastná – komerčné ✅, nie blockchain | ❌ | nie | – (nepoužité: príliš malé) | ✅ | Claude / 10. 10. 2026 |
+| `sprites/interior/` | G3 (LITE) | vlastná – komerčné ✅, nešíriť ani upravené | ❌ | nie | nie | ✅ | Claude / 10. 10. 2026 |
+| `sprites/clinic/` | G4 | vlastná – komerčné ✅, nešíriť ani upravené | ❌ | nie | nie | ✅ | Claude / 10. 10. 2026 |
+| `sprites/people/gbtl/` | G5 | vlastná – komerčné ✅ | ❌ (nešpecifikované → opatrne) | nie (vyžiadaný) | nie | ✅ | Claude / 10. 10. 2026 |
+| `ui/kenney_pixel_ui/` | G6 | CC0 | ✅ | nie | nie | ✅ | Claude / 10. 10. 2026 |
+| `fonts/` | F1 | OFL | ✅ | nie | nie | ✅ | Claude / 10. 10. 2026 |
+| `audio/music/lofi_*` | M1 | vlastná (`Terms.txt`) – komerčné ✅, nešíriť | ❌ | **✅ „Kentaro"** | nie | ✅ | Claude / 10. 10. 2026 |
+| `audio/music/calm_*` | M2 | CC0 | ✅ | nie | MP3 kópia | ✅ | Claude / 10. 10. 2026 |
+| `audio/sfx/ui/` | S3 | CC0 | ✅ | nie | nie | ✅ | Claude / 10. 10. 2026 |
+
+**Ešte chýba:** S1/S2 mačacie zvuky (pradenie, mňaukanie).

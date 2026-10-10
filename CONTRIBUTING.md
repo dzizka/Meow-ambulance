@@ -29,7 +29,7 @@ balance(data): nižšia cena krmiva vo Fáze 1
 - Štítky: `mvp`, `v1.0`, `later`, `design`, `code`, `art`, `audio`, `bug`, `balance`.
 - Každé Issue patrí do míľnika z [ROADMAP](docs/ROADMAP.md).
 
-## Veľké súbory
-Obrázky, zvuky a fonty idú cez **Git LFS** (nastavené v `.gitattributes`). Pred prvým commitom: `git lfs install`.
+## Assety
+Git LFS sa nepoužíva – assety sú malé (najväčší súbor ~5 MB).
 
 Všetky assety patria do súkromného podmodulu `public/assets/` (repozitár *Meow-ambulance-offline*), nikdy priamo do verejného repozitára – pozri [ASSETS.md §2](docs/ASSETS.md).

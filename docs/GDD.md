@@ -332,7 +332,7 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 | Dáta | JSON v `public/data/` | Balansovanie bez zásahu do kódu |
 | Lokalizácia | JSON slovníky `src/i18n/sk.json`, `en.json` | Jednoduché, bez závislostí |
 | Testy | **Vitest** | Testy hernej logiky bez prehliadača |
-| Verzovanie | Git + GitHub, **Git LFS** pre obrázky a zvuky | Veľké binárne súbory |
+| Verzovanie | Git + GitHub; assety v súkromnom podmodule | Licencie assetov zakazujú ich verejné šírenie |
 | CI | GitHub Actions: build + testy pri PR, nasadenie webovej verzie na GitHub Pages z `main` | Každá verzia hrateľná cez odkaz aj na mobile |
 | Úlohy | GitHub Issues + GitHub Projects (Kanban) | Všetko na jednom mieste |
 
