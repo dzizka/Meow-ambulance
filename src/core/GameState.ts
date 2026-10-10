@@ -757,6 +757,91 @@ export class GameState {
     return s;
   }
 
+  // ---------- Vývojárske menu (iba na testovanie) ----------
+
+  /** Peniaze a reputácia navyše. */
+  devGive(money: number, rep = 0): void {
+    this.addMoney(money, true);
+    if (rep) {
+      this.reputation += rep;
+      this.bus.emit('reputationChanged', { reputation: this.reputation });
+    }
+  }
+
+  /** Nové hlásenie hneď (ak nie je nástenka plná). */
+  devSpawnReport(): boolean {
+    const before = this.reports.length;
+    this.reportTimer = this.data.balance.rescue.interval_s * 1000;
+    this.advanceReports(0);
+    return this.reports.length > before;
+  }
+
+  /** Záujemca hneď – iba ak je nejaká mačka pripravená na adopciu. */
+  devSpawnAdopter(): boolean {
+    const before = this.adopters.length;
+    this.adopterTimer = this.data.balance.adopters.interval_s * 1000;
+    this.advanceAdopters(0);
+    return this.adopters.length > before;
+  }
+
+  /** Hosť v kaviarni hneď (treba otvorenú kaviareň, stálicu a voľný stôl). */
+  devSpawnGuest(): boolean {
+    if (!this.cafe.open) return false;
+    const before = this.cafe.guests.length;
+    this.cafe.timer = this.data.balance.cafe.guest_interval_s * 1000;
+    this.advanceGuests(0);
+    return this.cafe.guests.length > before;
+  }
+
+  /** Všetci hostia hneď odídu (a nechajú dar). */
+  devGuestsLeave(): void {
+    for (const g of this.cafe.guests) g.leaveAt = this.now;
+    this.advanceGuests(0);
+  }
+
+  /** Mačka úplne zdravá, vyšetrená, dôverčivá a so známymi rysmi. */
+  devHeal(catId: string): boolean {
+    const cat = this.getCat(catId);
+    if (!cat) return false;
+    for (const c of cat.conditions) {
+      c.revealed = true;
+      c.treated = true;
+    }
+    for (const t of cat.traits) t.revealed = true;
+    cat.examined = ['hand', 'thermometer', 'stethoscope'];
+    cat.stats = { health: 100, cleanliness: 100, trust: 100, satisfaction: 100 };
+    this.changed(cat);
+    return true;
+  }
+
+  /** Posun hodín o `hours` herných hodín (hlásenia ani potreby sa nemenia). */
+  devShiftClock(hours: number): void {
+    this.now += hours * this.data.balance.clock.real_seconds_per_game_hour * 1000;
+    this.deliverPostcards();
+  }
+
+  /** Všetky výzvy na nástenke splnené. */
+  devCompleteChallenges(): void {
+    for (const ch of this.challenges) {
+      if (ch.completed) continue;
+      ch.completed = true;
+      this.bus.emit('challengeCompleted', { challenge: ch });
+    }
+  }
+
+  /** Všetky čakajúce pohľadnice prídu hneď; adopcie bez pohľadnice ju dostanú. */
+  devDeliverPostcards(): number {
+    for (const rec of this.adoptions) if (!rec.postcardDelivered) rec.postcardDueAt = this.now;
+    return this.deliverPostcards();
+  }
+
+  /** Kaviareň zadarmo. */
+  devOpenCafe(): boolean {
+    if (this.cafe.open) return false;
+    this.addMoney(this.data.balance.cafe.price, false);
+    return this.buyCafe();
+  }
+
   // ---------- Pomocné ----------
 
   private newId(prefix: string): string {
