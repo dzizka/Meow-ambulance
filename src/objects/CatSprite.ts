@@ -32,6 +32,8 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     y: number,
     cat: CatData,
     private walkArea: Phaser.Geom.Rectangle,
+    /** Nábytok, cez ktorý mačka nechodí (pôdorysy pri zemi). */
+    private readonly obstacles: Phaser.Geom.Rectangle[] = [],
   ) {
     super(scene, x, y, cat.sprite, 0);
     this.cat = cat;
@@ -112,12 +114,20 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     this.play(catAnimKey(this.cat.sprite, anim, this.dir), true);
   }
 
+  private blocked(x: number, y: number): boolean {
+    return this.obstacles.some((o) => o.contains(x, y));
+  }
+
   private goTo(x: number, y: number, mode: 'walking' | 'fleeing'): void {
     const a = this.walkArea;
-    this.target = new Phaser.Math.Vector2(
-      Phaser.Math.Clamp(x, a.left, a.right),
-      Phaser.Math.Clamp(y, a.top, a.bottom),
-    );
+    let tx = Phaser.Math.Clamp(x, a.left, a.right);
+    let ty = Phaser.Math.Clamp(y, a.top, a.bottom);
+    // Cieľ nesmie byť pod nábytkom – skús iné miesto v oblasti
+    for (let i = 0; i < 12 && this.blocked(tx, ty); i++) {
+      tx = Phaser.Math.Between(a.left, a.right);
+      ty = Phaser.Math.Between(a.top, a.bottom);
+    }
+    this.target = new Phaser.Math.Vector2(tx, ty);
     this.behaviour = mode;
     this.dir = dirFromVector(this.target.x - this.x, this.target.y - this.y);
     this.setAnim(mode === 'fleeing' ? 'run' : 'walk');
@@ -190,8 +200,18 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
           if (this.behaviour === 'idle') this.setAnim('sit_idle');
         });
       } else {
-        this.x += (dx / dist) * step;
-        this.y += (dy / dist) * step;
+        const nx = this.x + (dx / dist) * step;
+        const ny = this.y + (dy / dist) * step;
+        if (this.blocked(nx, ny) && !this.blocked(this.x, this.y) && this.behaviour !== 'leaving') {
+          // Nábytok v ceste – zastav, ovoňaj a vyber si iný smer
+          this.target = null;
+          this.behaviour = 'idle';
+          this.nextDecisionAt = time + Phaser.Math.Between(300, 900);
+          this.setAnim('look');
+        } else {
+          this.x = nx;
+          this.y = ny;
+        }
       }
     } else if (this.behaviour !== 'leaving' && time >= this.nextDecisionAt) {
       this.decide(time);

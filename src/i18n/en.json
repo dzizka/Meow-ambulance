@@ -200,5 +200,10 @@
   "TOAST_CLAIMED": "+€{money} · ★ +{rep}",
   "TOAST_BOUGHT_CAGE": "A new cage is ready!",
   "TOAST_BOUGHT_SLOT": "The resident corner is bigger!",
-  "UI_SKIP_TUTORIAL": "Hide tips"
+  "UI_SKIP_TUTORIAL": "Hide tips",
+  "MG_BANDAGE_HINT": "Circle your finger around the paw – wrap it three times. Stay close to the bandage.",
+  "MG_EAR_HINT": "Wipe all the dirt from the ears with your finger.",
+  "MG_SYRUP_HINT": "Tap when the marker is in the green zone. Three spoonfuls.",
+  "MG_MISS": "Missed!",
+  "MG_GULP": "Yum!"
 }

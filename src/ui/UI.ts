@@ -23,7 +23,8 @@ export interface GameBridge {
   resetGame(): void;
 }
 
-export type MinigameKind = 'tick_removal' | 'feather' | 'hold' | 'quiet';
+export type MinigameKind =
+  'tick_removal' | 'bandage' | 'ears' | 'syrup' | 'feather' | 'hold' | 'quiet';
 export interface MinigameRequest {
   kind: MinigameKind;
   cat: CatData;
@@ -33,9 +34,9 @@ export interface MinigameRequest {
 /** Druh minihry podľa ošetrenia alebo aktivity (GDD §4.2, §4.3). */
 const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> = {
   tick_removal: { kind: 'tick_removal', titleKey: 'MG_TICK_TITLE' },
-  hold_bandage: { kind: 'hold', titleKey: 'HOLD_BANDAGE' },
-  hold_ear: { kind: 'hold', titleKey: 'HOLD_EAR' },
-  hold_syrup: { kind: 'hold', titleKey: 'HOLD_SYRUP' },
+  bandage: { kind: 'bandage', titleKey: 'HOLD_BANDAGE' },
+  ear_cleaning: { kind: 'ears', titleKey: 'HOLD_EAR' },
+  syrup: { kind: 'syrup', titleKey: 'HOLD_SYRUP' },
   hold_brush: { kind: 'hold', titleKey: 'HOLD_BRUSH' },
 };
 const SOCIAL: {

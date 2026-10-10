@@ -39,10 +39,7 @@
     "rep_perfect": 15,
     "rep_good": 8,
     "rep_poor": 2,
-    "postcard_delay_s": [
-      120,
-      300
-    ],
+    "postcard_delay_s": [120, 300],
     "postcard_chance_good": 0.5
   },
   "care": {
@@ -64,14 +61,8 @@
     "cages": 2
   },
   "upgrades": {
-    "cage_prices": [
-      120,
-      180
-    ],
-    "slot_prices": [
-      150,
-      220
-    ]
+    "cage_prices": [120, 180],
+    "slot_prices": [150, 220]
   },
   "challenges": {
     "active": 3

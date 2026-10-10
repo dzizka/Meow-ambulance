@@ -354,7 +354,7 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 **Paleta:** zvoliť jednu paletu (napr. z Lospec) a všetky assety cez ňu prefarbiť → jednotný vzhľad aj z rôznych zdrojov.
 
 ### 9.2 Zvuk
-- **Hudba:** pokojný lo-fi / akustický soundtrack, 3–5 skladieb v MVP (deň, noc, minihra, udalosť, menu).
+- **Hudba:** cez deň lo-fi (3 skladby), večer a v noci pokojné skladby (3); striedajú sa náhodne a neopakujú hneď po sebe. Ďalšie skladby sa načítajú až po spustení hry.
 - **SFX:** pradenie (kľúčový zvuk!), mňaukanie (rôzne podľa nálady), syčanie, kroky, UI kliky, „premena" jingle.
 - Všetky zdroje a licencie → `docs/ASSETS.md` a `CREDITS.md`.
 

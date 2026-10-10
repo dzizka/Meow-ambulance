@@ -37,6 +37,22 @@ export const AUDIO = {
 } as const satisfies Record<string, string[]>;
 
 /** Písmo textov a čísel – dobre čitateľné (Nunito, OFL). */
+/**
+ * Hudba podľa dennej doby (GDD §9.2). Prvá skladba dňa je v AUDIO.music (načíta sa hneď),
+ * ostatné sa načítajú na pozadí až po spustení hry.
+ */
+const MUSIC = 'assets/audio/music/';
+export const MUSIC_DAY: Record<string, [string, string]> = {
+  music: audio(`${MUSIC}lofi_home`),
+  musicCafe: audio(`${MUSIC}lofi_cafe_time`),
+  musicLove: audio(`${MUSIC}lofi_i_love_you`),
+};
+export const MUSIC_NIGHT: Record<string, [string, string]> = {
+  musicCalmHome: audio(`${MUSIC}calm_1_a_place_i_call_home`),
+  musicCalmDays: audio(`${MUSIC}calm_3_peaceful_days`),
+  musicCalmSummer: audio(`${MUSIC}calm_5_summer_memories`),
+};
+
 export const FONT_FAMILY = '"Nunito", system-ui, sans-serif';
 /** Pixelové písmo iba na nadpisy – dodáva hre charakter (Pixelify Sans, OFL). */
 export const DISPLAY_FONT = '"Pixelify Sans", monospace';

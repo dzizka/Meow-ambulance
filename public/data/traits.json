@@ -1,11 +1,47 @@
 {
   "_comment": "Povahové rysy MVP (GDD §4.4). Modifikátory socializácie = násobok prírastku Dôvery.",
   "traits": [
-    {"id": "shy",     "name_key": "TRAIT_SHY",     "social": {"feather": 0.5, "brush": 1.0, "hand_feed": 1.5, "sit_quietly": 2.0}, "adopt_good": ["quiet_home", "no_kids"],          "adopt_bad": ["kids", "other_pets"]},
-    {"id": "cuddly",  "name_key": "TRAIT_CUDDLY",  "social": {"feather": 1.0, "brush": 2.0, "hand_feed": 1.0, "sit_quietly": 0.5}, "adopt_good": ["home_often"],                      "adopt_bad": ["rarely_home"]},
-    {"id": "wild",    "name_key": "TRAIT_WILD",    "social": {"feather": 1.5, "brush": 0.5, "hand_feed": 1.0, "sit_quietly": 1.5}, "adopt_good": ["garden", "experienced"],          "adopt_bad": ["flat", "kids"]},
-    {"id": "foodie",  "name_key": "TRAIT_FOODIE",  "social": {"feather": 1.0, "brush": 1.0, "hand_feed": 2.0, "sit_quietly": 0.5}, "adopt_good": [],                                  "adopt_bad": []},
-    {"id": "playful", "name_key": "TRAIT_PLAYFUL", "social": {"feather": 2.0, "brush": 1.0, "hand_feed": 1.0, "sit_quietly": 0.5}, "adopt_good": ["kids", "active"],                 "adopt_bad": ["senior"]},
-    {"id": "lazy",    "name_key": "TRAIT_LAZY",    "social": {"feather": 0.5, "brush": 1.5, "hand_feed": 1.0, "sit_quietly": 1.0}, "adopt_good": ["senior", "flat"],                 "adopt_bad": ["active"]}
+    {
+      "id": "shy",
+      "name_key": "TRAIT_SHY",
+      "social": { "feather": 0.5, "brush": 1.0, "hand_feed": 1.5, "sit_quietly": 2.0 },
+      "adopt_good": ["quiet_home", "no_kids"],
+      "adopt_bad": ["kids", "other_pets"]
+    },
+    {
+      "id": "cuddly",
+      "name_key": "TRAIT_CUDDLY",
+      "social": { "feather": 1.0, "brush": 2.0, "hand_feed": 1.0, "sit_quietly": 0.5 },
+      "adopt_good": ["home_often"],
+      "adopt_bad": ["rarely_home"]
+    },
+    {
+      "id": "wild",
+      "name_key": "TRAIT_WILD",
+      "social": { "feather": 1.5, "brush": 0.5, "hand_feed": 1.0, "sit_quietly": 1.5 },
+      "adopt_good": ["garden", "experienced"],
+      "adopt_bad": ["flat", "kids"]
+    },
+    {
+      "id": "foodie",
+      "name_key": "TRAIT_FOODIE",
+      "social": { "feather": 1.0, "brush": 1.0, "hand_feed": 2.0, "sit_quietly": 0.5 },
+      "adopt_good": [],
+      "adopt_bad": []
+    },
+    {
+      "id": "playful",
+      "name_key": "TRAIT_PLAYFUL",
+      "social": { "feather": 2.0, "brush": 1.0, "hand_feed": 1.0, "sit_quietly": 0.5 },
+      "adopt_good": ["kids", "active"],
+      "adopt_bad": ["senior"]
+    },
+    {
+      "id": "lazy",
+      "name_key": "TRAIT_LAZY",
+      "social": { "feather": 0.5, "brush": 1.5, "hand_feed": 1.0, "sit_quietly": 1.0 },
+      "adopt_good": ["senior", "flat"],
+      "adopt_bad": ["active"]
+    }
   ]
 }

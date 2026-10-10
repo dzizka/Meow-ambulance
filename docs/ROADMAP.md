@@ -33,7 +33,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Pohľadnica po adopcii
 - [x] Ukladanie (localStorage) + offline príjem a privítanie po návrate (GDD §2.3)
 - [x] HTML rozhranie nad plátnom
-- [ ] Garáž z Tiled mapy, mačky obchádzajú nábytok (presunuté do M2)
+- [x] Mačky obchádzajú nábytok (pôdorysy nábytku ako prekážky)
+- [ ] Garáž z Tiled mapy (presunuté – teraz nie je nutné)
 - [ ] **Playtest #1** na PC aj telefóne – je slučka zábavná?
 
 ## M2 – Vertikálny rez / MVP (6–8 týždňov)
@@ -41,7 +42,7 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Efekt premeny (iskričky, pradenie), špinavá mačka tmavšia
 - [ ] 3 plné vizuálne stavy mačky (obväzy, lesk)
 - [ ] Diagnostika so skrytými diagnózami (ruka, teplomer, stetoskop)
-- [ ] 4 liečebné minihry: kliešte, obväz, uši, sirup
+- [x] 4 liečebné minihry: kliešte, obväz (krúženie), uši (stieranie), sirup (načasovanie)
 - [ ] 3 socializačné: pero, česanie, kŕmenie z ruky
 - [ ] 6 rysov, odhaľovanie rysov
 - [ ] 8 archetypov adoptérov
@@ -51,7 +52,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Tutoriál so Zuzkou (rady podľa postupu hráča, dá sa skryť)
 - [x] Ukladanie v2 s migráciou starých savov, „Nová hra" v menu
 - [ ] Ukladanie (3 sloty, autosave)
-- [ ] Hudba (3 skladby) + SFX (~20)
+- [x] Hudba: 6 skladieb – lo-fi cez deň, pokojné večer a v noci, načítanie na pozadí
+- [ ] Ďalšie SFX (syčanie, kroky)
 - [ ] SK + EN lokalizácia
 - [ ] Rozloženie UI na výšku aj na šírku, test na lacnom Android telefóne
 - [ ] **Playtest #2** (5–10 externých hráčov), metriky z GDD §13

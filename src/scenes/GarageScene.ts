@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { MUSIC_DAY, MUSIC_NIGHT } from '../assets';
 import type { GameState } from '../core/GameState';
 import { SaveManager, browserStorage } from '../core/SaveManager';
 import type { OfflineSummary } from '../core/EventBus';
@@ -54,8 +55,11 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private lampGlows: Phaser.GameObjects.Image[] = [];
   private phase: keyof typeof PHASE_TINT | null = null;
   private music?: Phaser.Sound.BaseSound;
+  private trackKey = '';
   private sinceSave = 0;
   private cagesDrawn = 0;
+  /** Pôdorysy nábytku – mačky ich obchádzajú. */
+  private readonly obstacles: Phaser.Geom.Rectangle[] = [];
   /** Po „Nová hra" sa už nesmie uložiť (inak by sa stará hra zapísala späť). */
   private noSave = false;
   private sinceSparkle = 0;
@@ -94,6 +98,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
     // Prehliadače dovolia zvuk až po prvom dotyku
     document.addEventListener('pointerdown', () => this.startMusic(), { once: true });
+    this.loadMoreMusic();
     const saveNow = () => this.save();
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') saveNow();
@@ -240,7 +245,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private spawnCat(cat: CatData, x: number, y: number): void {
     const area = cat.resident ? RESIDENT_AREA : PATIENT_AREA;
-    const sprite = new CatSprite(this, x, y, cat, area);
+    const sprite = new CatSprite(this, x, y, cat, area, this.obstacles);
     sprite.on('pointerdown', () => {
       const reaction = sprite.react();
       this.playSound(reaction === 'fled' ? 'mew' : 'mewPurr', 0.6);
@@ -331,7 +336,31 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private startMusic(): void {
     if (this.music) return;
-    this.music = this.sound.add('music', { loop: true, volume: 0.3 });
+    this.playTrack('music');
+  }
+
+  /** Ďalšie skladby sa načítajú na pozadí, aby štart hry nečakal na hudbu. */
+  private loadMoreMusic(): void {
+    for (const [key, urls] of Object.entries({ ...MUSIC_DAY, ...MUSIC_NIGHT })) {
+      if (!this.cache.audio.exists(key)) this.load.audio(key, [...urls]);
+    }
+    this.load.start();
+  }
+
+  /** Cez deň lo-fi, večer a v noci pokojné skladby; striedajú sa a neopakujú hneď po sebe. */
+  private nextTrack(): string {
+    const night = this.state.dayPhase === 'night' || this.state.dayPhase === 'evening';
+    const pool = Object.keys(night ? MUSIC_NIGHT : MUSIC_DAY).filter(
+      (k) => this.cache.audio.exists(k) && k !== this.trackKey,
+    );
+    return pool.length ? Phaser.Utils.Array.GetRandom(pool) : 'music';
+  }
+
+  private playTrack(key: string): void {
+    this.music?.destroy();
+    this.trackKey = key;
+    this.music = this.sound.add(key, { volume: 0.3 });
+    this.music.once(Phaser.Sound.Events.COMPLETE, () => this.playTrack(this.nextTrack()));
     this.music.play();
   }
 
@@ -434,8 +463,29 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   }
 
   /** Predmet stojí na zemi: (x, bottomY) = stred spodnej hrany. */
-  private prop(sheet: Sheet, name: string, x: number, bottomY: number): Phaser.GameObjects.Image {
-    return this.add.image(x, bottomY, sheet, name).setOrigin(0.5, 1).setDepth(bottomY);
+  private prop(
+    sheet: Sheet,
+    name: string,
+    x: number,
+    bottomY: number,
+    footprint = 0,
+  ): Phaser.GameObjects.Image {
+    const img = this.add.image(x, bottomY, sheet, name).setOrigin(0.5, 1).setDepth(bottomY);
+    // Pôdorys pri zemi (výška `footprint`) – tadiaľ mačky nechodia
+    if (footprint > 0) this.addObstacle(x, bottomY, img.width, footprint);
+    return img;
+  }
+
+  private addObstacle(x: number, bottomY: number, width: number, depth: number): void {
+    const pad = 3;
+    this.obstacles.push(
+      new Phaser.Geom.Rectangle(
+        x - width / 2 - pad,
+        bottomY - depth - pad,
+        width + pad * 2,
+        depth + pad * 2,
+      ),
+    );
   }
 
   private placeFurniture(): void {
@@ -448,13 +498,13 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.prop('clinic', 'trash', 214, wallBase);
 
     // Ošetrovací kút vľavo
-    this.prop('clinic', 'iv_stand', 38, FLOOR_TOP + 108);
-    this.prop('clinic', 'exam_bed', 66, FLOOR_TOP + 104);
+    this.prop('clinic', 'iv_stand', 38, FLOOR_TOP + 108, 8);
+    this.prop('clinic', 'exam_bed', 66, FLOOR_TOP + 104, 14);
     this.prop('clinic', 'monitor', 66, FLOOR_TOP + 85).setDepth(FLOOR_TOP + 105);
 
     // Stôl dobrovoľníčky
-    this.prop('interior', 'table', 120, FLOOR_TOP + 186);
-    this.prop('interior', 'chair', 132, FLOOR_TOP + 160).setDepth(FLOOR_TOP + 150);
+    this.prop('interior', 'table', 120, FLOOR_TOP + 186, 36);
+    this.prop('interior', 'chair', 132, FLOOR_TOP + 160, 14).setDepth(FLOOR_TOP + 150);
     this.prop('interior', 'desk_lamp', 96, FLOOR_TOP + 148).setDepth(FLOOR_TOP + 187);
     this.prop('interior', 'tv', 140, FLOOR_TOP + 150).setDepth(FLOOR_TOP + 187);
 
@@ -462,8 +512,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.prop('interior', 'cushion', 440, FLOOR_TOP + 62);
     this.prop('interior', 'bowl', 330, FLOOR_TOP + 64);
     this.prop('interior', 'bowl', 344, FLOOR_TOP + 66);
-    this.prop('interior', 'couch', 400, FLOOR_TOP + 188);
-    this.prop('interior', 'lamp', 448, FLOOR_TOP + 160);
+    this.prop('interior', 'couch', 400, FLOOR_TOP + 188, 26);
+    this.prop('interior', 'lamp', 448, FLOOR_TOP + 160, 8);
   }
 
   /** Klietka nakreslená kódom (v balíkoch nie je) – farby ladia s paletou interiéru. */
@@ -499,6 +549,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     const y = FLOOR_TOP + 168;
     this.zuzka = this.add.sprite(176, y, 'zuzka', 1).setOrigin(0.5, 1).setDepth(y);
     this.add.ellipse(176, y, 14, 5, 0x000000, 0.22).setDepth(y - 1);
+    this.addObstacle(176, y + 2, 16, 10);
     // Občas sa pozrie iným smerom: idle snímky dole/vľavo/vpravo/hore = 1, 4, 7, 10
     this.time.addEvent({
       delay: 3500,

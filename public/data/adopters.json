@@ -4,144 +4,73 @@
     {
       "id": "grandma",
       "name_key": "ADOPT_GRANDMA",
-      "tags": [
-        "senior",
-        "flat",
-        "home_often",
-        "quiet_home"
-      ],
+      "tags": ["senior", "flat", "home_often", "quiet_home"],
       "age_pref": "adult",
-      "dealbreakers": [
-        "kitten"
-      ],
-      "sprites": [
-        "015",
-        "008"
-      ],
+      "dealbreakers": ["kitten"],
+      "sprites": ["015", "008"],
       "desc_key": "ADOPT_GRANDMA_DESC"
     },
     {
       "id": "family_kids",
       "name_key": "ADOPT_FAMILY_KIDS",
-      "tags": [
-        "kids",
-        "garden",
-        "active"
-      ],
+      "tags": ["kids", "garden", "active"],
       "age_pref": "kitten",
-      "dealbreakers": [
-        "wild"
-      ],
-      "sprites": [
-        "010",
-        "013",
-        "024"
-      ],
+      "dealbreakers": ["wild"],
+      "sprites": ["010", "013", "024"],
       "desc_key": "ADOPT_FAMILY_KIDS_DESC"
     },
     {
       "id": "farmer",
       "name_key": "ADOPT_FARMER",
-      "tags": [
-        "garden",
-        "experienced",
-        "other_pets"
-      ],
+      "tags": ["garden", "experienced", "other_pets"],
       "age_pref": "adult",
       "dealbreakers": [],
-      "sprites": [
-        "003",
-        "019",
-        "025"
-      ],
+      "sprites": ["003", "019", "025"],
       "desc_key": "ADOPT_FARMER_DESC"
     },
     {
       "id": "student",
       "name_key": "ADOPT_STUDENT",
-      "tags": [
-        "flat",
-        "rarely_home"
-      ],
+      "tags": ["flat", "rarely_home"],
       "age_pref": "adult",
-      "dealbreakers": [
-        "senior_cat"
-      ],
-      "sprites": [
-        "000",
-        "014",
-        "017"
-      ],
+      "dealbreakers": ["senior_cat"],
+      "sprites": ["000", "014", "017"],
       "desc_key": "ADOPT_STUDENT_DESC"
     },
     {
       "id": "homeworker",
       "name_key": "ADOPT_HOMEWORKER",
-      "tags": [
-        "flat",
-        "home_often",
-        "quiet_home",
-        "no_kids"
-      ],
+      "tags": ["flat", "home_often", "quiet_home", "no_kids"],
       "age_pref": "any",
       "dealbreakers": [],
-      "sprites": [
-        "009",
-        "022",
-        "026"
-      ],
+      "sprites": ["009", "022", "026"],
       "desc_key": "ADOPT_HOMEWORKER_DESC"
     },
     {
       "id": "young_couple",
       "name_key": "ADOPT_YOUNG_COUPLE",
-      "tags": [
-        "flat",
-        "active"
-      ],
+      "tags": ["flat", "active"],
       "age_pref": "kitten",
       "dealbreakers": [],
-      "sprites": [
-        "001",
-        "011",
-        "016"
-      ],
+      "sprites": ["001", "011", "016"],
       "desc_key": "ADOPT_YOUNG_COUPLE_DESC"
     },
     {
       "id": "retired_vet",
       "name_key": "ADOPT_RETIRED_VET",
-      "tags": [
-        "experienced",
-        "home_often",
-        "garden"
-      ],
+      "tags": ["experienced", "home_often", "garden"],
       "age_pref": "senior",
       "dealbreakers": [],
-      "sprites": [
-        "002",
-        "020",
-        "028"
-      ],
+      "sprites": ["002", "020", "028"],
       "desc_key": "ADOPT_RETIRED_VET_DESC"
     },
     {
       "id": "dog_owner",
       "name_key": "ADOPT_DOG_OWNER",
-      "tags": [
-        "garden",
-        "other_pets",
-        "active"
-      ],
+      "tags": ["garden", "other_pets", "active"],
       "age_pref": "any",
-      "dealbreakers": [
-        "shy"
-      ],
-      "sprites": [
-        "018",
-        "021",
-        "004"
-      ],
+      "dealbreakers": ["shy"],
+      "sprites": ["018", "021", "004"],
       "desc_key": "ADOPT_DOG_OWNER_DESC"
     }
   ]
