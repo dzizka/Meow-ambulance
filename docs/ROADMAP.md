@@ -6,8 +6,9 @@ Každý míľnik = GitHub Milestone. Každá odrážka = GitHub Issue. Značky r
 
 ## M0 – Základy projektu (1 týždeň)
 - [x] GitHub repozitár, GDD, pravidlá assetov
-- [ ] Rozhodnúť verejný/súkromný repozitár kvôli licenciám assetov (ASSETS.md §2), nastaviť Git LFS a ochranu vetvy `main`
-- [ ] Stiahnuť a nahrať vybrané assety (ASSETS.md §4), uložiť licencie do `licenses/`
+- [x] Súkromný repozitár pre assety, pripojený ako podmodul `public/assets/`
+- [ ] Ochrana vetvy `main`
+- [ ] Stiahnuť a nahrať vybrané assety (ASSETS.md §4), uložiť licencie do `public/assets/licenses/`
 - [ ] Kostra projektu: Vite + TypeScript + Phaser, ESLint, Prettier, Vitest
 - [ ] Konfigurácia Phaseru pre pixel-art (480×270, celočíselné škálovanie, na výšku aj na šírku)
 - [ ] `src/core/`: prázdne kostry GameState, TimeManager, EventBus, SaveManager, CatRegistry

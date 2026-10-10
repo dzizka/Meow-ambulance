@@ -2,9 +2,9 @@
 
 ## 1. Zlaté pravidlá
 1. **Žiadny asset nejde do repozitára bez zápisu do tabuľky v časti 6** (a do `CREDITS.md`, ak licencia vyžaduje uvedenie autora).
-2. Pri sťahovaní **ulož licenciu**: snímku obrazovky stránky s licenciou (alebo `README/license.txt` z balíka) do `licenses/<nazov-balika>.png|txt`. Licencie sa môžu meniť – dôležitá je tá, pod ktorou si asset stiahol.
+2. Pri sťahovaní **ulož licenciu**: snímku obrazovky stránky s licenciou (alebo `README/license.txt` z balíka) do `public/assets/licenses/<id>-<nazov>.png|txt`. Licencie sa môžu meniť – dôležitá je tá, pod ktorou si asset stiahol.
 3. Iba licencie, ktoré **povoľujú komerčné použitie** – hra sa raz môže predávať.
-4. Pri pochybnostiach autorovi napíš (komentár na itch.io) a odpoveď ulož do `licenses/`.
+4. Pri pochybnostiach autorovi napíš (komentár na itch.io) a odpoveď ulož do `public/assets/licenses/`.
 
 ## 2. ⚠️ Verejný repozitár a zákaz šírenia
 Väčšina balíkov z itch.io má podmienku **„nesmie sa šíriť ani predávať samostatne"**. Hra, ktorá ich obsahuje, je v poriadku – ale **verejný GitHub repozitár so surovými PNG/WAV súbormi je šírenie**.
@@ -14,11 +14,12 @@ Väčšina balíkov z itch.io má podmienku **„nesmie sa šíriť ani predáva
 | CC0, CC BY, OFL | ✅ áno |
 | „Free for commercial use, no redistribution" (väčšina itch.io) | ❌ nie – iba v **súkromnom** repozitári |
 
-**Riešenie (vybrať jedno a zapísať sem):**
-- **A) Súkromný repozitár** (odporúčané – najjednoduchšie). Testovacie buildy sa zverejňujú cez itch.io (stránka môže byť skrytá) alebo ako súkromný odkaz.
-- **B) Verejný kód + súkromné assety:** balíky s obmedzením sú v samostatnom súkromnom repozitári pripojenom ako submodul `public/assets/licensed/`.
-
-> Rozhodnutie: *(doplniť)*
+**Rozhodnutie (10. 10. 2026): verejný kód + súkromné assety.**
+- Kód, dokumentácia a herné dáta → verejný repozitár [Meow-ambulance](https://github.com/dzizka/Meow-ambulance).
+- **Všetky** assety tretích strán (aj CC0 – kvôli jednoduchosti na jednom mieste) a texty licencií → súkromný repozitár **Meow-ambulance-offline**, pripojený ako Git podmodul na ceste `public/assets/`.
+- Kto nemá prístup k súkromnému repozitáru, vidí kód, ale hru bez assetov nespustí.
+- Verejne nasadený build (itch.io, GitHub Pages) je v poriadku – je to hotová hra, nie šírenie samostatných súborov. CI na to bude potrebovať prístupový token k súkromnému repozitáru (nastaví sa v M0).
+- Hudbu ukladať ako **OGG** (WAV iba ako záloha v `_source/`).
 
 ## 3. Povolené a zakázané licencie
 | Licencia | Komerčné použitie | Uvedenie autora | Poznámka |

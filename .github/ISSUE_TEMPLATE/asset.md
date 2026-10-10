@@ -9,7 +9,7 @@ labels: art
 **Povoľuje komerčné použitie?** áno / nie
 **Na čo v hre:**
 
-- [ ] Smie byť vo verejnom repozitári? (ASSETS.md §2)
-- [ ] Licencia uložená v `licenses/`
+- [ ] Súbory v podmodule `public/assets/` (súkromný repozitár)
+- [ ] Licencia uložená v `public/assets/licenses/`
 - [ ] Zápis v `docs/ASSETS.md`
 - [ ] Zápis v `CREDITS.md` (ak treba)

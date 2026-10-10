@@ -32,4 +32,4 @@ balance(data): nižšia cena krmiva vo Fáze 1
 ## Veľké súbory
 Obrázky, zvuky a fonty idú cez **Git LFS** (nastavené v `.gitattributes`). Pred prvým commitom: `git lfs install`.
 
-Assety s licenciou „nešíriť" nesmú ísť do verejného repozitára – pozri [ASSETS.md §2](docs/ASSETS.md).
+Všetky assety patria do súkromného podmodulu `public/assets/` (repozitár *Meow-ambulance-offline*), nikdy priamo do verejného repozitára – pozri [ASSETS.md §2](docs/ASSETS.md).

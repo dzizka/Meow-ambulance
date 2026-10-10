@@ -21,7 +21,9 @@ Presné verzie sa zafixujú v `package.json` pri M0.
 index.html
 package.json, tsconfig.json, vite.config.ts
 public/                 statické súbory (kopírujú sa do buildu bez zmeny)
-  assets/
+  assets/               ← Git podmodul: súkromný repozitár Meow-ambulance-offline
+    _source/            pôvodné zipy (nejdú do buildu)
+    licenses/           texty licencií (nejdú do buildu)
     sprites/cats/       mačky
     sprites/interior/   nábytok, steny, podlahy
     sprites/clinic/     veterinárne vybavenie
@@ -45,7 +47,6 @@ src/
   audio/                AudioManager.ts
   i18n/                 sk.json, en.json, t.ts
 tests/                  Vitest testy logiky
-licenses/               texty licencií stiahnutých assetov (neidú do buildu)
 docs/                   dizajn a plánovanie
 ```
 
@@ -76,3 +77,8 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - GitHub Actions: `npm ci && npm run lint && npm test && npm run build` pri každom PR.
 - Po merge do `main`: nasadenie na GitHub Pages → hrateľná verzia na odkaze aj na mobile.
 - Minihry a UI sa testujú ručne podľa checklistu v PR – **vždy aj na telefóne**.
+
+## Podmodul s assetmi
+- Klonovanie: `git clone --recurse-submodules …`, aktualizácia: `git submodule update --remote public/assets`.
+- Nové assety sa commitujú **najprv** v podmodule (`public/assets/`), potom sa vo verejnom repozitári commitne posun podmodulu.
+- Build (`vite`) nesmie kopírovať `public/assets/_source/` a `public/assets/licenses/` – vyfiltruje sa v `vite.config.ts`.

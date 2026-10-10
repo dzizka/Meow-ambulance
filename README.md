@@ -23,20 +23,20 @@ Cozy manažmentová hra o záchrane mačiek pre PC a mobil. Zachráň vystrašen
 
 ## Spustenie (od míľnika M0)
 1. Nainštaluj [Node.js LTS](https://nodejs.org) a [Git LFS](https://git-lfs.com) (`git lfs install`).
-2. `git clone https://github.com/dzizka/Meow-ambulance.git && cd Meow-ambulance`
+2. `git clone --recurse-submodules https://github.com/dzizka/Meow-ambulance.git && cd Meow-ambulance`
+   (assety sú v súkromnom repozitári *Meow-ambulance-offline* – bez prístupu k nemu sa hra nespustí)
 3. `npm install`
 4. `npm run dev` → otvor zobrazenú adresu v prehliadači (na mobile cez rovnakú Wi-Fi sieť).
 
 ## Štruktúra
 ```
 docs/        dizajn a plánovanie
-public/      assety a herné dáta (JSON)
+public/      herné dáta (JSON); public/assets = podmodul so súkromnými assetmi
 src/         zdrojový kód (core = logika, scenes = zobrazenie)
 tests/       testy logiky
-licenses/    texty licencií stiahnutých assetov
 .github/     šablóny issues, CI
 ```
 
 ## Licencia
 - **Kód:** MIT (pozri [LICENSE](LICENSE))
-- **Assety tretích strán:** podľa licencie každého assetu – pozri [CREDITS.md](CREDITS.md). Nesmú sa z repozitára ďalej šíriť samostatne.
+- **Assety tretích strán:** podľa licencie každého assetu – pozri [CREDITS.md](CREDITS.md). Assety nie sú súčasťou tohto repozitára.
