@@ -22,7 +22,8 @@ balance(data): nižšia cena krmiva vo Fáze 1
 1. Každý PR odkazuje na Issue (`Closes #12`).
 2. PR s novými assetmi **musí** obsahovať zápis v `docs/ASSETS.md` (a `CREDITS.md`, ak treba).
 3. PR, ktorý mení dizajn, musí upraviť `docs/GDD.md`.
-4. Hra sa musí spustiť bez chýb v Godote.
+4. `npm run lint`, `npm test` a `npm run build` prechádzajú.
+5. Zmeny ovládania alebo UI sú vyskúšané aj na telefóne.
 
 ## Issues
 - Štítky: `mvp`, `v1.0`, `later`, `design`, `code`, `art`, `audio`, `bug`, `balance`.
@@ -30,3 +31,5 @@ balance(data): nižšia cena krmiva vo Fáze 1
 
 ## Veľké súbory
 Obrázky, zvuky a fonty idú cez **Git LFS** (nastavené v `.gitattributes`). Pred prvým commitom: `git lfs install`.
+
+Assety s licenciou „nešíriť" nesmú ísť do verejného repozitára – pozri [ASSETS.md §2](docs/ASSETS.md).

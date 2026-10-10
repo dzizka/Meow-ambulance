@@ -5,22 +5,25 @@ Každý míľnik = GitHub Milestone. Každá odrážka = GitHub Issue. Značky r
 ---
 
 ## M0 – Základy projektu (1 týždeň)
-- [ ] Vytvoriť GitHub repo, nastaviť Git LFS, ochranu vetvy `main`
-- [ ] Založiť Godot 4 projekt v `game/`, nastaviť rozlíšenie (pixel-art: 640×360, škálovanie `viewport`, integer scaling)
-- [ ] Autoloady: `GameState`, `TimeManager`, `EventBus`, `SaveManager`, `AudioManager` (prázdne kostry)
+- [x] GitHub repozitár, GDD, pravidlá assetov
+- [ ] Rozhodnúť verejný/súkromný repozitár kvôli licenciám assetov (ASSETS.md §2), nastaviť Git LFS a ochranu vetvy `main`
+- [ ] Stiahnuť a nahrať vybrané assety (ASSETS.md §4), uložiť licencie do `licenses/`
+- [ ] Kostra projektu: Vite + TypeScript + Phaser, ESLint, Prettier, Vitest
+- [ ] Konfigurácia Phaseru pre pixel-art (480×270, celočíselné škálovanie, na výšku aj na šírku)
+- [ ] `src/core/`: prázdne kostry GameState, TimeManager, EventBus, SaveManager, CatRegistry
+- [ ] GitHub Actions: lint + testy + build pri PR, nasadenie webovej verzie
 - [ ] GitHub Project (Kanban: Backlog → Todo → In progress → Review → Done)
-- [ ] GitHub Actions: export Windows/Linux/Web pri tagu `v*`
-- [ ] **Rozhodnutie o assetoch:** vybrať hlavný balík interiéru + mačiek + paletu (zapísať do `ASSETS.md`)
 
 ## M1 – Prototyp „šedé krabice" (2 týždne)
-Cieľ: overiť zábavnosť slučky s placeholder grafikou.
-- [ ] Generovanie mačky z `data/*.json` (`CatData`)
-- [ ] Klietky v garáži, klik na mačku → karta mačky
+Cieľ: overiť zábavnosť slučky s jednoduchou grafikou – **hrateľné na mobile cez odkaz**.
+- [ ] Načítanie `public/data/*.json`, generovanie mačky (`CatGenerator`) + testy
+- [ ] Garáž z Tiled mapy, klietky, klik/ťuk na mačku → karta mačky
 - [ ] Štatistiky (Zdravie, Čistota, Dôvera, Spokojnosť) a ich pokles v čase
 - [ ] Herný deň (07:00–20:00), pauza, zrýchlenie, súhrn dňa
 - [ ] 1 liečebná minihra (kliešte) + 1 socializačná (pero)
-- [ ] 1 adoptér, výpočet zhody, adopcia
-- [ ] **Playtest #1** – je slučka zábavná aj bez grafiky?
+- [ ] 1 adoptér, výpočet zhody (`MatchCalculator`) + testy, adopcia
+- [ ] Výber palety, test mierky assetov
+- [ ] **Playtest #1** na PC aj telefóne – je slučka zábavná?
 
 ## M2 – Vertikálny rez / MVP (6–8 týždňov)
 - [ ] Grafika garáže a mačiek z vybraných free assetov
@@ -36,8 +39,10 @@ Cieľ: overiť zábavnosť slučky s placeholder grafikou.
 - [ ] Ukladanie (3 sloty, autosave)
 - [ ] Hudba (3 skladby) + SFX (~20)
 - [ ] SK + EN lokalizácia
+- [ ] Rozloženie UI na výšku aj na šírku, test na lacnom Android telefóne
 - [ ] **Playtest #2** (5–10 externých hráčov), metriky z GDD §13
-- [ ] Zverejniť demo na itch.io
+- [ ] Zverejniť webové demo na itch.io
+- [ ] Prvý Android build cez Capacitor (interné testovanie) a PC build cez Tauri
 
 ## M3 – Komunitný útulok (Fáza 2)
 - [ ] Systém stavby miestností na mriežke
@@ -56,4 +61,4 @@ Cieľ: overiť zábavnosť slučky s placeholder grafikou.
 - [ ] Viac poschodí, CT, bazén, hotel, edukačné centrum
 - [ ] Balans celej hry, achievementy
 - [ ] Steam stránka / itch.io vydanie
-- [ ] Mobilný port (🔵)
+- [ ] Vydanie na Google Play a App Store

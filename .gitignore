@@ -1,15 +1,18 @@
-# Godot 4
-.godot/
-*.translation
-export_presets.cfg.bak
+# Node / Vite
+node_modules/
+dist/
+.vite/
+coverage/
+*.log
 
-# Buildy
-build/
-exports/
-*.exe
-*.pck
-*.apk
-*.aab
+# Tauri / Capacitor
+src-tauri/target/
+android/app/build/
+ios/App/Pods/
+
+# Lokálne nastavenia
+.env
+.env.local
 
 # OS
 .DS_Store

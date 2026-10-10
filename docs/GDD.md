@@ -2,8 +2,8 @@
 
 > **Pracovný názov:** Labková záchranka (EN: *Paw Rescue*)
 > **Žáner:** Cozy manažment / simulácia útulku a veterinárnej kliniky
-> **Engine:** Godot 4.x (GDScript)
-> **Platformy:** PC (Windows / Linux / macOS) → neskôr Android / iOS
+> **Technológia:** TypeScript + Phaser (HTML5), Vite
+> **Platformy:** Web (demo) · PC cez Tauri (Windows / macOS / Linux, Steam) · Mobil cez Capacitor (Android / iOS)
 > **Verzia dokumentu:** 0.1 (živý dokument – každá zmena ide cez Pull Request)
 
 ---
@@ -15,7 +15,7 @@
   - 🟢 **MVP** – musí byť vo vertikálnom reze (prvá hrateľná verzia)
   - 🟡 **v1.0** – potrebné pre plné vydanie
   - 🔵 **Neskôr** – nápady na aktualizácie po vydaní
-- Čísla (ceny, časy, štatistiky) sú **štartovacie hodnoty na balansovanie**, nie definitívne. Všetky žijú v dátových súboroch (`/data`), nie v kóde.
+- Čísla (ceny, časy, štatistiky) sú **štartovacie hodnoty na balansovanie**, nie definitívne. Všetky žijú v dátových súboroch (`public/data/`), nie v kóde.
 
 ---
 
@@ -94,13 +94,13 @@ Každá mačka sa generuje procedurálne z dátových tabuliek:
 
 | Atribút | Príklad | Zdroj |
 |---|---|---|
-| Meno | Mrkvička, Bublina, Pán Fúzik | `data/names.json` (zoznam + slovná hračka podľa farby) |
+| Meno | Mrkvička, Bublina, Pán Fúzik | `public/data/names.json` (zoznam + slovná hračka podľa farby) |
 | Vek | mačiatko / dospelá / senior | váhovaná náhoda podľa typu hlásenia |
-| Plemeno / typ | domáca krátkosrstá, perzská, mainská mývalia… | `data/breeds.json` |
-| Farba a vzor | rufus, čierna, trojfarebná, mourovatá, tuxedo… | `data/coats.json` |
-| Povaha (1–2 rysy) | plachá, maznavá, divoká, maškrtná… | `data/traits.json` |
-| Diagnózy (1–3) | kliešte, zranená labka, infekcia uší… | `data/conditions.json` |
-| Minipríbeh | 2–3 vety, skladané zo šablón | `data/stories.json` |
+| Plemeno / typ | domáca krátkosrstá, perzská, mainská mývalia… | `public/data/breeds.json` |
+| Farba a vzor | rufus, čierna, trojfarebná, mourovatá, tuxedo… | `public/data/coats.json` |
+| Povaha (1–2 rysy) | plachá, maznavá, divoká, maškrtná… | `public/data/traits.json` |
+| Diagnózy (1–3) | kliešte, zranená labka, infekcia uší… | `public/data/conditions.json` |
+| Minipríbeh | 2–3 vety, skladané zo šablón | `public/data/stories.json` |
 
 ### 3.3 Štatistiky mačky 🟢 MVP
 Všetky na škále **0–100**:
@@ -285,14 +285,16 @@ Pri prechode stavu: krátka „premena" s efektom a zvukom (dopamínový moment)
 - **Zuzka** – dobrovoľníčka, tutoriál, priateľský komentár. Neskôr vedúca ošetrovateľov.
 - **Pán Kováč** – mrzutý sused z garáže, ktorý sa postupne obmäkčí (a nakoniec si adoptuje mačku – emočný míľnik konca Fázy 1).
 - **Tón:** teplý, jemný humor, nikdy nie ponurý. Ťažké témy (týranie, množiarne) sa spomínajú, ale nezobrazujú – hra sa sústreďuje na záchranu, nie na utrpenie.
-- **Jazyk:** slovenčina + angličtina od začiatku (lokalizácia cez CSV tabuľky v Godote). Žiadny text natvrdo v kóde.
+- **Jazyk:** slovenčina + angličtina od začiatku (lokalizácia cez JSON súbory v `src/i18n/`). Žiadny text natvrdo v kóde.
 
 ---
 
 ## 9. Umenie, zvuk a UX
 
 ### 9.1 Rozhodnutie o vizuálnom štýle
-**Odporúčanie: 2D pixel-art, pohľad zhora v 3/4 perspektíve (top-down, ako Stardew Valley), mriežka 16×16 alebo 32×32 px.**
+**Rozhodnutie: 2D pixel-art, pohľad zhora v 3/4 perspektíve (top-down, ako Stardew Valley), mriežka 32×32 px.**
+
+Mriežka 32×32 bola zvolená preto, lebo v nej existujú free assety pre všetky kľúčové časti (domáci interiér, nemocničné vybavenie, mačky, ľudia) a mačky sú pri nej dosť veľké na čitateľné emócie aj na mobile. Konkrétne balíky → `docs/ASSETS.md`.
 
 Dôvody:
 - Najväčšia ponuka **kvalitných free assetov** (interiéry, nábytok, postavy, mačky) – izometrických free balíkov je výrazne menej a ťažko sa kombinujú.
@@ -321,35 +323,37 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 ### 10.1 Technológie
 | Oblasť | Voľba | Prečo |
 |---|---|---|
-| Engine | **Godot 4.x** (stabilná verzia) | Zadarmo, open-source (MIT), výborný na 2D, export na PC aj mobil, malé buildy |
-| Jazyk | GDScript (statické typovanie) | Rýchly vývoj, integrácia s editorom |
-| Dáta | JSON v `/data` + Godot `Resource` (.tres) | Balansovanie bez zásahu do kódu |
-| Lokalizácia | Godot CSV preklady | Natívna podpora |
+| Jazyk | **TypeScript** (strict) | Typová kontrola, rovnaký kód pre web, PC aj mobil |
+| Herná knižnica | **Phaser** (WebGL) | Zrelá 2D knižnica: sprity, animácie, tilemapy, vstup myšou aj dotykom, zvuk |
+| Build | **Vite** | Rýchly vývojový server, produkčný build do statických súborov |
+| Mapy útulku | **Tiled** (free editor) → JSON | Phaser načítava Tiled mapy priamo; vizuálny editor miestností |
+| PC | **Tauri** (alternatíva Electron) | Malé natívne aplikácie pre Windows/macOS/Linux, Steam |
+| Mobil | **Capacitor** | Zabalí webovú hru do Android/iOS aplikácie |
+| Dáta | JSON v `public/data/` | Balansovanie bez zásahu do kódu |
+| Lokalizácia | JSON slovníky `src/i18n/sk.json`, `en.json` | Jednoduché, bez závislostí |
+| Testy | **Vitest** | Testy hernej logiky bez prehliadača |
 | Verzovanie | Git + GitHub, **Git LFS** pre obrázky a zvuky | Veľké binárne súbory |
-| CI | GitHub Actions: export buildu (Windows/Linux/Web) pri tagu | Automatické buildy na testovanie |
+| CI | GitHub Actions: build + testy pri PR, nasadenie webovej verzie na GitHub Pages z `main` | Každá verzia hrateľná cez odkaz aj na mobile |
 | Úlohy | GitHub Issues + GitHub Projects (Kanban) | Všetko na jednom mieste |
 
 ### 10.2 Architektúra (vysoká úroveň)
 ```
-Autoloads (singletony):
-  GameState      – peniaze, reputácia, deň, fáza útulku
-  TimeManager    – herný čas, pauza, zrýchlenie, signály day_started/day_ended
-  CatRegistry    – všetky mačky v útulku (dáta, nie uzly)
-  EventBus       – globálne signály (cat_admitted, cat_adopted, postcard_arrived…)
-  SaveManager    – ukladanie/načítanie (JSON, verzovaný formát)
-  AudioManager   – hudba a SFX
-
-Dátové triedy (Resource):
-  CatData        – id, meno, plemeno, farba, rysy, diagnózy, štatistiky, história
-  ConditionData  – diagnóza: odhalenie nástrojom, liečebná minihra, náročnosť
-  TraitData      – rys: modifikátory socializácie a adopcie
-  AdopterData    – tagy domácnosti, preferencie, dealbreakery
-  RoomData       – typ miestnosti, povinné predmety, kapacita
-
-Scény:
-  Main → World (útulok, mriežka) / UI (HUD, karty) / Minigames (overlay)
+src/
+  core/        (čistá logika – bez Phaseru, testovateľná)
+    GameState      – peniaze, reputácia, deň, fáza útulku
+    TimeManager    – herný čas, pauza, zrýchlenie, udalosti dayStarted/dayEnded
+    CatRegistry    – všetky mačky v útulku (dáta)
+    EventBus       – typované globálne udalosti (catAdmitted, catAdopted, postcardArrived…)
+    SaveManager    – ukladanie/načítanie (JSON, verzovaný formát)
+    systems/       – CatGenerator, MatchCalculator, Economy
+  data/        typy: CatData, ConditionData, TraitData, AdopterData, RoomData
+  scenes/      (Phaser scény – iba zobrazenie a vstup)
+    BootScene, PreloadScene, WorldScene (útulok), UIScene (HUD, karty),
+    minigames/ (jedna scéna = jedna minihra), AlbumScene, DaySummaryScene
+  audio/       AudioManager
+  i18n/        sk.json, en.json
 ```
-**Zásada:** logika mačky (dáta + pravidlá) je oddelená od zobrazenia (scéna `Cat.tscn` iba zobrazuje `CatData`). Umožní to testovanie a ukladanie bez závislosti na scénach.
+**Zásada:** všetka herná logika žije v `src/core/` a nezávisí od Phaseru. Phaser scény iba zobrazujú stav a posielajú akcie hráča. Vďaka tomu sa logika dá testovať, ukladať a v prípade potreby preniesť inam bez prepisovania.
 
 ### 10.3 Ukladanie hry 🟢 MVP
 - Automatické uloženie na konci každého dňa + manuálne v menu.
@@ -358,7 +362,8 @@ Scény:
 
 ### 10.4 Výkonnostné ciele
 - 60 FPS na bežnom notebooku s integrovanou grafikou pri 50 mačkách na scéne.
-- Build < 200 MB.
+- 60 FPS (min. 30) na strednom Android telefóne staršom ako 4 roky.
+- Webová verzia < 30 MB pri prvom načítaní; mobilná aplikácia < 100 MB.
 
 ---
 
@@ -386,6 +391,7 @@ Cieľ: **15–20 minút hrania**, ktoré dokážu, že slučka je zábavná.
 
 | Riziko | Dopad | Zmiernenie |
 |---|---|---|
+| Výkon WebView na slabých Androidoch | Seknutá hra | Atlasy textúr, obmedzenie počtu animovaných objektov, testovanie na lacnom telefóne od M1 |
 | Free assety nesedia štýlovo | Hra vyzerá „poskladane" | Jedna paleta, primárne 1–2 hlavné balíky, prefarbovanie, vlastné úpravy |
 | Licencia assetu neumožňuje komerčné použitie | Právny problém pri vydaní | Povinný zápis každého assetu do `ASSETS.md` pred commitom, preferovať CC0 |
 | Minihry sa omrzia | Pokles retencie | Varianty, rastúca náročnosť, automatizácia personálom v neskorších fázach |

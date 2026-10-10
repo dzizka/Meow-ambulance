@@ -14,4 +14,6 @@
 ## Fonty
 
 ## Nástroje
-- [Godot Engine](https://godotengine.org) – MIT License
+- [Phaser](https://phaser.io) – MIT License
+- [Vite](https://vitejs.dev) – MIT License
+- [Tiled](https://www.mapeditor.org) – mapy útulku

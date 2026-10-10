@@ -1,12 +1,10 @@
 # Normalizácia koncov riadkov
 * text=auto eol=lf
 
-# Godot textové súbory
-*.gd text
-*.tscn text
-*.tres text
-*.godot text
-*.import text
+# Textové súbory
+*.ts text
+*.html text
+*.tmx text
 *.json text
 *.csv text
 *.md text

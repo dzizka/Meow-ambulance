@@ -9,6 +9,7 @@ labels: art
 **Povoľuje komerčné použitie?** áno / nie
 **Na čo v hre:**
 
-- [ ] Licencia uložená v `game/assets/_licenses/`
+- [ ] Smie byť vo verejnom repozitári? (ASSETS.md §2)
+- [ ] Licencia uložená v `licenses/`
 - [ ] Zápis v `docs/ASSETS.md`
 - [ ] Zápis v `CREDITS.md` (ak treba)
