@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      latest_assets:
+        description: 'Použiť najnovšie assety z Meow-ambulance-offline (napr. po nahratí nových zvukov)'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -32,6 +37,9 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.ASSETS_TOKEN }}
+      - name: Najnovšie assety (iba pri ručnom spustení)
+        if: github.event_name == 'workflow_dispatch' && inputs.latest_assets
+        run: git submodule update --remote public/assets
       - uses: actions/setup-node@v4
         with:
           node-version: 22
