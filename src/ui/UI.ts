@@ -114,6 +114,8 @@ const STAT_KEYS: Record<keyof CatStats, string> = {
 
 type CardTab = 'health' | 'care' | 'about';
 type MenuTab = 'challenges' | 'album' | 'postcards' | 'shop' | 'more';
+/** Časti obchodu – aby sa nemuselo dlho rolovať. */
+type ShopTab = 'build' | 'equipment' | 'staff' | 'decor';
 
 /** Portrét mačky: snímka „sedí, pozerá na hráča" (riadok 1, stĺpec 0) z hárka 768×512. */
 function catPortrait(cat: CatData, scale = 3): HTMLElement {
@@ -193,6 +195,9 @@ export class UI {
   private modalKind: 'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | null = null;
   /** Prístroj kliniky, pri ktorom hráč vyberá pacienta. */
   private stationRoom: ClinicRoomId = 'lab';
+  private shopTab: ShopTab = 'build';
+  /** Čo okno naposledy ukazovalo – pri prekreslení toho istého sa zachová posun. */
+  private modalViewKey = '';
   private menuTab: MenuTab = 'challenges';
   private confirmReset = false;
   private selectedForVisit: string | null = null;
@@ -368,7 +373,8 @@ export class UI {
   }
 
   /** Otvorí obchod (napr. ťuknutím na plachtu nekúpenej miestnosti kliniky). */
-  openShop(): void {
+  openShop(tab: ShopTab = 'build'): void {
+    this.shopTab = tab;
     this.openMenu('shop');
   }
 
@@ -1306,7 +1312,13 @@ export class UI {
       default:
         return;
     }
+    // Po kúpe sa okno prekreslí – zostaň tam, kde hráč bol (nehádž ho hore)
+    const key = `${this.modalKind}:${this.menuTab}:${this.shopTab}:${this.stationRoom}`;
+    const scroll =
+      key === this.modalViewKey ? (this.modal.querySelector('.modal-box')?.scrollTop ?? 0) : 0;
+    this.modalViewKey = key;
     this.modal.replaceChildren(box);
+    box.scrollTop = scroll;
   }
 
   /** Pacienti, ktorým pomôže tento prístroj kliniky (GDD §6.5). */
@@ -1824,14 +1836,36 @@ export class UI {
         }),
     ]);
 
+    const tabs: { id: ShopTab; label: string }[] = [
+      { id: 'build', label: `🏗️ ${t('UI_SHOP_BUILD')}` },
+      { id: 'equipment', label: `🧰 ${t('UI_SHOP_EQUIP')}` },
+      { id: 'staff', label: `👩‍⚕️ ${t('UI_SECTION_STAFF')}` },
+      { id: 'decor', label: `🪴 ${t('UI_SECTION_DECOR')}` },
+    ];
+    const bar = el('div', { class: 'tabs shop-tabs', role: 'tablist' });
+    for (const tb of tabs) {
+      const b = el(
+        'button',
+        {
+          class: `tab${this.shopTab === tb.id ? ' active' : ''}`,
+          type: 'button',
+          role: 'tab',
+          'aria-selected': this.shopTab === tb.id ? 'true' : 'false',
+        },
+        tb.label,
+      );
+      b.addEventListener('click', () => {
+        this.shopTab = tb.id;
+        this.renderModal();
+      });
+      bar.append(b);
+    }
+    if (this.shopTab === 'build') return [levelCard, bar, ...expand];
+    if (this.shopTab === 'equipment') return [levelCard, bar, ...equipment];
+    if (this.shopTab === 'staff') return [levelCard, bar, ...this.staffSection().slice(1)];
     return [
       levelCard,
-      el('h3', {}, t('UI_SECTION_EXPAND')),
-      ...expand,
-      el('h3', {}, t('UI_SECTION_EQUIPMENT')),
-      ...equipment,
-      ...this.staffSection(),
-      el('h3', {}, t('UI_SECTION_DECOR')),
+      bar,
       el(
         'p',
         { class: 'hint' },
