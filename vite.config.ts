@@ -12,7 +12,15 @@ function stripPrivateAssetFiles(): Plugin {
     apply: 'build',
     closeBundle() {
       const out = resolve(import.meta.dirname, 'dist/assets');
-      for (const p of ['_source', 'licenses', 'README.md', '.gitattributes', '.git', '.gitkeep']) {
+      for (const p of [
+        '_source',
+        '_signing',
+        'licenses',
+        'README.md',
+        '.gitattributes',
+        '.git',
+        '.gitkeep',
+      ]) {
         rmSync(resolve(out, p), { recursive: true, force: true });
       }
       rmSync(resolve(out, 'sprites/cats/popshop/README.md'), { force: true });

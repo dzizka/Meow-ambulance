@@ -1,0 +1,65 @@
+name: Android APK
+
+# Zostaví Android aplikáciu (Capacitor) aj s assetmi zo súkromného repozitára
+# a zverejní podpísané APK v GitHub Release „android-latest".
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths: ['android/**', 'capacitor.config.ts', 'package.json', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.ASSETS_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Gradle – assembleRelease
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: 0.1.${{ github.run_number }}
+        run: |
+          if [ ! -f ../public/assets/_signing/keystore.properties ]; then
+            echo "::error::Chýba podpisový kľúč public/assets/_signing (súkromný repozitár). Pozri docs/TECH.md – Android."
+            exit 1
+          fi
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk ../meow-ambulance.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meow-ambulance-apk
+          path: meow-ambulance.apk
+      - name: GitHub Release „android-latest"
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete android-latest --cleanup-tag --yes || true
+          gh release create android-latest meow-ambulance.apk \
+            --target "$GITHUB_SHA" \
+            --title "Meow Ambulance – Android (0.1.${{ github.run_number }})" \
+            --notes "Najnovšia verzia hry pre Android, zostavená z $GITHUB_SHA. Stiahni meow-ambulance.apk v telefóne a nainštaluj (treba povoliť inštaláciu z neznámych zdrojov)."

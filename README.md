@@ -19,7 +19,7 @@ https://dzizka.github.io/Meow-ambulance/
 
 ## Technológie
 - **TypeScript + Phaser** (HTML5), build cez **Vite**
-- PC cez **Tauri**, mobil (Android/iOS) cez **Capacitor**
+- Android cez **Capacitor** – APK: [Releases → android-latest](https://github.com/dzizka/Meow-ambulance/releases/tag/android-latest); PC neskôr cez **Tauri**
 - Git + GitHub; assety v súkromnom podmodule
 - GitHub Issues + Projects na úlohy, GitHub Actions na testy a nasadenie
 
