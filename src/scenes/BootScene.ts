@@ -127,6 +127,7 @@ export class BootScene extends Phaser.Scene {
     const loaded = saves.load(data);
     this.registry.set('state', loaded?.state ?? new GameState(data));
     this.registry.set('offline', loaded?.offline ?? null);
+    this.registry.set('hadSave', loaded !== null);
 
     // Písmo musí byť načítané skôr, než vzniknú texty na plátne
     try {

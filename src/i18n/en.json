@@ -635,5 +635,19 @@
   "RARE_TORTIE_MALE": "male tortoiseshell",
   "UI_RARE_HINT": "rare cat: bigger adoption fee, ★ and an album page",
   "UI_ALBUM_RARE": "Rarities",
-  "TOAST_HEARTS": "+{n} ❤"
+  "TOAST_HEARTS": "+{n} ❤",
+  "TITLE_TAGLINE": "A cozy cat-rescue game",
+  "TITLE_PLAY": "Play",
+  "TITLE_CONTINUE": "Continue",
+  "TITLE_SETTINGS": "Settings",
+  "TITLE_EXIT": "Quit game",
+  "TITLE_BACK": "Back",
+  "TITLE_SAVED": "The game saves automatically.",
+  "UI_PAUSE": "Paused",
+  "UI_PAUSE_HINT": "Game time stands still while the menu is open.",
+  "UI_RESUME": "Resume",
+  "UI_MAIN_MENU": "Main menu",
+  "UI_LANGUAGE": "Language",
+  "UI_EXIT_CONFIRM": "Quit the game? Your progress is saved.",
+  "UI_EXIT_YES": "Quit"
 }

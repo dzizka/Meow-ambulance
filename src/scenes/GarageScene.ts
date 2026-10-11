@@ -9,7 +9,7 @@ import type { CatData, ClinicRoomId } from '../data/types';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { CatSprite, type CatWorld } from '../objects/CatSprite';
 import { UI, type GameBridge, type MinigameRequest } from '../ui/UI';
-import type { MinigameInit } from './MinigameScene';
+import type { MinigameInit, MinigameScene } from './MinigameScene';
 import {
   FLOOR_TOP,
   ROOM,
@@ -98,6 +98,10 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   room: Room = 'garage';
   /** Rýchlosť herného času – iba vývojárske menu. */
   speed = 1;
+  /** Hlavné menu alebo pauza – herný čas stojí (mačky sa ďalej hýbu). */
+  paused = false;
+  /** Bola pri spustení uložená hra? (hlavné menu: Pokračovať / Hrať) */
+  hadSave = false;
   private cafe: CafeRoom | null = null;
   private shelterRoom: ShelterRoom | null = null;
   private clinicRoom: ClinicRoom | null = null;
@@ -126,6 +130,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   create(): void {
     this.state = this.registry.get('state') as GameState;
     const offline = this.registry.get('offline') as OfflineSummary | null;
+    this.hadSave = this.registry.get('hadSave') === true;
 
     this.registerFrames();
     this.buildBackground();
@@ -183,7 +188,9 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   override update(_time: number, delta: number): void {
     // Po dlhšom uspaní karty prehliadača sa čas dopočíta ako offline (beží iba to dobré)
-    if (delta > 5000) this.state.applyOffline(delta);
+    if (this.paused) {
+      /* hlavné menu / pauza – čas stojí */
+    } else if (delta > 5000) this.state.applyOffline(delta);
     else this.state.tick(delta * this.speed);
 
     this.sinceSave += delta;
@@ -536,6 +543,17 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   setSpeed(speed: number): void {
     this.speed = speed;
+  }
+
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+  }
+
+  /** Späť počas minihry ju zavrie. Vráti true, ak nejaká bežala. */
+  cancelMinigame(): boolean {
+    if (!this.scene.isActive('Minigame')) return false;
+    (this.scene.get('Minigame') as MinigameScene).cancel();
+    return true;
   }
 
   saveNow(): void {

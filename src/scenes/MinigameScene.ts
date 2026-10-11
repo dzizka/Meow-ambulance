@@ -158,6 +158,11 @@ export class MinigameScene extends Phaser.Scene {
     });
   }
 
+  /** Tlačidlo Späť (Android) – ako ✕. */
+  cancel(): void {
+    this.finish(null);
+  }
+
   private finish(stars: Stars | null): void {
     if (this.finished) return;
     this.finished = true;

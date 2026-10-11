@@ -635,5 +635,19 @@
   "RARE_TORTIE_MALE": "trojfarebný kocúr",
   "UI_RARE_HINT": "vzácna mačka: pri adopcii vyšší príspevok, ★ a strana albumu",
   "UI_ALBUM_RARE": "Vzácnosti",
-  "TOAST_HEARTS": "+{n} ❤"
+  "TOAST_HEARTS": "+{n} ❤",
+  "TITLE_TAGLINE": "Útulná hra o záchrane mačiek",
+  "TITLE_PLAY": "Hrať",
+  "TITLE_CONTINUE": "Pokračovať",
+  "TITLE_SETTINGS": "Nastavenia",
+  "TITLE_EXIT": "Ukončiť hru",
+  "TITLE_BACK": "Späť",
+  "TITLE_SAVED": "Hra sa ukladá sama.",
+  "UI_PAUSE": "Pauza",
+  "UI_PAUSE_HINT": "Čas v hre stojí, kým je menu otvorené.",
+  "UI_RESUME": "Pokračovať",
+  "UI_MAIN_MENU": "Hlavné menu",
+  "UI_LANGUAGE": "Jazyk",
+  "UI_EXIT_CONFIRM": "Ukončiť hru? Postup je uložený.",
+  "UI_EXIT_YES": "Ukončiť"
 }
