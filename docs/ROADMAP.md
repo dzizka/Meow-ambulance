@@ -62,7 +62,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [ ] Rozloženie UI na výšku aj na šírku, test na lacnom Android telefóne
 - [ ] **Playtest #2** (5–10 externých hráčov), metriky z GDD §13
 - [ ] Zverejniť webové demo na itch.io
-- [ ] Prvý Android build cez Capacitor (interné testovanie) a PC build cez Tauri
+- [x] Prvý Android build cez Capacitor (podpísané APK v GitHub Release `android-latest`, zostavuje sa automaticky)
+- [ ] PC build cez Tauri
 
 ## M3 – Komunitný útulok (Fáza 2)
 - [ ] Systém stavby miestností na mriežke
