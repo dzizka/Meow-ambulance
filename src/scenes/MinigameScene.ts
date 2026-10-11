@@ -18,6 +18,8 @@ export interface MinigameInit {
   done: (stars: Stars | null) => void;
 }
 
+/** Počet otázok v kvíze edukačného centra (kľúče QUIZ_n_Q, QUIZ_n_A1 = správna). */
+const QUIZ_COUNT = 10;
 const BG = 0x2b2533;
 const ACCENT = 0xe8a87c;
 const TEXT = '#f4e6d0';
@@ -121,6 +123,9 @@ export class MinigameScene extends Phaser.Scene {
         break;
       case 'swim':
         this.swim();
+        break;
+      case 'quiz':
+        this.quiz();
         break;
       default:
         this.hold();
@@ -1988,5 +1993,78 @@ export class MinigameScene extends Phaser.Scene {
       vest.fillStyle(0xffffff, 1).fillRect(c.x - S * 0.5, c.y + S * 1.2, S, S * 2.2);
       waves.fillStyle(0x3a8ad0, 0.55).fillRect(c.x - S * 7, c.y + S * 3, S * 14, S * 2);
     };
+  }
+
+  // ---------- Edukačné centrum: prednáška (kvíz) ----------
+
+  /** Tri otázky o mačkách pre deti, tri odpovede – hviezdičky za správne odpovede. */
+  private quiz(): void {
+    const S = this.S;
+    const { width: W, height: H } = this.scale;
+    this.catSprite.setScale(this.S * 0.6).setY(this.cy - S * 10);
+    const ids = Phaser.Utils.Array.Shuffle([...Array(QUIZ_COUNT).keys()].map((i) => i + 1)).slice(
+      0,
+      3,
+    );
+    let index = 0;
+    let correct = 0;
+    const font = Math.round(DPR * Math.min(20, Math.max(14, Math.min(W, H) / DPR / 26)));
+    const bw = Math.min(W * 0.86, 520 * DPR);
+    const layer = this.add.container(0, 0).setDepth(10);
+    const progress = this.text(W / 2, this.cy - S * 2, '', font * 0.9, DIM).setOrigin(0.5);
+
+    const ask = () => {
+      layer.removeAll(true);
+      const id = ids[index];
+      if (id === undefined) {
+        progress.setVisible(false);
+        this.finish(Math.max(1, correct) as Stars);
+        return;
+      }
+      progress.setText(t('MG_QUIZ_PROGRESS', { n: index + 1, total: ids.length }));
+      this.hintText.setText(t(`QUIZ_${id}_Q`));
+      const answers = Phaser.Utils.Array.Shuffle([1, 2, 3]);
+      const bh = font * 2.6;
+      const top = this.cy + S * 1;
+      answers.forEach((a, i) => {
+        const y = top + i * (bh + font * 0.7);
+        const box = this.add
+          .rectangle(W / 2, y, bw, bh, 0x3b2f45)
+          .setStrokeStyle(Math.max(2, DPR * 2), ACCENT)
+          .setOrigin(0.5, 0)
+          .setInteractive({ useHandCursor: true });
+        const label = this.text(W / 2, y + bh / 2, t(`QUIZ_${id}_A${a}`), font, TEXT)
+          .setOrigin(0.5)
+          .setAlign('center')
+          .setWordWrapWidth(bw - font * 2);
+        layer.add([box, label]);
+        box.on('pointerdown', () => {
+          if (this.finished || layer.getData('answered')) return;
+          layer.setData('answered', true);
+          const ok = a === 1;
+          if (ok) {
+            correct += 1;
+            box.setFillStyle(0x3d8a5a);
+            this.sfx('success', 0.4);
+            this.hearts(3);
+          } else {
+            box.setFillStyle(0x8a3a4a);
+            this.sfx('error', 0.4);
+            // ukáž správnu odpoveď
+            layer.each((obj: Phaser.GameObjects.GameObject) => {
+              if (obj instanceof Phaser.GameObjects.Rectangle && obj.getData('right'))
+                obj.setFillStyle(0x3d8a5a);
+            });
+          }
+          this.time.delayedCall(1300, () => {
+            index += 1;
+            layer.setData('answered', false);
+            ask();
+          });
+        });
+        if (a === 1) box.setData('right', true);
+      });
+    };
+    ask();
   }
 }

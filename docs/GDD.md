@@ -387,6 +387,13 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 - **Rehabilitačný bazén** (3 500 €): minihra **Plávanie** – striedavo ťukať ľavou a pravou labkou, mačka v plávacej veste preplává bazén. Lieči ochorenie chrbtice (bez bazéna sa nedá – mačky ho bez bazéna ani nedostanú) a ponúka **rehabilitáciu** po zlomenine, operácii alebo chrbtici: +20 zdravia, pri adopcii príspevok +10 %.
 - Prístroje sú ťuknuteľné ako na prízemí, mačka leží na stole CT alebo pláva v bazéne; veterinárka robí CT aj sama.
 
+
+### 6.9 Edukačné centrum 🟢 (úroveň 7, 500 ★)
+- Kúpa v Obchode → Stavby za **3 500 €**, treba kaviareň. Miestnosť 🎓: tabuľa s nakreslenou mačkou, lavičky, plagáty, koberec na hranie.
+- Cez deň (nie večer a v noci) príde asi každé 3,5 minúty **školský výlet** (3–5 detí s pani učiteľkou). Deti si sadnú a čakajú 2,5 minúty.
+- **Prednáška** = minihra **Kvíz**: 3 otázky o starostlivosti o mačky (z 10), tri odpovede. Hviezdičky = správne odpovede (aspoň 1).
+- Odmena: dar 15 € za každé dieťa, ★ podľa výsledku (1 / 1 / 2), stálice sa potešia (deti sa s nimi pohrajú na koberci) a **záujemca o adopciu príde hneď**. Bez prednášky výlet odíde s polovičným darom.
+
 ---
 
 ## 7. Retenčné mechaniky

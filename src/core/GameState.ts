@@ -27,7 +27,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -67,7 +67,24 @@ export interface SaveData {
   catio: { open: boolean };
   // od verzie 10
   hotel: HotelState;
+  // od verzie 12
+  education: EducationState;
 }
+
+/** Školský výlet: deti s učiteľkou čakajú na prednášku (GDD §6.9). */
+export interface SchoolTrip {
+  id: string;
+  kids: string[];
+  teacher: string;
+  arrivedAt: number;
+  leaveAt: number;
+}
+export interface EducationState {
+  open: boolean;
+  trip: SchoolTrip | null;
+  timer: number;
+}
+export const emptyEducation = (): EducationState => ({ open: false, trip: null, timer: 0 });
 
 /** Mačací hotel (GDD §6.7): kúpené apartmány a hostia. */
 export interface HotelState {
@@ -106,6 +123,7 @@ export const emptyCounters = (): Counters => ({
   vaccinated: 0,
   neutered: 0,
   hotel: 0,
+  lectures: 0,
 });
 
 /** Kroky tutoriálu so Zuzkou (kľúče textov) – postupujú podľa toho, čo hráč už urobil. */
@@ -157,6 +175,8 @@ export class GameState {
   catio = { open: false };
   /** Mačací hotel (GDD §6.7). */
   hotel: HotelState = emptyHotel();
+  /** Edukačné centrum (GDD §6.9). */
+  education: EducationState = emptyEducation();
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
   /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
@@ -343,6 +363,7 @@ export class GameState {
     for (const cat of this.cats)
       Care.passTime(cat, minutes, this.data, this.catio.open && cat.resident ? outside : mods);
     this.advanceHotel(deltaMs, true);
+    this.advanceEducation(deltaMs);
     this.addMoney(this.donationsPerMinute * minutes, false);
     this.advanceReports(deltaMs);
     this.advanceAdopters(deltaMs);
@@ -776,6 +797,88 @@ export class GameState {
     this.hotel.guests.push(cat);
     this.bus.emit('hotelCheckIn', { cat });
     return cat;
+  }
+
+  // ---------- Edukačné centrum (GDD §6.9) ----------
+
+  get educationMissing(): { rep: number; cafe: boolean } {
+    return {
+      rep: this.hasUnlock('education') ? 0 : (this.unlockRep('education') ?? 0) - this.reputation,
+      cafe: !this.cafe.open,
+    };
+  }
+
+  buyEducation(): boolean {
+    const e = this.data.balance.education;
+    const miss = this.educationMissing;
+    if (this.education.open || miss.rep > 0 || miss.cafe || this.money < e.price) return false;
+    this.addMoney(-e.price, true);
+    this.openEducation();
+    return true;
+  }
+
+  private openEducation(): void {
+    const e = this.data.balance.education;
+    this.education.open = true;
+    this.education.timer = (e.interval_s - e.first_delay_s) * 1000;
+    this.bus.emit('upgradeBought', { kind: 'education' });
+  }
+
+  /** Výlety prichádzajú cez deň; nevyužitý výlet po chvíli odíde s polovičným darom. */
+  private advanceEducation(deltaMs: number): void {
+    if (!this.education.open) return;
+    const e = this.data.balance.education;
+    const trip = this.education.trip;
+    if (trip) {
+      if (this.now >= trip.leaveAt) this.endTrip(0);
+      return;
+    }
+    if (this.dayPhase === 'night' || this.dayPhase === 'evening') return;
+    this.education.timer += deltaMs;
+    if (this.education.timer < e.interval_s * 1000) return;
+    this.education.timer = 0;
+    this.startTrip();
+  }
+
+  private startTrip(): SchoolTrip {
+    const e = this.data.balance.education;
+    const n = this.rng.int(e.kids[0], e.kids[1]);
+    const trip: SchoolTrip = {
+      id: this.newId('trip'),
+      kids: this.rng.sample(e.kid_sprites, Math.min(n, e.kid_sprites.length)),
+      teacher: e.teacher_sprite,
+      arrivedAt: this.now,
+      leaveAt: this.now + e.wait_s * 1000,
+    };
+    this.education.trip = trip;
+    this.bus.emit('tripArrived', { trip });
+    return trip;
+  }
+
+  /** Prednáška (kvíz) – deti si pohladkajú stálice a zanechajú dar; viac ★ za lepší kvíz. */
+  giveLecture(stars: Care.Stars): boolean {
+    if (!this.education.trip) return false;
+    this.endTrip(stars);
+    return true;
+  }
+
+  private endTrip(stars: number): void {
+    const trip = this.education.trip;
+    if (!trip) return;
+    const e = this.data.balance.education;
+    const money = Math.round(trip.kids.length * e.donation_per_kid * (stars > 0 ? 1 : 0.5));
+    const rep = e.rep_by_stars[stars] ?? 0;
+    this.education.trip = null;
+    this.addMoney(money, true);
+    this.gainRep(rep);
+    if (stars > 0) {
+      this.counters.lectures += 1;
+      // deti povedia doma o útulku – záujemca o adopciu príde skôr
+      this.adopterTimer = this.data.balance.adopters.interval_s * 1000;
+      for (const cat of this.residents) Care.addStats(cat, { satisfaction: 8, trust: 3 });
+    }
+    this.bus.emit('tripLeft', { trip, stars, money, rep });
+    this.checkChallenges();
   }
 
   // ---------- Catio (GDD §6.6) ----------
@@ -1491,6 +1594,7 @@ export class GameState {
       clinic: structuredClone(this.clinic),
       catio: { ...this.catio },
       hotel: structuredClone(this.hotel),
+      education: structuredClone(this.education),
     };
   }
 
@@ -1524,6 +1628,7 @@ export class GameState {
     };
     s.catio = { ...(save.catio ?? { open: false }) };
     s.hotel = structuredClone(save.hotel ?? emptyHotel());
+    s.education = structuredClone(save.education ?? emptyEducation());
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();
@@ -1646,6 +1751,15 @@ export class GameState {
       this.clinic.rooms.push(room);
       this.bus.emit('clinicRoomBought', { room });
     }
+    return true;
+  }
+
+  /** Edukačné centrum zadarmo a hneď výlet (otvorí aj kaviareň). */
+  devSchoolTrip(): boolean {
+    if (!this.cafe.open) this.openCafe();
+    if (!this.education.open) this.openEducation();
+    if (this.education.trip) return false;
+    this.startTrip();
     return true;
   }
 

@@ -28,6 +28,7 @@ import { ClinicRoom, type Floor1Room } from './ClinicRoom';
 import { Clinic2Room, type Floor2Room } from './Clinic2Room';
 import { CATIO_AREA, CatioRoom } from './CatioRoom';
 import { HOTEL_AREA, HotelRoom } from './HotelRoom';
+import { EducationRoom, PLAY_SPOTS } from './EducationRoom';
 import { addProp, type WorldGeom } from './world';
 import type { CafeGuest } from '../data/types';
 import { DPR } from './dpr';
@@ -103,6 +104,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private clinic2Room: Clinic2Room | null = null;
   private catioRoom: CatioRoom | null = null;
   private hotelRoom: HotelRoom | null = null;
+  private educationRoom: EducationRoom | null = null;
   /** Stálice, ktoré sú práve vonku vo výbehu. */
   private readonly outside = new Set<string>();
   private sinceCatio = 0;
@@ -133,6 +135,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.state.hasFloor2) this.openClinic2Room();
     if (this.state.catio.open) this.openCatioRoom();
     if (this.state.hotel.open) this.openHotelRoom();
+    if (this.state.education.open) this.openEducationRoom();
     new Furnishings(this, this.state, this.geom);
 
     this.staff = new StaffSprites(this, this.state, (id) => this.sprites.get(id));
@@ -240,7 +243,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       (room === 'clinic' && !this.clinicRoom) ||
       (room === 'catio' && !this.catioRoom) ||
       (room === 'hotel' && !this.hotelRoom) ||
-      (room === 'clinic2' && !this.clinic2Room)
+      (room === 'clinic2' && !this.clinic2Room) ||
+      (room === 'education' && !this.educationRoom)
     )
       return;
     const cam = this.cameras.main;
@@ -283,6 +287,35 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       this.ui.openStation(room),
     );
     for (const [x, y, r] of this.clinic2Room.lamps) this.addGlow(x, y, r);
+  }
+
+  /** Edukačné centrum (GDD §6.9). */
+  private openEducationRoom(): void {
+    if (this.educationRoom) return;
+    this.educationRoom = new EducationRoom(this, this.state, this.geom, () =>
+      this.ui.startLecture(),
+    );
+    for (const [x, y, r] of this.educationRoom.lamps) this.addGlow(x, y, r);
+  }
+
+  /** Po prednáške si deti pohladkajú stálice – tie na chvíľu prídu na koberec. */
+  private kidsPlay(): void {
+    const residents = [...this.sprites.values()].filter(
+      (sp) => sp.cat.resident && !sp.isPinned && !sp.leaving,
+    );
+    residents.slice(0, PLAY_SPOTS.length).forEach((sprite, i) => {
+      const spot = PLAY_SPOTS[i]!;
+      sprite.pin(spot.x, spot.y, { lay: i % 2 === 0, dir: 'left', depthBoost: 0 });
+      this.time.delayedCall(6500, () => {
+        if (!sprite.active || !this.sprites.has(sprite.cat.id)) return;
+        const a = this.areaFor(sprite.cat);
+        sprite.teleport(
+          Phaser.Math.Between(a.left + 10, a.right - 10),
+          Phaser.Math.Between(a.top + 5, a.bottom - 5),
+          a,
+        );
+      });
+    });
   }
 
   /** Mačací hotel (GDD §6.7). */
@@ -527,6 +560,16 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     bus.on('reportDeclined', save);
     bus.on('clinicRoomBought', save);
     // Mačací hotel: majiteľ prinesie mačku a neskôr si ju vyzdvihne (GDD §6.7)
+    // Edukačné centrum: výlet príde, po prednáške sa deti hrajú so stálicami (GDD §6.9)
+    bus.on('tripArrived', ({ trip }) => {
+      this.educationRoom?.arrive(trip);
+      save();
+    });
+    bus.on('tripLeft', ({ stars }) => {
+      this.educationRoom?.leave(stars > 0);
+      if (stars > 0) this.kidsPlay();
+      save();
+    });
     bus.on('hotelCheckIn', ({ cat }) => {
       const owner = cat.hotel?.owner ?? '005';
       if (!this.hotelRoom) return;
@@ -565,6 +608,10 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
         this.showRoom('hotel');
       }
       if (kind === 'suite') this.hotelRoom?.refreshSuites(true);
+      if (kind === 'education') {
+        this.openEducationRoom();
+        this.showRoom('education');
+      }
       if (kind === 'floor') {
         this.openClinic2Room();
         this.showRoom('clinic2');
@@ -647,7 +694,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private createLighting(): void {
     this.nightOverlay = this.add
-      .rectangle(0, 0, WORLD_W * 7, WORLD_H, 0x000000, 0)
+      .rectangle(0, 0, WORLD_W * 8, WORLD_H, 0x000000, 0)
       .setOrigin(0)
       .setDepth(5000);
     // Mäkké svetlo lámp: radiálny prechod v textúre, sčítaný s obrazom

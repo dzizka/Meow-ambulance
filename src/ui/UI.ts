@@ -56,6 +56,7 @@ export type MinigameKind =
   | 'splint'
   | 'ct'
   | 'swim'
+  | 'quiz'
   | 'feather'
   | 'hold'
   | 'quiet';
@@ -173,6 +174,7 @@ const ROOM_ICON: Record<Room, string> = {
   catio: '🌳',
   hotel: '🏨',
   clinic2: '🏢',
+  education: '🎓',
 };
 const ORDER_ICON = { coffee: '☕', tea: '🍵', cake: '🍰' } as const;
 const round1 = (n: number): string =>
@@ -336,6 +338,7 @@ export class UI {
       ...(s.shelter.open ? ['shelter' as const] : []),
       ...(s.catio.open ? ['catio' as const] : []),
       ...(s.hotel.open ? ['hotel' as const] : []),
+      ...(s.education.open ? ['education' as const] : []),
       ...(s.clinic.open ? ['clinic' as const] : []),
       ...(s.hasFloor2 ? ['clinic2' as const] : []),
     ];
@@ -357,7 +360,12 @@ export class UI {
       this.roomBtn.replaceChildren(ROOM_ICON[shown], this.badges.room);
     }
     // Hostia čakajúci na obsluhu, kým je hráč inde ako v kaviarni
-    this.setBadge(this.badges.room, room === 'cafe' ? 0 : s.waitingGuests.length);
+    // a školský výlet čakajúci na prednášku
+    this.setBadge(
+      this.badges.room,
+      (room === 'cafe' ? 0 : s.waitingGuests.length) +
+        (room !== 'education' && s.education.trip ? 1 : 0),
+    );
   }
 
   private toggleRoomMenu(rooms: Room[]): void {
@@ -388,6 +396,24 @@ export class UI {
     }
     this.stationRoom = room;
     this.openModal('station');
+  }
+
+  /** Prednáška pre školský výlet – kvíz (GDD §6.9). */
+  startLecture(): void {
+    void this.doLecture();
+  }
+
+  private async doLecture(): Promise<void> {
+    const s = this.state;
+    if (!s.education.trip) {
+      this.toast(t('UI_NO_TRIP'));
+      return;
+    }
+    const cat =
+      s.residents[0] ?? s.cats[0] ?? generateCat(s.data, new Rng(3), { id: 'lecture-cat' });
+    const stars = await this.runMinigame({ kind: 'quiz', cat, title: t('MG_QUIZ_TITLE') });
+    if (stars === null) return;
+    s.giveLecture(stars);
   }
 
   /** Otvorí obchod (napr. ťuknutím na plachtu nekúpenej miestnosti kliniky). */
@@ -518,12 +544,24 @@ export class UI {
         hotel: 'TOAST_HOTEL_OPEN',
         suite: 'TOAST_BOUGHT_SUITE',
         floor: 'TOAST_FLOOR_OPEN',
+        education: 'TOAST_EDUCATION_OPEN',
       }[kind];
       this.toast(t(key));
       this.game.playSound('upgrade', 0.6);
       this.updateHud();
     });
     bus.on('hotelCheckIn', ({ cat }) => this.toast(t('TOAST_HOTEL_IN', { cat: cat.name })));
+    bus.on('tripArrived', ({ trip }) => {
+      this.toast(t('TOAST_TRIP', { n: trip.kids.length }));
+      this.game.playSound('notify', 0.5);
+      this.updateHud();
+    });
+    bus.on('tripLeft', ({ stars, money, rep }) => {
+      this.toast(
+        stars > 0 ? t('TOAST_LECTURE_DONE', { money, rep }) : t('TOAST_TRIP_LEFT', { money }),
+      );
+      this.updateHud();
+    });
     bus.on('hotelCheckOut', ({ cat, fee, rep }) => {
       this.toast(t(rep > 0 ? 'TOAST_HOTEL_OUT_STAR' : 'TOAST_HOTEL_OUT', { cat: cat.name, fee }));
       this.game.playSound(rep > 0 ? 'success' : 'notify', 0.5);
@@ -993,6 +1031,10 @@ export class UI {
       this.renderClinic2Panel();
       return;
     }
+    if (this.game.room === 'education') {
+      this.renderEducationPanel();
+      return;
+    }
     if (this.game.room === 'catio') {
       this.renderCatioPanel();
       return;
@@ -1158,6 +1200,53 @@ export class UI {
             t(night ? 'UI_CATIO_NIGHT' : s.residents.length ? 'UI_CATIO_INSIDE' : 'UI_CATIO_NONE'),
           ),
       el('p', { class: 'hint' }, t('UI_CATIO_HINT')),
+      this.panelButtons(),
+    );
+  }
+
+  /** Panel edukačného centra: čakajúci výlet a prednáška (GDD §6.9). */
+  private renderEducationPanel(): void {
+    const s = this.state;
+    const trip = s.education.trip;
+    const e = s.data.balance.education;
+    const body: (HTMLElement | string)[] = trip
+      ? [
+          el(
+            'div',
+            { class: 'guest' },
+            personPortrait(trip.teacher, 1.25),
+            el(
+              'span',
+              { class: 'grow' },
+              t('UI_TRIP_LINE', {
+                n: trip.kids.length,
+                min: Math.max(1, Math.ceil((trip.leaveAt - s.now) / 60_000)),
+              }),
+            ),
+          ),
+          button(`🎓 ${t('UI_LECTURE')}`, () => this.startLecture(), {
+            class: 'btn primary',
+            disabled: this.busy,
+          }),
+          el(
+            'p',
+            { class: 'hint' },
+            t('UI_LECTURE_HINT', { money: trip.kids.length * e.donation_per_kid }),
+          ),
+        ]
+      : [
+          el(
+            'p',
+            { class: 'muted' },
+            t(
+              s.dayPhase === 'night' || s.dayPhase === 'evening' ? 'UI_TRIP_NIGHT' : 'UI_TRIP_NONE',
+            ),
+          ),
+        ];
+    this.setSheet(
+      el('h2', {}, `🎓 ${t('UI_EDUCATION')}`),
+      el('p', { class: 'hint' }, t('UI_EDUCATION_LINE', { n: s.counters.lectures })),
+      ...body,
       this.panelButtons(),
     );
   }
@@ -1426,6 +1515,7 @@ export class UI {
       splint: 'MG_SPLINT_TITLE',
       ct: 'MG_CT_TITLE',
       swim: 'MG_SWIM_TITLE',
+      quiz: 'MG_QUIZ_TITLE',
     };
     const title = t(titles[kind] ?? kind);
     const stars = await this.runMinigame({ kind, cat, title, ...extra });
@@ -2001,6 +2091,7 @@ export class UI {
       this.cafeUpgrade(),
       this.catioUpgrade(),
       ...this.hotelUpgrade(),
+      this.educationUpgrade(),
       this.shelterUpgrade(),
       ...this.clinicUpgrade(),
     ];
@@ -2258,6 +2349,49 @@ export class UI {
               if (s.buyShelter()) this.closeModal();
             },
             { class: 'btn primary', disabled: s.money < b.price },
+          ),
+    );
+  }
+
+  /** Edukačné centrum (GDD §6.9). */
+  private educationUpgrade(): HTMLElement {
+    const s = this.state;
+    const price = s.data.balance.education.price;
+    if (s.education.open)
+      return el(
+        'div',
+        { class: 'upgrade' },
+        el('strong', {}, `🎓 ${t('UI_EDUCATION')}`),
+        el('span', { class: 'chip good' }, '✓'),
+      );
+    const miss = s.educationMissing;
+    const locks: HTMLElement[] = [];
+    if (miss.rep > 0)
+      locks.push(
+        el(
+          'span',
+          { class: 'chip lock' },
+          t('UI_LOCKED', { rep: s.unlockRep('education') ?? '?' }),
+        ),
+      );
+    if (miss.cafe) locks.push(el('span', { class: 'chip lock' }, t('UI_STAFF_NEEDS_CAFE')));
+    return el(
+      'div',
+      { class: 'upgrade cafe' },
+      el(
+        'div',
+        {},
+        el('strong', {}, `🎓 ${t('UI_EDUCATION')}`),
+        el('p', { class: 'hint' }, t('UI_EDUCATION_DESC')),
+      ),
+      locks.length
+        ? el('div', { class: 'locks' }, ...locks)
+        : button(
+            t('UI_BUY_CLINIC', { price }),
+            () => {
+              if (s.buyEducation()) this.closeModal();
+            },
+            { class: 'btn primary', disabled: s.money < price },
           ),
     );
   }

@@ -60,6 +60,13 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v11 → v12: edukačné centrum (GDD §6.9). */
+  11: (s) => ({
+    ...s,
+    version: 12,
+    education: { open: false, trip: null, timer: 0 },
+    counters: { ...emptyCounters(), ...s.counters },
+  }),
   /** v10 → v11: 2. poschodie kliniky (GDD §6.8). */
   10: (s) => ({ ...s, version: 11, clinic: { ...s.clinic, floors: 1 } }),
   /** v9 → v10: mačací hotel (GDD §6.7). */
