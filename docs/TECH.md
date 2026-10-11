@@ -81,7 +81,7 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - Web a Tauri: `localStorage` (kľúč `meow-ambulance:save:1`); Capacitor: plugin Preferences/Filesystem – za spoločným rozhraním `SaveStorage` (`src/core/SaveManager.ts`).
 - Ukladá sa každých 15 s, po dôležitých udalostiach a pri skrytí/zatvorení stránky. Pri načítaní sa dopočíta offline čas (`GameState.applyOffline`).
 - Adresa končiaca `#novahra` zmaže uloženú hru (na testovanie).
-- Pole `version` (aktuálne 7); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
+- Pole `version` (aktuálne 8); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
 - „Nová hra" v menu (☰ → Obchod) zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
 
 ## Testy a CI
@@ -103,7 +103,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Minihry a UI sa testujú ručne podľa checklistu v PR – **vždy aj na telefóne**.
 
 ## Miestnosti
-- Svet má tri miestnosti vedľa seba, každá `WORLD_W × WORLD_H`: garáž (x 0), kaviareň (`CAFE_X`) a Komunitný útulok (`SHELTER_X`, `ShelterRoom.ts` – karanténa a ambulancia). `roomAt(x)` povie, v ktorej miestnosti je bod. Kamera má hranice iba aktuálnej miestnosti (`GarageScene.showRoom`, `roomX` v `layout.ts`).
+- Svet má štyri miestnosti vedľa seba, každá `WORLD_W × WORLD_H`: garáž (x 0), kaviareň (`CAFE_X`) a Komunitný útulok (`SHELTER_X`, `ShelterRoom.ts` – karanténa a ambulancia) a klinika (`CLINIC_X`, `ClinicRoom.ts`). `roomAt(x)` povie, v ktorej miestnosti je bod. Kamera má hranice iba aktuálnej miestnosti (`GarageScene.showRoom`, `roomX` v `layout.ts`).
 - Kaviareň kreslí `src/scenes/CafeRoom.ts` (pozadie, nábytok, hostia, bubliny objednávok); stav a pravidlá sú v `GameState` (sekcia Mačacia kaviareň), balans v `balance.json → cafe`.
 - Hostia sú postavičky G5 (`personAnims.ts`, hárky sa načítajú podľa `cafe.guest_sprites`). „Sedenie": stolička má väčšiu hĺbku ako hosť, takže mu zakryje nohy.
 - Save v3 pridal `cafe` a `counters.served` (migrácia `MIGRATIONS[2]`). Save v6 pridal `shelter`, `counters.vaccinated` a voliteľné `cat.ward` / `cat.vaccinated`.
@@ -117,6 +117,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Dekorácie: `public/data/decor.json` (pevné miesta, `layer` wall/floor/prop), útulnosť `GameState.coziness(room)`.
 - Zobrazenie vo svete: `src/scenes/Furnishings.ts` (kŕmidlo, mačací strom, klbko a myška sú nakreslené kódom).
 - Save v5 pridal `equipment` a `decor`.
+- Klinika: stav `GameState.clinic` (`open`, `rooms`: lab/xray/or; save v8, `MIGRATIONS[7]`), ceny a bonusy `balance.json → clinic`. Nástroje `bloodtest` a `xray` pribudnú do `GameState.tools` s miestnosťou; diagnózy v `conditions.json` majú `ages` a `clinic`, operácia (`minigame: surgery`) sa dá iba s operačnou sálou (`needsOperatingRoom`). Hlásenie `referral` (`requires: clinic`, `clinic_case`). Minihry `bloodtest`, `xray` (dostane `xray: fracture | swallowed | null`), `surgery` (`neuter: true` bez pinzety) a `splint` v `MinigameScene`. Nekúpené miestnosti zakrýva plachta (`ClinicRoom.makeTarp`), vybavenie nakreslené kódom je v `ClinicRoom.makeTextures`.
 - Personál: `public/data/staff.json` (rola, cena, sprite, miestnosť), balans `balance.json → staff`. Stav `GameState.staff` (save v7, `MIGRATIONS[6]`), práca v `advanceStaff` (volá `tick`), udalosti `staffHired` a `staffAction`. Zobrazenie `src/scenes/StaffSprites.ts` (baristku zastupuje statická baristka v kaviarni).
 
 ## Správanie mačiek

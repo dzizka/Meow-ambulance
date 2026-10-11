@@ -45,6 +45,10 @@ export type MinigameKind =
   | 'claws'
   | 'drops'
   | 'vaccine'
+  | 'bloodtest'
+  | 'xray'
+  | 'surgery'
+  | 'splint'
   | 'feather'
   | 'hold'
   | 'quiet';
@@ -52,6 +56,10 @@ export interface MinigameRequest {
   kind: MinigameKind;
   cat: CatData;
   title: string;
+  /** Röntgen: čo je na snímke (skrytá diagnóza mačky), null = nič. */
+  xray?: 'fracture' | 'swallowed' | null;
+  /** Operácia je kastrácia (bez kroku s pinzetou). */
+  neuter?: boolean;
 }
 
 /** Druh minihry podľa ošetrenia alebo aktivity (GDD §4.2, §4.3). */
@@ -65,6 +73,9 @@ const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> 
   bath: { kind: 'bath', titleKey: 'MG_BATH_TITLE' },
   nail_trim: { kind: 'claws', titleKey: 'MG_CLAWS_TITLE' },
   ear_drops: { kind: 'drops', titleKey: 'MG_DROPS_TITLE' },
+  insulin: { kind: 'vaccine', titleKey: 'MG_INSULIN_TITLE' },
+  splint: { kind: 'splint', titleKey: 'MG_SPLINT_TITLE' },
+  surgery: { kind: 'surgery', titleKey: 'MG_SURGERY_TITLE' },
 };
 const SOCIAL: {
   id: SocialActivity;
@@ -136,7 +147,12 @@ function decorPreview(def: DecorDef): HTMLElement {
 }
 
 const paws = (n: number): string => '🐾'.repeat(n);
-const ROOM_ICON: Record<Room, string> = { garage: '🏥', cafe: '☕', shelter: '🏠' };
+const ROOM_ICON: Record<Room, string> = {
+  garage: '🏥',
+  cafe: '☕',
+  shelter: '🏠',
+  clinic: '⚕️',
+};
 const ORDER_ICON = { coffee: '☕', tea: '🍵', cake: '🍰' } as const;
 const round1 = (n: number): string =>
   (Math.round(n * 10) / 10).toLocaleString(undefined, { maximumFractionDigits: 1 });
@@ -291,6 +307,7 @@ export class UI {
       'garage',
       ...(s.cafe.open ? ['cafe' as const] : []),
       ...(s.shelter.open ? ['shelter' as const] : []),
+      ...(s.clinic.open ? ['clinic' as const] : []),
     ];
   }
 
@@ -331,6 +348,11 @@ export class UI {
       }),
     );
     this.root.append(this.roomMenu);
+  }
+
+  /** Otvorí obchod (napr. ťuknutím na plachtu nekúpenej miestnosti kliniky). */
+  openShop(): void {
+    this.openMenu('shop');
   }
 
   /** Volá scéna po prepnutí miestnosti. */
@@ -449,8 +471,14 @@ export class UI {
         cafe: 'TOAST_CAFE_OPEN',
         table: 'TOAST_BOUGHT_TABLE',
         shelter: 'TOAST_SHELTER_OPEN',
+        clinic: 'TOAST_CLINIC_OPEN',
       }[kind];
       this.toast(t(key));
+      this.game.playSound('upgrade', 0.6);
+      this.updateHud();
+    });
+    bus.on('clinicRoomBought', ({ room }) => {
+      this.toast(t('TOAST_CLINIC_ROOM', { room: t(`CLINIC_${room.toUpperCase()}`) }));
       this.game.playSound('upgrade', 0.6);
       this.updateHud();
     });
@@ -683,7 +711,7 @@ export class UI {
         out.push(
           el('p', { class: 'hint' }, t('UI_KEEP_FULL', { max: data.balance.residents.slots })),
         );
-      out.push(...this.shelterActions(cat));
+      out.push(...this.shelterActions(cat), ...this.clinicActions(cat));
       return out;
     }
 
@@ -707,10 +735,12 @@ export class UI {
             'li',
             { class: 'row' },
             el('span', {}, t(def?.name_key ?? c.id)),
-            button(`🩹 ${t('UI_TREAT')}`, () => void this.doTreat(cat, c.id), {
-              class: 'btn primary',
-              disabled: this.busy,
-            }),
+            s.needsOperatingRoom(c.id) && !s.hasClinicRoom('or')
+              ? el('span', { class: 'chip lock' }, `🔒 ${t('UI_NEEDS_OR')}`)
+              : button(`🩹 ${t('UI_TREAT')}`, () => void this.doTreat(cat, c.id), {
+                  class: 'btn primary',
+                  disabled: this.busy,
+                }),
           ),
         );
       }
@@ -722,6 +752,8 @@ export class UI {
       ['thermometer', '🌡️', 'UI_TOOL_THERMOMETER'],
       ['stethoscope', '🩺', 'UI_TOOL_STETHOSCOPE'],
       ['otoscope', '🔦', 'UI_TOOL_OTOSCOPE'],
+      ['bloodtest', '🩸', 'UI_TOOL_BLOODTEST'],
+      ['xray', '🩻', 'UI_TOOL_XRAY'],
     ];
     const pending = tools.filter(
       ([tool]) => s.tools.includes(tool) && !cat.examined.includes(tool),
@@ -732,13 +764,46 @@ export class UI {
           'div',
           { class: 'actions' },
           ...pending.map(([tool, icon, key]) =>
-            button(`${icon} ${t(key)}`, () => this.doExamine(cat, tool), { disabled: this.busy }),
+            button(`${icon} ${t(key)}`, () => void this.doExamine(cat, tool), {
+              disabled: this.busy,
+            }),
           ),
         ),
       );
     }
-    out.push(...this.shelterActions(cat));
+    out.push(...this.shelterActions(cat), ...this.clinicActions(cat));
     return out;
+  }
+
+  /** Klinika: kastrácia pred adopciou (GDD §6.5). */
+  private clinicActions(cat: CatData): HTMLElement[] {
+    const s = this.state;
+    if (cat.resident || !s.hasClinicRoom('or')) return [];
+    if (cat.neutered)
+      return [el('div', {}, el('span', { class: 'chip good' }, `✂️ ${t('UI_NEUTERED')}`))];
+    if (!s.canNeuter(cat)) return [];
+    return [
+      el('p', { class: 'hint' }, t('UI_NEUTER_HINT')),
+      el(
+        'div',
+        { class: 'actions' },
+        button(`✂️ ${t('UI_NEUTER')}`, () => void this.doNeuter(cat), { disabled: this.busy }),
+      ),
+    ];
+  }
+
+  private async doNeuter(cat: CatData): Promise<void> {
+    const stars = await this.runMinigame({
+      kind: 'surgery',
+      cat,
+      title: t('MG_NEUTER_TITLE'),
+      neuter: true,
+    });
+    if (stars === null) return;
+    if (this.state.neuter(cat.id)) {
+      this.toast(t('TOAST_NEUTERED', { cat: cat.name }));
+      this.game.playSound('success', 0.5);
+    }
   }
 
   /** Útulok: očkovanie v ambulancii a presun medzi garážou a karanténou (GDD §6.2). */
@@ -820,6 +885,7 @@ export class UI {
         hidden > 0 ? el('span', { class: 'muted' }, ` ${t('UI_UNKNOWN')}`) : '',
       ),
       el('p', { class: 'hint' }, t('UI_TRAITS_HINT')),
+      cat.clinicCase ? el('p', { class: 'hint' }, `💗 ${t('UI_CLINIC_CASE')}`) : el('span'),
       report
         ? el('p', { class: 'hint' }, t('UI_FOUND_AT', { where: t(report.name_key) }))
         : el('span'),
@@ -834,6 +900,10 @@ export class UI {
     }
     if (this.game.room === 'shelter') {
       this.renderShelterPanel();
+      return;
+    }
+    if (this.game.room === 'clinic') {
+      this.renderClinicPanel();
       return;
     }
     const s = this.state;
@@ -868,11 +938,19 @@ export class UI {
     const s = this.state;
     const names = s.data.staff
       .filter((d) => s.staffWorking(d.id))
-      .filter((d) => (d.id === 'vet' ? (s.shelter.open ? 'shelter' : 'garage') : d.room) === room)
+      .filter((d) => this.staffRoom(d.id, d.room) === room)
       .map((d) => `${d.icon} ${t(d.name_key)}`);
     return names.length
       ? el('p', { class: 'hint' }, t('UI_STAFF_HERE', { names: names.join(', ') }))
       : '';
+  }
+
+  /** Kde člen tímu práve pracuje (veterinárka sa sťahuje s útulkom a klinikou). */
+  private staffRoom(id: string, room: Room): Room {
+    const s = this.state;
+    if (id !== 'vet') return room;
+    if (s.hasClinicRoom('lab') || s.hasClinicRoom('xray')) return 'clinic';
+    return s.shelter.open ? 'shelter' : 'garage';
   }
 
   /** Hlásenia a záujemcovia – rýchly prístup z prehľadu miestnosti. */
@@ -911,6 +989,40 @@ export class UI {
         ? el('div', { class: 'cat-list' }, ...tiles)
         : el('p', { class: 'muted' }, t('UI_SHELTER_EMPTY')),
       this.staffHere('shelter'),
+      this.panelButtons(),
+    );
+  }
+
+  /** Panel kliniky: miestnosti a mačky, ktoré tu niečo čaká (GDD §6.5). */
+  private renderClinicPanel(): void {
+    const s = this.state;
+    const roomLine = (['lab', 'xray', 'or'] as const)
+      .map((r) => `${s.hasClinicRoom(r) ? '✓' : '🔒'} ${t(`CLINIC_${r.toUpperCase()}`)}`)
+      .join(' · ');
+    // pacienti, ktorým klinika pomôže: prehliadka novým nástrojom, operácia, dlaha, kastrácia
+    const clinicTools = s.tools.filter((x) => x === 'bloodtest' || x === 'xray');
+    const waiting = s.cats.filter(
+      (c) =>
+        !c.resident &&
+        (clinicTools.some((x) => !c.examined.includes(x)) ||
+          c.conditions.some((x) => {
+            const def = s.data.conditions.find((d) => d.id === x.id);
+            return x.revealed && !x.treated && !!def?.clinic;
+          }) ||
+          s.canNeuter(c)),
+    );
+    const missing = (['lab', 'xray', 'or'] as const).filter((r) => !s.hasClinicRoom(r));
+    this.setSheet(
+      el('h2', {}, `⚕️ ${t('UI_CLINIC')}`),
+      el('p', { class: 'hint' }, roomLine),
+      waiting.length
+        ? el('div', { class: 'cat-list' }, ...waiting.map((cat) => this.catTile(cat)))
+        : el('p', { class: 'muted' }, t('UI_CLINIC_EMPTY')),
+      waiting.length ? el('p', { class: 'hint' }, t('UI_CLINIC_TAP')) : '',
+      this.staffHere('clinic'),
+      missing.length
+        ? button(`🛒 ${t('UI_CLINIC_BUY_ROOMS')}`, () => this.openShop(), { class: 'btn' })
+        : '',
       this.panelButtons(),
     );
   }
@@ -1012,7 +1124,22 @@ export class UI {
 
   // ---------- Akcie ----------
 
-  private doExamine(cat: CatData, tool: DiagnosticTool): void {
+  private async doExamine(cat: CatData, tool: DiagnosticTool): Promise<void> {
+    // Krvný test a röntgen majú vlastnú minihru (GDD §6.5)
+    if (tool === 'bloodtest' || tool === 'xray') {
+      const hidden = cat.conditions.find(
+        (c) =>
+          !c.revealed &&
+          this.state.data.conditions.find((d) => d.id === c.id)?.reveal_tool === 'xray',
+      );
+      const stars = await this.runMinigame({
+        kind: tool,
+        cat,
+        title: t(tool === 'xray' ? 'MG_XRAY_TITLE' : 'MG_BLOOD_TITLE'),
+        xray: hidden ? (hidden.id as 'fracture' | 'swallowed') : null,
+      });
+      if (stars === null) return;
+    }
     const found = this.state.examine(cat.id, tool);
     this.game.playSound(found.length ? 'found' : 'nothing', 0.5);
     const names = found.map((id) =>
@@ -1512,6 +1639,7 @@ export class UI {
       ),
       this.cafeUpgrade(),
       this.shelterUpgrade(),
+      ...this.clinicUpgrade(),
     ];
 
     // Vybavenie
@@ -1731,6 +1859,65 @@ export class UI {
             { class: 'btn primary', disabled: s.money < b.price },
           ),
     );
+  }
+
+  /** Klinika – budova, potom tri miestnosti (GDD §6.5). */
+  private clinicUpgrade(): HTMLElement[] {
+    const s = this.state;
+    const b = s.data.balance.clinic;
+    if (!s.clinic.open) {
+      const miss = s.clinicMissing;
+      const locks: HTMLElement[] = [];
+      if (miss.rep > 0)
+        locks.push(
+          el('span', { class: 'chip lock' }, t('UI_LOCKED', { rep: s.unlockRep('clinic') ?? '?' })),
+        );
+      if (miss.shelter) locks.push(el('span', { class: 'chip lock' }, t('UI_NEED_SHELTER')));
+      return [
+        el(
+          'div',
+          { class: 'upgrade cafe' },
+          el(
+            'div',
+            {},
+            el('strong', {}, `⚕️ ${t('UI_CLINIC')}`),
+            el('p', { class: 'hint' }, t('UI_CLINIC_DESC')),
+          ),
+          locks.length
+            ? el('div', { class: 'locks' }, ...locks)
+            : button(
+                t('UI_BUY_CLINIC', { price: b.price }),
+                () => {
+                  if (s.buyClinic()) this.closeModal();
+                },
+                { class: 'btn primary', disabled: s.money < b.price },
+              ),
+        ),
+      ];
+    }
+    const icons = { lab: '🔬', xray: '🩻', or: '🩺' } as const;
+    return (['lab', 'xray', 'or'] as const).map((room) => {
+      const price = s.clinicRoomPrice(room);
+      return el(
+        'div',
+        { class: 'upgrade cafe' },
+        el(
+          'div',
+          {},
+          el('strong', {}, `${icons[room]} ${t(`CLINIC_${room.toUpperCase()}`)}`),
+          el('p', { class: 'hint' }, t(`CLINIC_${room.toUpperCase()}_DESC`)),
+        ),
+        s.hasClinicRoom(room)
+          ? el('span', { class: 'chip good' }, '✓')
+          : button(
+              t('UI_BUY_FOR', { price }),
+              () => {
+                if (s.buyClinicRoom(room)) this.renderModal();
+              },
+              { class: 'btn primary', disabled: s.money < price },
+            ),
+      );
+    });
   }
 
   /** Kúpa kaviarne, potom dokupovanie stolov (GDD §5.5). */

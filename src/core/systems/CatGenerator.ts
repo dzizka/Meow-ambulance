@@ -20,6 +20,10 @@ export interface CatOptions {
   rareBoost?: boolean;
   /** Nástroje, ktoré hráč má – diagnózu, ktorú nemá čím odhaliť, mačka nedostane. */
   tools?: string[];
+  /** Je operačná sála – inak mačka nedostane diagnózu, ktorá potrebuje operáciu. */
+  surgery?: boolean;
+  /** Prípad z inej útulne: prvá diagnóza je vždy diagnóza kliniky. */
+  clinicCase?: boolean;
 }
 
 /** Vygeneruje novú mačku pri príjme do útulku (GDD §3.2). */
@@ -47,10 +51,16 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
 
   const conditionCount =
     opts.conditionCount ?? rng.weighted([1, 2, 3], (n) => [50, 35, 15][n - 1] ?? 0);
-  const pool = data.conditions.filter((c) => !opts.tools || opts.tools.includes(c.reveal_tool));
+  const pool = data.conditions.filter(
+    (c) =>
+      (!opts.tools || opts.tools.includes(c.reveal_tool)) &&
+      (!c.ages || c.ages.includes(age)) &&
+      (c.minigame !== 'surgery' || opts.surgery),
+  );
   const conditions: CatCondition[] = [];
   for (let i = 0; i < conditionCount && pool.length > 0; i++) {
-    const c = rng.weighted(pool, (x) => x.weight);
+    const clinicPool = i === 0 && opts.clinicCase ? pool.filter((x) => x.clinic) : [];
+    const c = rng.weighted(clinicPool.length ? clinicPool : pool, (x) => x.weight);
     pool.splice(pool.indexOf(c), 1);
     conditions.push({ id: c.id, revealed: false, treated: false });
   }
@@ -78,6 +88,7 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
     lastSocialAt: NEVER,
     lastFedAt: NEVER,
     reportId: opts.reportId ?? '',
+    ...(opts.clinicCase ? { clinicCase: true } : {}),
     admittedAt: opts.now ?? 0,
   };
 }

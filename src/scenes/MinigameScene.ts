@@ -11,6 +11,10 @@ export interface MinigameInit {
   kind: MinigameKind;
   cat: CatData;
   title: string;
+  /** Röntgen: čo je na snímke (null = nič). */
+  xray?: 'fracture' | 'swallowed' | null;
+  /** Operácia: kastrácia (bez kroku s pinzetou). */
+  neuter?: boolean;
   done: (stars: Stars | null) => void;
 }
 
@@ -99,6 +103,18 @@ export class MinigameScene extends Phaser.Scene {
         break;
       case 'vaccine':
         this.vaccine();
+        break;
+      case 'bloodtest':
+        this.bloodtest();
+        break;
+      case 'xray':
+        this.xray();
+        break;
+      case 'surgery':
+        this.surgery();
+        break;
+      case 'splint':
+        this.splint();
         break;
       default:
         this.hold();
@@ -1208,6 +1224,568 @@ export class MinigameScene extends Phaser.Scene {
       );
       ring.strokePath();
       if (progress >= duration) this.finish(Math.max(1, 3 - taps) as Stars);
+    };
+  }
+
+  // ---------- Klinika: krvný test (GDD §6.5) ----------
+
+  /** V mikroskope plávajú bunky – ťuknúť na 3 zvláštne (fialové s výbežkami). */
+  private bloodtest(): void {
+    this.hintText.setText(t('MG_BLOOD_HINT'));
+    this.catSprite.setVisible(false);
+    const { width: W, height: H } = this.scale;
+    const S = this.S;
+    const { cx, cy } = this;
+    const R = Math.min(W * 0.42, H * 0.3);
+    const cellR = Math.max(S * 1.4, R * 0.075);
+    const g = this.add.graphics().setDepth(3);
+    const label = this.text(cx, cy + R + S * 3, '', S * 2.2, TEXT, true).setOrigin(0.5, 0);
+    type Cell = { x: number; y: number; vx: number; vy: number; odd: boolean; alive: boolean };
+    const cells: Cell[] = [];
+    const spawn = (odd: boolean): Cell => {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * (R - cellR * 2);
+      const sp = (odd ? 0.05 : 0.03) * (R / 150);
+      const d = Math.random() * Math.PI * 2;
+      return {
+        x: cx + Math.cos(a) * r,
+        y: cy + Math.sin(a) * r,
+        vx: Math.cos(d) * sp,
+        vy: Math.sin(d) * sp,
+        odd,
+        alive: true,
+      };
+    };
+    for (let i = 0; i < 22; i++) cells.push(spawn(false));
+    for (let i = 0; i < 3; i++) cells.push(spawn(true));
+    let found = 0;
+    let misses = 0;
+    let elapsed = 0;
+
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      if (this.finished) return;
+      if (Phaser.Math.Distance.Between(p.x, p.y, cx, cy) > R) return;
+      const hit = cells.find(
+        (c) => c.odd && c.alive && Phaser.Math.Distance.Between(p.x, p.y, c.x, c.y) < cellR * 1.8,
+      );
+      if (hit) {
+        hit.alive = false;
+        found += 1;
+        this.flash('✓', hit.x, hit.y - cellR * 2, '#9ad17b');
+        this.sfx('pluck', 0.5);
+        this.hearts(1);
+        if (found >= 3)
+          this.finish((misses === 0 && elapsed < 15000 ? 3 : misses <= 2 ? 2 : 1) as Stars);
+      } else {
+        misses += 1;
+        this.flash(t('MG_MISS'), p.x, p.y - S * 3, '#e86a6a');
+        this.sfx('error', 0.4);
+      }
+    });
+
+    this.updater = (dt) => {
+      elapsed += dt;
+      g.clear();
+      g.fillStyle(0x1d1824, 1).fillCircle(cx, cy, R + S * 1.2);
+      g.fillStyle(0xf6e7ea, 1).fillCircle(cx, cy, R);
+      for (const c of cells) {
+        if (!c.alive) continue;
+        c.x += c.vx * dt;
+        c.y += c.vy * dt;
+        const dx = c.x - cx;
+        const dy = c.y - cy;
+        const dist = Math.hypot(dx, dy);
+        if (dist > R - cellR) {
+          // odraz od okraja zorného poľa
+          const nx = dx / dist;
+          const ny = dy / dist;
+          const dot = c.vx * nx + c.vy * ny;
+          c.vx -= 2 * dot * nx;
+          c.vy -= 2 * dot * ny;
+          c.x = cx + nx * (R - cellR);
+          c.y = cy + ny * (R - cellR);
+        }
+        if (c.odd) {
+          g.lineStyle(Math.max(2, cellR * 0.22), 0x5a4aa8, 1);
+          for (let k = 0; k < 6; k++) {
+            const a = k * 1.05 + elapsed / 900;
+            g.lineBetween(
+              c.x + Math.cos(a) * cellR,
+              c.y + Math.sin(a) * cellR,
+              c.x + Math.cos(a) * cellR * 1.45,
+              c.y + Math.sin(a) * cellR * 1.45,
+            );
+          }
+          g.fillStyle(0x8a7ad8, 1).fillCircle(c.x, c.y, cellR);
+          g.fillStyle(0x5a4aa8, 1).fillCircle(c.x + cellR * 0.2, c.y - cellR * 0.1, cellR * 0.4);
+        } else {
+          g.fillStyle(0xc4606d, 1).fillCircle(c.x, c.y, cellR);
+          g.fillStyle(0xe88a95, 1).fillCircle(c.x, c.y, cellR * 0.82);
+          g.fillStyle(0xf2b0b8, 1).fillCircle(c.x, c.y, cellR * 0.35);
+        }
+      }
+      label.setText(t('MG_BLOOD_FOUND', { n: found }));
+    };
+  }
+
+  // ---------- Klinika: röntgen ----------
+
+  /**
+   * 1) Podržať rám nad mačkou, kým chvíľu obsedí. 2) Na snímke ťuknúť, kde je problém
+   * (zlomenina alebo prehltnutý predmet). Ak nič nie je, snímka sa iba ukáže.
+   */
+  private xray(): void {
+    this.hintText.setText(t('MG_XRAY_HINT_FRAME'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const fw = S * 22;
+    const fh = S * 20;
+    const frame = this.add.graphics().setDepth(6);
+    const bar = this.add.graphics().setDepth(6);
+    const bw = S * 24;
+    const by = cy + S * 17;
+    let fx = cx;
+    let fy = cy;
+    let progress = 0;
+    let elapsed = 0;
+    let phase: 'frame' | 'find' | 'done' = 'frame';
+    let misses = 0;
+    const finding = this.cfg.xray ?? null;
+    const u = Math.min(S * 1.1, (this.scale.width * 0.9) / 30);
+    const target =
+      finding === 'fracture'
+        ? { x: cx + 4 * u, y: cy + 4 * u }
+        : finding === 'swallowed'
+          ? { x: cx - 1 * u, y: cy - 0.5 * u }
+          : null;
+
+    const showImage = () => {
+      phase = 'find';
+      frame.clear();
+      bar.clear();
+      this.catSprite.setVisible(false);
+      const img = this.add.graphics().setDepth(4);
+      // snímka je väčšia ako rám – celá kostra sa do nej zmestí
+      const iw = 30 * u;
+      const ih = 23 * u;
+      const ix = cx - 0.5 * u - iw / 2;
+      const iy = cy - 1.5 * u - ih / 2;
+      img.fillStyle(0x1d1824, 1).fillRect(ix - S, iy - S, iw + S * 2, ih + S * 2);
+      img.fillStyle(0x22304a, 1).fillRect(ix, iy, iw, ih);
+      const sk = 0xdfe8f2;
+      const lw = Math.max(2, u * 0.45);
+      img.lineStyle(lw, sk, 1);
+      img.strokeCircle(cx + 9 * u, cy - 6 * u, 3 * u); // lebka
+      img.strokeTriangle(
+        cx + 7 * u,
+        cy - 8.5 * u,
+        cx + 7.5 * u,
+        cy - 11 * u,
+        cx + 9 * u,
+        cy - 9 * u,
+      );
+      img.strokeTriangle(
+        cx + 11 * u,
+        cy - 8.5 * u,
+        cx + 10.5 * u,
+        cy - 11 * u,
+        cx + 9 * u,
+        cy - 9 * u,
+      );
+      img.lineBetween(cx - 9 * u, cy - 4 * u, cx + 6.5 * u, cy - 4 * u); // chrbtica
+      for (let k = 0; k < 6; k++) {
+        const rx = cx - 4 * u + k * 1.4 * u;
+        img.beginPath();
+        img.arc(rx, cy - 4 * u, 0.7 * u, 0, Math.PI, false);
+        img.strokePath();
+        img.lineBetween(rx - 0.7 * u, cy - 4 * u, rx - 0.7 * u, cy + 1 * u);
+      }
+      img.strokeEllipse(cx - 8 * u, cy - 3 * u, 3 * u, 2 * u); // panva
+      for (const lx of [cx - 8.5 * u, cx - 7 * u, cx + 3.5 * u, cx + 5 * u])
+        img.lineBetween(lx, cy - 3.5 * u, lx, cy + 8 * u);
+      img.beginPath(); // chvost
+      img.moveTo(cx - 9 * u, cy - 4 * u);
+      img.lineTo(cx - 12 * u, cy - 6 * u);
+      img.lineTo(cx - 13 * u, cy - 9 * u);
+      img.strokePath();
+      if (finding === 'fracture') {
+        img.fillStyle(0x22304a, 1).fillRect(cx + 4.5 * u, cy + 3.5 * u, 1.2 * u, 1 * u);
+        img
+          .lineStyle(lw, sk, 1)
+          .lineBetween(cx + 4.4 * u, cy + 4.6 * u, cx + 5.6 * u, cy + 3.7 * u);
+      }
+      if (finding === 'swallowed') {
+        img
+          .fillStyle(0xff8a5a, 1)
+          .fillRoundedRect(cx - 2 * u, cy - 1.2 * u, 2.2 * u, 1.4 * u, u * 0.4);
+      }
+      this.sfx('click', 0.5);
+      if (!target) {
+        this.hintText.setText(t('MG_XRAY_CLEAR'));
+        phase = 'done';
+        this.time.delayedCall(1600, () =>
+          this.finish(elapsed < 6000 ? 3 : elapsed < 10000 ? 2 : 1),
+        );
+      } else this.hintText.setText(t('MG_XRAY_HINT_FIND'));
+    };
+
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      if (this.finished || phase !== 'find' || !target) return;
+      if (Phaser.Math.Distance.Between(p.x, p.y, target.x, target.y) < S * 3.5) {
+        phase = 'done';
+        const ring = this.add.graphics().setDepth(7);
+        ring.lineStyle(Math.max(3, S * 0.5), 0x9ad17b, 1).strokeCircle(target.x, target.y, S * 3);
+        this.sfx('found', 0.5);
+        this.finish((misses === 0 && elapsed < 10000 ? 3 : misses <= 1 ? 2 : 1) as Stars);
+      } else {
+        misses += 1;
+        this.flash(t('MG_MISS'), p.x, p.y - S * 3, '#e86a6a');
+        this.sfx('error', 0.4);
+      }
+    });
+
+    this.updater = (dt) => {
+      if (phase !== 'frame') return;
+      elapsed += dt;
+      // mačka sa vrtí zo strany na stranu
+      const catX = cx + Math.sin(elapsed / 900) * S * 9 + Math.sin(elapsed / 330) * S * 2.5;
+      this.catSprite.x = catX;
+      const ptr = this.input.activePointer;
+      if (ptr.isDown) {
+        fx = ptr.x;
+        fy = ptr.y;
+      }
+      const inside =
+        ptr.isDown && Math.abs(catX - fx) < fw / 2 - S * 6 && Math.abs(cy - fy) < fh / 2 - S * 4;
+      progress = inside ? Math.min(1, progress + dt / 1800) : Math.max(0, progress - dt / 2500);
+      frame.clear();
+      frame.lineStyle(Math.max(3, S * 0.5), inside ? 0x9ad17b : 0xf2c14e, 1);
+      frame.strokeRect(fx - fw / 2, fy - fh / 2, fw, fh);
+      bar.clear();
+      bar.fillStyle(0x3b2f45, 1).fillRoundedRect(cx - bw / 2, by, bw, S * 2, S);
+      bar
+        .fillStyle(0x9ad17b, 1)
+        .fillRoundedRect(cx - bw / 2, by, Math.max(S * 2, bw * progress), S * 2, S);
+      if (progress >= 1) {
+        this.catSprite.x = cx;
+        showImage();
+      }
+    };
+  }
+
+  // ---------- Klinika: operácia ----------
+
+  /**
+   * Tri kroky: uspať (držať ručičku v zelenom), vybrať predmet pinzetou (pomaly),
+   * zašiť ťukaním na bodky zľava doprava. Kastrácia nemá krok s pinzetou.
+   */
+  private surgery(): void {
+    const S = this.S;
+    const { width: W } = this.scale;
+    const { cx, cy } = this;
+    const steps: ('sleep' | 'extract' | 'stitch')[] = this.cfg.neuter
+      ? ['sleep', 'stitch']
+      : ['sleep', 'extract', 'stitch'];
+    let stepIdx = 0;
+    let faults = 0;
+    const layer = this.add.container(0, 0).setDepth(5);
+    let stepUpdate: ((dt: number) => void) | null = null;
+    let onDown: ((p: Phaser.Input.Pointer) => void) | null = null;
+    let stepLabel = '';
+    const hint = (key: string) => this.hintText.setText(`${stepLabel} · ${t(key)}`);
+
+    const next = () => {
+      layer.removeAll(true);
+      stepUpdate = null;
+      onDown = null;
+      const kind = steps[stepIdx];
+      if (!kind) {
+        this.finish((faults === 0 ? 3 : faults <= 2 ? 2 : 1) as Stars);
+        return;
+      }
+      stepLabel = t('MG_SURG_STEP', { n: stepIdx + 1, total: steps.length });
+      if (kind === 'sleep') sleep();
+      else if (kind === 'extract') extract();
+      else stitch();
+    };
+    const done = () => {
+      stepIdx += 1;
+      this.hearts(2);
+      this.sfx('success', 0.3);
+      this.time.delayedCall(400, next);
+    };
+
+    /** Rúško s operačným poľom cez mačku. */
+    const field = () => {
+      const g = this.add.graphics();
+      g.fillStyle(0x5a8ac0, 1).fillRoundedRect(cx - S * 20, cy - S * 9, S * 40, S * 20, S * 2);
+      g.fillStyle(0xe8c39a, 1).fillEllipse(cx, cy + S, S * 26, S * 13);
+      g.lineStyle(Math.max(2, S * 0.3), 0xb08860, 1).strokeEllipse(cx, cy + S, S * 26, S * 13);
+      layer.add(g);
+      return g;
+    };
+
+    const sleep = () => {
+      hint('MG_SURG_SLEEP');
+      this.catSprite.setVisible(true).setY(cy - S * 3);
+      const g = this.add.graphics();
+      layer.add(g);
+      const mw = Math.min(W * 0.8, S * 40);
+      const mx = cx - mw / 2;
+      const my = cy + S * 16;
+      let v = 0.15;
+      let inZone = 0;
+      let left = false;
+      let elapsed = 0;
+      const zone: [number, number] = [0.45, 0.72];
+      stepUpdate = (dt) => {
+        elapsed += dt;
+        const down = this.input.activePointer.isDown;
+        v += (down ? dt / 1100 : -dt / 1300) + Math.sin(elapsed / 260) * 0.0012 * dt;
+        v = Phaser.Math.Clamp(v, 0, 1);
+        const ok = v >= zone[0] && v <= zone[1];
+        if (ok) {
+          inZone += dt;
+          left = true;
+        } else if (left) {
+          left = false;
+          faults += 0.5;
+        }
+        g.clear();
+        g.fillStyle(0x10202a, 1).fillRoundedRect(mx, my - S * 7, mw, S * 6, S);
+        g.lineStyle(Math.max(2, S * 0.3), 0x6ee08a, 1);
+        g.beginPath();
+        for (let i = 0; i <= 30; i++) {
+          const x = mx + S + ((mw - S * 2) * i) / 30;
+          const beat = (i + Math.floor(elapsed / 80)) % 10 === 0 ? -S * 2 * (0.5 + v) : 0;
+          if (i === 0) g.moveTo(x, my - S * 4 + beat);
+          else g.lineTo(x, my - S * 4 + beat);
+        }
+        g.strokePath();
+        g.fillStyle(0x5a3a4a, 1).fillRoundedRect(mx, my, mw, S * 2, S);
+        g.fillStyle(0x3d8a5a, 1).fillRect(mx + mw * zone[0], my, mw * (zone[1] - zone[0]), S * 2);
+        g.fillStyle(0xffffff, 1).fillTriangle(
+          mx + mw * v,
+          my - S * 0.2,
+          mx + mw * v - S,
+          my - S * 1.6,
+          mx + mw * v + S,
+          my - S * 1.6,
+        );
+        g.fillStyle(0x9ad17b, 1).fillRect(
+          mx,
+          my + S * 2.6,
+          mw * Math.min(1, inZone / 2500),
+          S * 0.6,
+        );
+        if (inZone >= 2500) {
+          this.catSprite.play(catAnimKey(this.cfg.cat.sprite, 'lay_idle', 'down'));
+          done();
+        }
+      };
+    };
+
+    const extract = () => {
+      hint('MG_SURG_EXTRACT');
+      this.catSprite.setVisible(false);
+      field();
+      const woundR = S * 4;
+      const wound = this.add.graphics();
+      wound.fillStyle(0xa8404d, 1).fillEllipse(cx, cy + S, woundR * 2.4, woundR * 1.4);
+      layer.add(wound);
+      const obj = this.add
+        .rectangle(cx, cy + S, S * 2.4, S * 1.6, 0xff8a5a)
+        .setStrokeStyle(Math.max(1, S * 0.25), 0x8a3a1a);
+      obj.setInteractive({ draggable: true, useHandCursor: true });
+      layer.add(obj);
+      const maxSpeed = S * 0.08;
+      let lastX = 0;
+      let lastY = 0;
+      let lastT = 0;
+      obj.on('dragstart', (p: Phaser.Input.Pointer) => {
+        lastX = p.x;
+        lastY = p.y;
+        lastT = this.time.now;
+      });
+      obj.on('drag', (p: Phaser.Input.Pointer) => {
+        const dtm = Math.max(1, this.time.now - lastT);
+        const speed = Phaser.Math.Distance.Between(lastX, lastY, p.x, p.y) / dtm;
+        lastX = p.x;
+        lastY = p.y;
+        lastT = this.time.now;
+        if (speed > maxSpeed) {
+          faults += 1;
+          this.input.setDragState(p, 0);
+          obj.setPosition(cx, cy + S);
+          this.flash(t('MG_SLIPPED'), cx, cy - S * 4, '#e86a6a');
+          this.sfx('error', 0.4);
+          return;
+        }
+        obj.setPosition(p.x, p.y);
+        if (Phaser.Math.Distance.Between(cx, cy + S, p.x, p.y) > S * 9) {
+          obj.disableInteractive();
+          this.input.setDragState(p, 0);
+          this.sfx('pluck', 0.6);
+          this.tweens.add({ targets: obj, alpha: 0, y: obj.y - S * 4, duration: 350 });
+          done();
+        }
+      });
+      obj.on('dragend', () => {
+        if (obj.input?.enabled) this.tweens.add({ targets: obj, x: cx, y: cy + S, duration: 160 });
+      });
+    };
+
+    const stitch = () => {
+      hint('MG_SURG_STITCH');
+      this.catSprite.setVisible(false);
+      field();
+      const cut = this.add.graphics();
+      const x0 = cx - S * 9;
+      const x1 = cx + S * 9;
+      const y = cy + S;
+      cut.lineStyle(Math.max(3, S * 0.6), 0xc4606d, 1).lineBetween(x0, y, x1, y);
+      layer.add(cut);
+      const n = 5;
+      const dots = Array.from({ length: n }, (_, i) => ({
+        x: x0 + S + ((x1 - x0 - S * 2) * i) / (n - 1),
+        y,
+      }));
+      const marks = this.add.graphics();
+      layer.add(marks);
+      let at = 0;
+      const draw = () => {
+        marks.clear();
+        dots.forEach((d, i) => {
+          if (i < at) {
+            marks.lineStyle(Math.max(2, S * 0.45), 0x3b2f45, 1);
+            marks.lineBetween(d.x - S, d.y - S * 1.4, d.x + S, d.y + S * 1.4);
+          } else {
+            marks.lineStyle(Math.max(2, S * 0.4), i === at ? 0xf2c14e : 0x9a8aa8, 1);
+            marks.strokeCircle(d.x, d.y, S * 0.9);
+          }
+        });
+      };
+      draw();
+      onDown = (p) => {
+        const d = dots[at];
+        if (!d) return;
+        if (Phaser.Math.Distance.Between(p.x, p.y, d.x, d.y) < S * 2.2) {
+          at += 1;
+          this.sfx('click', 0.5);
+          draw();
+          if (at >= n) done();
+        } else {
+          faults += 1;
+          this.flash(t('MG_MISS'), p.x, p.y - S * 3, '#e86a6a');
+          this.sfx('error', 0.4);
+        }
+      };
+    };
+
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      if (!this.finished) onDown?.(p);
+    });
+    this.updater = (dt) => stepUpdate?.(dt);
+    next();
+  }
+
+  // ---------- Klinika: dlaha ----------
+
+  /** Krúživým ťahom omotať labku – príliš rýchlo = príliš tesne (ukazovateľ tlaku). */
+  private splint(): void {
+    this.hintText.setText(t('MG_SPLINT_HINT'));
+    this.catSprite.setVisible(false);
+    const S = this.S;
+    const { cx, cy } = this;
+    const legW = S * 9;
+    const legH = S * 26;
+    const top = cy - legH / 2;
+    const leg = this.add.graphics();
+    leg.fillStyle(0xd9b38c, 1).fillRoundedRect(cx - legW / 2, top, legW, legH, legW / 2);
+    leg.fillStyle(0xd9b38c, 1).fillEllipse(cx, top + legH, legW * 1.5, legW * 0.9);
+    leg.fillStyle(0xe8a0a0, 1).fillEllipse(cx, top + legH + S, legW * 0.7, legW * 0.35);
+    // dlaha (dlhá doštička vedľa labky)
+    leg
+      .fillStyle(0xc9a06a, 1)
+      .fillRect(cx + legW / 2 - S * 0.5, top + S * 3, S * 1.4, legH - S * 6);
+    const wraps = this.add.graphics().setDepth(2);
+    const ring = this.add.graphics().setDepth(1);
+    const meter = this.add.graphics().setDepth(3);
+    const inner = legW * 0.4;
+    const outer = legH * 0.75;
+    const need = 4;
+    let layers = 0;
+    let turned = 0;
+    let lastAngle: number | null = null;
+    let lastT = 0;
+    let pressure = 0; // vyhladená uhlová rýchlosť, 0..1+
+    let tight = 0;
+    const tooTight = 1;
+
+    ring.lineStyle(Math.max(2, S / 2), 0xf4e6d0, 0.18).strokeCircle(cx, cy, (inner + outer) / 2);
+    const addLayer = () => {
+      layers += 1;
+      const y = top + S * 3 + (layers - 1) * ((legH - S * 8) / (need - 1));
+      wraps
+        .fillStyle(0xfdfaf2, 0.97)
+        .fillRoundedRect(cx - legW * 0.65, y, legW * 1.3, S * 2.6, S * 0.6);
+      wraps
+        .lineStyle(Math.max(1, S / 4), 0xd9cbb8, 1)
+        .strokeRoundedRect(cx - legW * 0.65, y, legW * 1.3, S * 2.6, S * 0.6);
+      this.sfx('click', 0.5);
+      this.hearts(2);
+    };
+
+    this.input.on('pointerup', () => (lastAngle = null));
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown || this.finished) return;
+      const dist = Phaser.Math.Distance.Between(cx, cy, p.x, p.y);
+      if (dist < inner || dist > outer) {
+        lastAngle = null;
+        return;
+      }
+      const angle = Math.atan2(p.y - cy, p.x - cx);
+      const now = this.time.now;
+      if (lastAngle !== null) {
+        let d = angle - lastAngle;
+        if (d > Math.PI) d -= Math.PI * 2;
+        if (d < -Math.PI) d += Math.PI * 2;
+        const speed = Math.abs(d) / Math.max(8, now - lastT); // rad/ms
+        pressure = pressure * 0.7 + (speed / 0.012) * 0.3;
+        if (pressure > tooTight) {
+          tight += 1;
+          turned = Math.max(0, turned - Math.PI);
+          pressure = 0.4;
+          this.flash(t('MG_TOO_TIGHT'), cx, top - S * 3, '#e86a6a');
+          this.sfx('mew', 0.4);
+        } else turned += Math.abs(d);
+      }
+      lastAngle = angle;
+      lastT = now;
+      while (turned >= Math.PI * 2 && layers < need) {
+        turned -= Math.PI * 2;
+        addLayer();
+      }
+      if (layers >= need) this.finish((tight === 0 ? 3 : tight <= 2 ? 2 : 1) as Stars);
+    });
+
+    const mx = cx + outer + S * 2;
+    const mh = S * 20;
+    const my = cy - mh / 2;
+    this.updater = (dt) => {
+      pressure = Math.max(0, pressure - dt / 1500);
+      meter.clear();
+      meter.lineStyle(Math.max(1, S / 4), 0xf4e6d0, 1).strokeRect(mx, my, S * 2, mh);
+      meter.fillStyle(0x3d8a5a, 0.6).fillRect(mx, my + mh * 0.3, S * 2, mh * 0.45);
+      const level = Math.min(1, pressure / tooTight);
+      meter.fillStyle(level > 0.85 ? 0xe86a6a : level > 0.6 ? 0xf2c14e : 0x9ad17b, 1);
+      meter.fillRect(mx + S * 0.3, my + mh * (1 - level), S * 1.4, mh * level);
+      ring.clear();
+      ring.lineStyle(Math.max(2, S / 2), 0xf4e6d0, 0.18).strokeCircle(cx, cy, (inner + outer) / 2);
+      ring.lineStyle(Math.max(3, S * 0.8), ACCENT, 1);
+      ring.beginPath();
+      ring.arc(cx, cy, (inner + outer) / 2, -Math.PI / 2, -Math.PI / 2 + turned);
+      ring.strokePath();
     };
   }
 }

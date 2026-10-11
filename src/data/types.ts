@@ -1,7 +1,10 @@
 /** Typy herných dát. Statické definície zodpovedajú súborom v public/data/*.json. */
 
 export type SocialActivity = 'feather' | 'brush' | 'hand_feed' | 'sit_quietly';
-export type DiagnosticTool = 'hand' | 'thermometer' | 'stethoscope' | 'otoscope';
+export type DiagnosticTool =
+  'hand' | 'thermometer' | 'stethoscope' | 'otoscope' | 'bloodtest' | 'xray';
+/** Miestnosti kliniky (GDD §6.5). */
+export type ClinicRoomId = 'lab' | 'xray' | 'or';
 export type AgeGroup = 'kitten' | 'adult' | 'senior';
 
 export interface TraitDef {
@@ -20,6 +23,10 @@ export interface ConditionDef {
   health_gain: number;
   cleanliness_gain?: number;
   weight: number;
+  /** Iba mačky tohto veku (napr. choroba obličiek u starších). */
+  ages?: AgeGroup[];
+  /** Diagnóza kliniky – „Prípad z inej útulne" má aspoň jednu. */
+  clinic?: boolean;
 }
 
 export interface BreedDef {
@@ -59,8 +66,10 @@ export interface ReportDef {
   weight: number;
   /** Mačacia rodinka: mama + [min, max] mačiatok naraz (GDD §6.2). */
   family?: [number, number];
-  /** Hlásenie chodí iba s Komunitným útulkom. */
-  requires?: 'shelter';
+  /** Hlásenie chodí iba s Komunitným útulkom / s klinikou. */
+  requires?: 'shelter' | 'clinic';
+  /** Prípad z inej útulne: aspoň jedna diagnóza kliniky, bonus pri adopcii. */
+  clinic_case?: boolean;
 }
 
 export interface NamesData {
@@ -138,6 +147,16 @@ export interface BalanceData {
     vaccine_fee_bonus: number;
     vaccine_rep_bonus: number;
   };
+  /** Klinika – Fáza 3 (GDD §6.5). */
+  clinic: {
+    price: number;
+    rooms: Record<ClinicRoomId, number>;
+    neuter_fee_bonus: number;
+    neuter_rep_bonus: number;
+    neuter_match_bonus: number;
+    case_fee_bonus: number;
+    case_rep_bonus: number;
+  };
   /** Mačacia kaviareň (GDD §5.5). */
   cafe: {
     price: number;
@@ -171,6 +190,7 @@ export interface Counters {
   fed: number;
   served: number;
   vaccinated: number;
+  neutered: number;
 }
 
 export type ChallengeKind = keyof Counters | 'residents';
@@ -256,6 +276,10 @@ export interface CatData {
   ward?: 'garage' | 'quarantine';
   /** Zaočkovaná v ambulancii – vyšší príspevok pri adopcii. */
   vaccinated?: boolean;
+  /** Kastrovaná na klinike – bonus ★ a lepšia zhoda pri adopcii. */
+  neutered?: boolean;
+  /** Prišla ako prípad z inej útulne – bonus pri adopcii. */
+  clinicCase?: boolean;
   /** Herný čas (ms simulácie) posledného kontaktu – kvôli prestávkam medzi aktivitami. */
   lastSocialAt: number;
   lastFedAt: number;

@@ -1,5 +1,5 @@
 {
-  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush, inhalation, bath, nail_trim, ear_drops).",
+  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush, inhalation, bath, nail_trim, ear_drops, vaccine, splint, surgery). ages = iba tento vek; clinic = diagnóza kliniky. surgery potrebuje operačnú sálu.",
   "conditions": [
     {
       "id": "ticks",
@@ -74,6 +74,53 @@
       "minigame": "ear_drops",
       "health_gain": 25,
       "weight": 18
+    },
+    {
+      "id": "diabetes",
+      "name_key": "COND_DIABETES",
+      "reveal_tool": "bloodtest",
+      "minigame": "insulin",
+      "health_gain": 30,
+      "weight": 10,
+      "ages": ["adult", "senior"],
+      "clinic": true
+    },
+    {
+      "id": "kidney",
+      "name_key": "COND_KIDNEY",
+      "reveal_tool": "bloodtest",
+      "minigame": "syrup",
+      "health_gain": 30,
+      "weight": 12,
+      "ages": ["senior"],
+      "clinic": true
+    },
+    {
+      "id": "uti",
+      "name_key": "COND_UTI",
+      "reveal_tool": "bloodtest",
+      "minigame": "syrup",
+      "health_gain": 25,
+      "weight": 14,
+      "clinic": true
+    },
+    {
+      "id": "fracture",
+      "name_key": "COND_FRACTURE",
+      "reveal_tool": "xray",
+      "minigame": "splint",
+      "health_gain": 35,
+      "weight": 12,
+      "clinic": true
+    },
+    {
+      "id": "swallowed",
+      "name_key": "COND_SWALLOWED",
+      "reveal_tool": "xray",
+      "minigame": "surgery",
+      "health_gain": 40,
+      "weight": 10,
+      "clinic": true
     }
   ]
 }

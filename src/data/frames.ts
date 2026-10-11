@@ -56,4 +56,10 @@ export const CLINIC_FRAMES = {
   office_chair: [454, 33, 20, 31],
   plant_small: [297, 210, 14, 14],
   plant_tall: [385, 197, 22, 27],
+  // klinika (GDD §6.5)
+  lockers: [384, 296, 32, 48],
+  desk_blue: [424, 136, 48, 24],
+  pc: [198, 264, 22, 24],
+  monitor_bank: [32, 32, 96, 32],
+  curtain: [193, 36, 28, 59],
 } as const satisfies Record<string, FrameRect>;

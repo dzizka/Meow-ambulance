@@ -9,12 +9,14 @@ export const FLOOR_TOP = ROOM.y + ROOM.wallH;
 export const CAFE_X = WORLD_W;
 /** Komunitný útulok je tretia budova vedľa kaviarne (GDD §6.2). */
 export const SHELTER_X = WORLD_W * 2;
-export type Room = 'garage' | 'cafe' | 'shelter';
+/** Klinika je štvrtá budova (GDD §6.5). */
+export const CLINIC_X = WORLD_W * 3;
+export type Room = 'garage' | 'cafe' | 'shelter' | 'clinic';
 export const roomX = (room: Room): number =>
-  room === 'cafe' ? CAFE_X : room === 'shelter' ? SHELTER_X : 0;
+  room === 'cafe' ? CAFE_X : room === 'shelter' ? SHELTER_X : room === 'clinic' ? CLINIC_X : 0;
 /** V ktorej miestnosti je bod sveta. */
 export const roomAt = (x: number): Room =>
-  x >= SHELTER_X ? 'shelter' : x >= CAFE_X ? 'cafe' : 'garage';
+  x >= CLINIC_X ? 'clinic' : x >= SHELTER_X ? 'shelter' : x >= CAFE_X ? 'cafe' : 'garage';
 
 export interface Layout {
   width: number;
