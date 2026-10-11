@@ -224,7 +224,9 @@ export class UI {
     const l = computeLayout(window.innerWidth, window.innerHeight);
     this.root.classList.toggle('portrait', l.portrait);
     this.root.classList.toggle('landscape', !l.portrait);
+    this.root.classList.toggle('docked', l.docked);
     this.root.style.setProperty('--world-h', `${l.worldScreenH}px`);
+    this.root.style.setProperty('--panel-w', `${l.panel.w}px`);
   }
 
   // ---------- Horný panel ----------
@@ -835,21 +837,58 @@ export class UI {
       return;
     }
     const s = this.state;
-    const tiles = s.cats.map((cat) => this.catTile(cat));
+    // V garáži sú pacienti z garáže; stálice iba dovtedy, kým nie je kaviareň
+    const cats = [...s.wardCats('garage'), ...(s.cafe.open ? [] : s.residents)];
     this.setSheet(
-      el('p', { class: 'hint' }, t('UI_TAP_CAT')),
-      el('div', { class: 'cat-list' }, ...tiles),
+      el('h2', {}, `🚑 ${t('UI_GARAGE')}`),
       el(
         'p',
         { class: 'hint' },
-        `${t('UI_FREE_CAGES', { free: s.freeCages, total: s.totalCages })} · ${t('UI_RESIDENTS', { n: s.residents.length, max: s.residentSlots })}`,
+        [
+          t('UI_GARAGE_LINE', { free: s.freeIn('garage'), total: s.cageCount }),
+          s.cafe.open ? '' : t('UI_RESIDENTS', { n: s.residents.length, max: s.residentSlots }),
+          s.shelter.open
+            ? t('UI_QUARANTINE_SHORT', { free: s.freeIn('quarantine'), total: s.quarantineCages })
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' · '),
       ),
+      cats.length
+        ? el('div', { class: 'cat-list' }, ...cats.map((cat) => this.catTile(cat)))
+        : el('p', { class: 'muted' }, t('UI_GARAGE_EMPTY')),
+      cats.length ? el('p', { class: 'hint' }, t('UI_TAP_CAT')) : '',
+      this.staffHere('garage'),
+      this.panelButtons(),
+    );
+  }
+
+  /** Personál, ktorý práve pracuje v danej miestnosti (GDD §6.4). */
+  private staffHere(room: Room): HTMLElement | string {
+    const s = this.state;
+    const names = s.data.staff
+      .filter((d) => s.staffWorking(d.id))
+      .filter((d) => (d.id === 'vet' ? (s.shelter.open ? 'shelter' : 'garage') : d.room) === room)
+      .map((d) => `${d.icon} ${t(d.name_key)}`);
+    return names.length
+      ? el('p', { class: 'hint' }, t('UI_STAFF_HERE', { names: names.join(', ') }))
+      : '';
+  }
+
+  /** Hlásenia a záujemcovia – rýchly prístup z prehľadu miestnosti. */
+  private panelButtons(): HTMLElement | string {
+    const s = this.state;
+    const btns = [
       s.reports.length > 0
         ? button(`📋 ${t('UI_REPORTS')} (${s.reports.length})`, () => this.openModal('reports'), {
             class: 'btn primary',
           })
-        : '',
-    );
+        : null,
+      s.adopters.length > 0
+        ? button(`🚪 ${t('UI_VISITORS')} (${s.adopters.length})`, () => this.openModal('visitors'))
+        : null,
+    ].filter((b): b is HTMLButtonElement => !!b);
+    return btns.length ? el('div', { class: 'actions' }, ...btns) : '';
   }
 
   /** Panel útulku: pacienti v karanténe a voľné miesta (GDD §6.2). */
@@ -871,11 +910,8 @@ export class UI {
       tiles.length
         ? el('div', { class: 'cat-list' }, ...tiles)
         : el('p', { class: 'muted' }, t('UI_SHELTER_EMPTY')),
-      s.reports.length > 0
-        ? button(`📋 ${t('UI_REPORTS')} (${s.reports.length})`, () => this.openModal('reports'), {
-            class: 'btn primary',
-          })
-        : '',
+      this.staffHere('shelter'),
+      this.panelButtons(),
     );
   }
 
@@ -923,6 +959,8 @@ export class UI {
           ? el('p', { class: 'muted' }, t(s.cafeOpenNow ? 'UI_CAFE_NO_GUESTS' : 'UI_CAFE_CLOSED'))
           : el('div', { class: 'guests' }, ...rows),
       residents.length ? el('div', { class: 'cat-list' }, ...residents) : '',
+      this.staffHere('cafe'),
+      this.panelButtons(),
     );
   }
 
@@ -936,6 +974,7 @@ export class UI {
         'span',
         {},
         cat.name,
+        this.needIcons(cat),
         el('br'),
         el(
           'small',
@@ -950,6 +989,25 @@ export class UI {
     );
     b.addEventListener('click', () => this.game.select(cat.id));
     return b;
+  }
+
+  /** Čo mačka práve potrebuje – malé ikonky na dlaždici v prehľade. */
+  private needIcons(cat: CatData): HTMLElement | string {
+    const s = this.state;
+    const needs: [string, string][] = [];
+    if (!cat.resident) {
+      if (cat.conditions.some((c) => c.revealed && !c.treated))
+        needs.push(['💊', t('UI_NEED_TREAT')]);
+      if (cat.examined.length < s.tools.length) needs.push(['🔍', t('UI_NEED_EXAMINE')]);
+    }
+    if (cat.stats.satisfaction < 40) needs.push(['🍽️', t('UI_NEED_FOOD')]);
+    if (cat.stats.cleanliness < 40) needs.push(['🛁', t('UI_NEED_CLEAN')]);
+    if (!needs.length) return '';
+    return el(
+      'span',
+      { class: 'needs', title: needs.map((n) => n[1]).join(', ') },
+      ...needs.map((n) => n[0]),
+    );
   }
 
   // ---------- Akcie ----------

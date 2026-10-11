@@ -373,5 +373,13 @@
   "UI_STAFF_NEEDS_CAFE": "café first",
   "UI_STAFF_HINT": "Staff handle routine for you – you can still do everything yourself.",
   "TOAST_STAFF_HIRED": "New team member: {name}",
-  "TOAST_VET_FOUND": "Vet: {cat} – {list}"
+  "TOAST_VET_FOUND": "Vet: {cat} – {list}",
+  "UI_GARAGE_LINE": "Cages: {free} of {total} free",
+  "UI_QUARANTINE_SHORT": "Quarantine: {free} of {total} free",
+  "UI_GARAGE_EMPTY": "No patients in the garage. New cats come from reports.",
+  "UI_STAFF_HERE": "Working here: {names}",
+  "UI_NEED_TREAT": "needs treatment",
+  "UI_NEED_EXAMINE": "needs an exam",
+  "UI_NEED_FOOD": "hungry",
+  "UI_NEED_CLEAN": "dirty"
 }

@@ -373,5 +373,13 @@
   "UI_STAFF_NEEDS_CAFE": "najprv kaviareň",
   "UI_STAFF_HINT": "Personál robí rutinu za teba – všetko môžeš stále urobiť aj sám.",
   "TOAST_STAFF_HIRED": "Nový člen tímu: {name}",
-  "TOAST_VET_FOUND": "Veterinárka: {cat} – {list}"
+  "TOAST_VET_FOUND": "Veterinárka: {cat} – {list}",
+  "UI_GARAGE_LINE": "Klietky: voľné {free} z {total}",
+  "UI_QUARANTINE_SHORT": "Karanténa: voľné {free} z {total}",
+  "UI_GARAGE_EMPTY": "V garáži nie sú žiadni pacienti. Nové mačky prídu z hlásení.",
+  "UI_STAFF_HERE": "Pracuje tu: {names}",
+  "UI_NEED_TREAT": "treba liečiť",
+  "UI_NEED_EXAMINE": "treba vyšetriť",
+  "UI_NEED_FOOD": "hladná",
+  "UI_NEED_CLEAN": "špinavá"
 }
