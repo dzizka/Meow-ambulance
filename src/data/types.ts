@@ -26,7 +26,10 @@ export interface BreedDef {
   id: string;
   name_key: string;
   rarity: number;
-  sprite_override?: string;
+  /** Plemeno má vždy túto farbu (napr. siamská → seal_point). */
+  coat?: string;
+  /** Starostlivosť o srsť: long = rýchlejšie sa zašpiní, none = takmer vôbec. */
+  coat_care?: 'long' | 'none';
 }
 
 export interface CoatDef {
@@ -34,6 +37,8 @@ export interface CoatDef {
   name_key: string;
   rarity: number;
   sprites: string[];
+  /** Iba s plemenom, ktoré ju má pevne – nepadne náhodne. */
+  special?: boolean;
 }
 
 export interface AdopterDef {

@@ -90,7 +90,10 @@ describe('Album (GDD §7.1)', () => {
     const key = GameState.albumKey(cat.breedId, cat.coatId);
     expect(s.album[key]?.how).toBe('resident');
     expect(added).toEqual([key]);
-    expect(s.albumSize).toBe(data.breeds.length * data.coats.length);
+    const regularBreeds = data.breeds.filter((b) => !b.coat).length;
+    const fixedBreeds = data.breeds.length - regularBreeds;
+    const regularCoats = data.coats.filter((c) => !c.special).length;
+    expect(s.albumSize).toBe(regularBreeds * regularCoats + fixedBreeds);
   });
 });
 

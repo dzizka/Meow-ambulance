@@ -21,7 +21,13 @@ export interface CatOptions {
 /** Vygeneruje novú mačku pri príjme do útulku (GDD §3.2). */
 export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData {
   const breed = rng.weighted(data.breeds, (b) => rarityWeight(b.rarity));
-  const coat = rng.weighted(data.coats, (c) => rarityWeight(c.rarity));
+  const fixed = breed.coat ? data.coats.find((c) => c.id === breed.coat) : undefined;
+  const coat =
+    fixed ??
+    rng.weighted(
+      data.coats.filter((c) => !c.special),
+      (c) => rarityWeight(c.rarity),
+    );
   const age =
     opts.age ?? rng.weighted(Object.keys(AGE_WEIGHTS) as AgeGroup[], (a) => AGE_WEIGHTS[a]);
 
@@ -42,7 +48,7 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
     conditions.push({ id: c.id, revealed: false, treated: false });
   }
 
-  const shy = traits.some((t) => t.id === 'shy' || t.id === 'wild');
+  const shy = traits.some((t) => t.id === 'shy' || t.id === 'wild' || t.id === 'grumpy');
   const dirty = conditions.some((c) => c.id === 'dirty');
 
   return {
@@ -51,7 +57,7 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
     age,
     breedId: breed.id,
     coatId: coat.id,
-    sprite: breed.sprite_override ?? rng.pick(coat.sprites),
+    sprite: rng.pick(coat.sprites),
     traits,
     conditions,
     stats: {

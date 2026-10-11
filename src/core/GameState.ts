@@ -20,7 +20,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -401,9 +401,13 @@ export class GameState {
     if (match.quality === 'blocked') return null;
 
     const r = this.data.balance.rewards;
+    // Vzácnejšie plemeno = vyšší príspevok (+15 % za každý stupeň vzácnosti)
+    const rarity = this.data.breeds.find((b) => b.id === cat.breedId)?.rarity ?? 1;
     const fee =
       Math.round(
-        (r.adoption_fee_min + ((r.adoption_fee_max - r.adoption_fee_min) * match.score) / 100) / 5,
+        ((r.adoption_fee_min + ((r.adoption_fee_max - r.adoption_fee_min) * match.score) / 100) *
+          (1 + 0.15 * (rarity - 1))) /
+          5,
       ) * 5;
     const rep =
       match.quality === 'perfect'
@@ -535,8 +539,24 @@ export class GameState {
     this.bus.emit('albumAdded', { key });
   }
 
+  /** Všetky políčka albumu: bežné plemená × bežné farby, plemená s pevnou farbou majú jedno. */
+  get albumSlots(): { breedId: string; coatId: string }[] {
+    const regular = this.data.coats.filter((c) => !c.special);
+    return this.data.breeds.flatMap((b) =>
+      b.coat
+        ? [{ breedId: b.id, coatId: b.coat }]
+        : regular.map((c) => ({ breedId: b.id, coatId: c.id })),
+    );
+  }
+
   get albumSize(): number {
-    return this.data.breeds.length * this.data.coats.length;
+    return this.albumSlots.length;
+  }
+
+  /** Koľko políčok albumu je vyplnených (staré savy môžu mať kľúče mimo albumu). */
+  get albumFilled(): number {
+    return this.albumSlots.filter((x) => this.album[GameState.albumKey(x.breedId, x.coatId)])
+      .length;
   }
 
   // ---------- Vylepšenia garáže (GDD §6.1) ----------
@@ -619,8 +639,11 @@ export class GameState {
   /** Dar hosťa pri odchode: základ + bonus za každú stálicu podľa spokojnosti. */
   guestTip(served: boolean): number {
     const c = this.data.balance.cafe;
+    // Spoločenské a maznavé stálice hostí potešia viac (GDD §4.4)
+    const charm = (cat: CatData) =>
+      cat.traits.some((t) => t.id === 'social' || t.id === 'cuddly') ? 1.5 : 1;
     const bonus = this.residents.reduce(
-      (sum, cat) => sum + c.tip_per_resident * (0.5 + cat.stats.satisfaction / 100),
+      (sum, cat) => sum + c.tip_per_resident * (0.5 + cat.stats.satisfaction / 100) * charm(cat),
       0,
     );
     const tip = (c.tip_base + bonus) * (served ? c.served_multiplier : 1);

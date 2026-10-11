@@ -69,7 +69,7 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Nové minihry: kúpanie (blchy), strihanie pazúrikov (dlhé pazúriky)
 - [ ] Minihra očkovanie
 - [ ] Prvé udalosti: Zima prichádza, Deň otvorených dverí
-- [ ] Rozšírenie na 15 rysov, 12 plemien
+- [x] Rozšírenie na 15 rysov, 12 plemien, 13 farieb (album 84 políčok)
 
 ## M4 – Klinika (Fáza 3)
 - [ ] Personál a automatizácia

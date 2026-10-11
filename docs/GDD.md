@@ -182,16 +182,32 @@ Zvyšuje **Dôveru**. Účinnosť závisí od povahy:
 
 > Hráč spoznáva povahu skúšaním – ✨ pri úspechu, 💢 pri nevhodnej aktivite. Odhalená povaha sa zapíše do karty mačky.
 
-### 4.4 Povahové rysy 🟢 MVP (6 rysov), 🟡 v1.0 (15+)
-| Rys | Účinok na hru | Účinok na adopciu |
-|---|---|---|
-| Plachá | Pomalšia dôvera, potrebuje tichú miestnosť | Pokojná domácnosť, bez detí |
-| Maznavá | Rýchla dôvera, smutní v samote | Niekto, kto je veľa doma |
-| Divoká | Syčí pri liečbe (ťažšie minihry) | Dom so záhradou, skúsený majiteľ |
-| Maškrtná | Jedlo dáva bonus, priberá | Takmer kdekoľvek |
-| Hravá | Rýchlo sa nudí, potrebuje hračky | Aktívna rodina, deti |
-| Leňoch | Pomalá rehabilitácia, ale spokojná | Seniori, byt |
-| *v1.0:* Bojí sa vysávača, Kamarátska (lepšie v skupine), Zvedavá (uteká z klietky), Hlasná, Teritoriálna… | | |
+### 4.4 Povahové rysy a plemená 🟢 MVP (15 rysov, 12 plemien)
+Mačka má 1–2 rysy, odhaľujú sa pri socializácii (aktivita, ktorá jej sedí / nesedí) alebo pri adopcii. Socializačné násobky sú v `traits.json`.
+
+| Rys | Účinok na hru | Hodí sa (adoptéri) | Nehodí sa |
+|---|---|---|---|
+| Plachá | Prichádza s nízkou dôverou, miluje tiché sedenie | pokojná domácnosť, bez detí | deti, iné zvieratá |
+| Maznavá | Miluje česanie; v kaviarni väčšie dary | veľa doma | málo doma |
+| Divoká | Nízka dôvera, miluje pero | záhrada, skúsený | byt, deti |
+| Maškrtná | Jedlo dáva +50 % spokojnosti | – | – |
+| Hravá | Viac sa prechádza, miluje pero | deti, aktívni | seniori |
+| Leňoch | Viac leží, rád sa nechá česať | seniori, byt | aktívni |
+| Zvedavá | Viac sa prechádza | aktívni, záhrada | pokojná domácnosť |
+| Ukecaná | Miluje kŕmenie z ruky | veľa doma, seniori | pokojná domácnosť |
+| Nezávislá | Spokojnosť klesá o polovicu pomalšie | málo doma, byt | veľa doma |
+| Nežná | Rada sa nechá česať | deti, seniori | – |
+| Odvážna | Miluje pero | iné zvieratá, záhrada | – |
+| Múdra | Pero aj kŕmenie z ruky | skúsený | málo doma |
+| Mrzutá | Nízka dôvera, iba tiché sedenie pomáha | skúsený, pokojná domácnosť | deti |
+| Spoločenská | Rada sa nechá česať; v kaviarni väčšie dary | iné zvieratá, deti | málo doma |
+| Lovkyňa | Viac sa prechádza, pero ×2 | záhrada | byt |
+
+**Plemená** (`breeds.json`): domáca krátkosrstá a dlhosrstá, európska, britská, perzská, mainská mývalia, nórska lesná, škótska klapouchá (bežné farby) a ruská modrá, siamská, ragdoll, sfinga (vlastná pevná farba).
+- Vzácnejšie plemeno = **vyšší adopčný príspevok** (+15 % za každý stupeň vzácnosti).
+- Dlhosrsté plemená sa zašpinia o 50 % rýchlejšie, sfinga takmer vôbec.
+- Farby: 10 bežných (čierna, ryšavá, mourovatá, sivá, smokingová, trojfarebná, krémová, biela, čokoládová, modrosivá) + 3 vlastné (tmavé/svetlé odznaky, bez srsti).
+- Fantasy farby z balíka (ružová, duch, „radioaktívna"…) sú rezervované na udalosti (napr. Halloween).
 
 ---
 
@@ -304,7 +320,7 @@ Druhá miestnosť vedľa garáže. Kúpi sa v menu ☰ → Garáž (**350 €**)
 - Mriežka slotov: **plemená × farby/vzory** + špeciálne strany (vzácne diagnózy, udalosti, seniori).
 - Každá adoptovaná mačka = stránka: portrét pred/po, meno, povaha, príbeh, pohľadnice.
 - Percentá dokončenia a odmeny za dokončené strany (dekorácie, nové typy hlásení).
-- MVP: 6 plemien × 6 farieb = 36 slotov (menu ☰ → Album). Zapisuje sa prvá mačka každého políčka, ďalšie zvyšujú počítadlo ×N.
+- **84 políčok** (menu ☰ → Album): 8 bežných plemien × 10 farieb + 4 plemená s vlastnou farbou. Zapisuje sa prvá mačka každého políčka, ďalšie zvyšujú počítadlo ×N.
 
 ### 7.2 Vzácne mačky 🟡 v1.0
 - Vzácne farby (napr. dymová, čokoládová), heterochrómia, polydaktylia („palčiaky"), bezsrsté, trojfarebný kocúr (ultra vzácny).
