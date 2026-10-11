@@ -151,6 +151,7 @@ export class DevMenu {
         act('Splniť výzvy', () => s.devCompleteChallenges()),
         act('Pohľadnice teraz', () => `Doručené: ${s.devDeliverPostcards()}`),
         act('Kaviareň zadarmo', () => s.devOpenCafe() && 'Kaviareň otvorená'),
+        act('Útulok zadarmo', () => s.devOpenShelter() && 'Útulok otvorený'),
         act('Tutoriál odznova', () => {
           s.tutorialStep = 0;
           s.tutorialDone = false;

@@ -7,8 +7,14 @@ export const ROOM = { x: 16, y: 6, w: 448, wallH: 64, floorH: 192 } as const;
 export const FLOOR_TOP = ROOM.y + ROOM.wallH;
 /** Kaviareň je vo svete hneď vedľa garáže (GDD §5.5). */
 export const CAFE_X = WORLD_W;
-export type Room = 'garage' | 'cafe';
-export const roomX = (room: Room): number => (room === 'cafe' ? CAFE_X : 0);
+/** Komunitný útulok je tretia budova vedľa kaviarne (GDD §6.2). */
+export const SHELTER_X = WORLD_W * 2;
+export type Room = 'garage' | 'cafe' | 'shelter';
+export const roomX = (room: Room): number =>
+  room === 'cafe' ? CAFE_X : room === 'shelter' ? SHELTER_X : 0;
+/** V ktorej miestnosti je bod sveta. */
+export const roomAt = (x: number): Room =>
+  x >= SHELTER_X ? 'shelter' : x >= CAFE_X ? 'cafe' : 'garage';
 
 export interface Layout {
   width: number;

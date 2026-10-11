@@ -1,7 +1,7 @@
 /** Typy herných dát. Statické definície zodpovedajú súborom v public/data/*.json. */
 
 export type SocialActivity = 'feather' | 'brush' | 'hand_feed' | 'sit_quietly';
-export type DiagnosticTool = 'hand' | 'thermometer' | 'stethoscope';
+export type DiagnosticTool = 'hand' | 'thermometer' | 'stethoscope' | 'otoscope';
 export type AgeGroup = 'kitten' | 'adult' | 'senior';
 
 export interface TraitDef {
@@ -57,6 +57,10 @@ export interface ReportDef {
   age: AgeGroup | null;
   difficulty: 1 | 2 | 3;
   weight: number;
+  /** Mačacia rodinka: mama + [min, max] mačiatok naraz (GDD §6.2). */
+  family?: [number, number];
+  /** Hlásenie chodí iba s Komunitným útulkom. */
+  requires?: 'shelter';
 }
 
 export interface NamesData {
@@ -113,6 +117,14 @@ export interface BalanceData {
   levels: LevelDef[];
   /** Účinok útulnosti (GDD §6.1.3). */
   coziness: { garage_trust_per_point: number; cafe_tip_per_point: number };
+  /** Komunitný útulok – Fáza 2 (GDD §6.2). */
+  shelter: {
+    price: number;
+    min_rescued: number;
+    quarantine_cages: number;
+    vaccine_fee_bonus: number;
+    vaccine_rep_bonus: number;
+  };
   /** Mačacia kaviareň (GDD §5.5). */
   cafe: {
     price: number;
@@ -145,6 +157,7 @@ export interface Counters {
   social: number;
   fed: number;
   served: number;
+  vaccinated: number;
 }
 
 export type ChallengeKind = keyof Counters | 'residents';
@@ -159,7 +172,7 @@ export interface ChallengeDef {
   rep: number;
   weight: number;
   /** Výzva sa ponúka iba po splnení podmienky (napr. otvorená kaviareň). */
-  requires?: 'cafe';
+  requires?: 'cafe' | 'shelter';
 }
 
 /** Výzva na nástenke (GDD §7.3). */
@@ -225,6 +238,10 @@ export interface CatData {
   examined: DiagnosticTool[];
   /** Stálica – býva v kútiku/kaviarni namiesto klietky (GDD §5.4). */
   resident: boolean;
+  /** Kde je pacient: garáž alebo karanténa v útulku (chýba = garáž). */
+  ward?: 'garage' | 'quarantine';
+  /** Zaočkovaná v ambulancii – vyšší príspevok pri adopcii. */
+  vaccinated?: boolean;
   /** Herný čas (ms simulácie) posledného kontaktu – kvôli prestávkam medzi aktivitami. */
   lastSocialAt: number;
   lastFedAt: number;

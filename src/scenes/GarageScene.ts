@@ -11,17 +11,18 @@ import { CatSprite, type CatWorld } from '../objects/CatSprite';
 import { UI, type GameBridge, type MinigameRequest } from '../ui/UI';
 import type { MinigameInit } from './MinigameScene';
 import {
-  CAFE_X,
   FLOOR_TOP,
   ROOM,
   WORLD_H,
   WORLD_W,
   computeLayout,
+  roomAt,
   roomX,
   type Room,
 } from './layout';
 import { CAFE_AREA, CafeRoom } from './CafeRoom';
 import { Furnishings } from './Furnishings';
+import { QUARANTINE_AREA, QUARANTINE_CAGES, ShelterRoom } from './ShelterRoom';
 import { addProp, type WorldGeom } from './world';
 import type { CafeGuest } from '../data/types';
 import { DPR } from './dpr';
@@ -78,7 +79,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     hideZones: this.geom.hideZones,
     cats: () => this.sprites.values(),
     guestSpot: (c) =>
-      this.cafe && c.cat.resident && c.x >= CAFE_X ? this.cafe.guestSpotFor(c) : null,
+      this.cafe && c.cat.resident && roomAt(c.x) === 'cafe' ? this.cafe.guestSpotFor(c) : null,
     onVisit: (c) => this.cafe?.heartsAt(c.x, c.y - 22),
   };
   /** Po „Nová hra" sa už nesmie uložiť (inak by sa stará hra zapísala späť). */
@@ -89,6 +90,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   /** Rýchlosť herného času – iba vývojárske menu. */
   speed = 1;
   private cafe: CafeRoom | null = null;
+  private shelterRoom: ShelterRoom | null = null;
   private ui!: UI;
 
   constructor() {
@@ -107,6 +109,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.createLighting();
     this.makeSparkTexture();
     if (this.state.cafe.open) this.openCafeRoom();
+    if (this.state.shelter.open) this.openShelterRoom();
     new Furnishings(this, this.state, this.geom);
 
     this.state.cats.forEach((cat, i) => {
@@ -164,7 +167,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   select(catId: string | null): void {
     const sprite = catId ? (this.sprites.get(catId) ?? null) : null;
     if (sprite) {
-      const room: Room = sprite.x >= CAFE_X ? 'cafe' : 'garage';
+      const room: Room = roomAt(sprite.x);
       if (room !== this.room) this.showRoom(room, false);
     }
     this.selected?.setSelected(false);
@@ -190,7 +193,12 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   /** Prepne kameru do inej miestnosti (garáž / kaviareň) s krátkym prelínaním. */
   showRoom(room: Room, fade = true): void {
-    if (room === this.room || (room === 'cafe' && !this.cafe)) return;
+    if (
+      room === this.room ||
+      (room === 'cafe' && !this.cafe) ||
+      (room === 'shelter' && !this.shelterRoom)
+    )
+      return;
     const cam = this.cameras.main;
     const apply = () => {
       this.room = room;
@@ -210,8 +218,24 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   /** Kde žije mačka: pacienti v garáži, stálice v kútiku alebo v kaviarni. */
   private areaFor(cat: CatData): Phaser.Geom.Rectangle {
-    if (!cat.resident) return PATIENT_AREA;
+    if (!cat.resident)
+      return cat.ward === 'quarantine' && this.shelterRoom ? QUARANTINE_AREA : PATIENT_AREA;
     return this.cafe ? CAFE_AREA : RESIDENT_AREA;
+  }
+
+  /** Komunitný útulok – tretia budova (GDD §6.2). */
+  private openShelterRoom(): void {
+    if (this.shelterRoom) return;
+    this.shelterRoom = new ShelterRoom(this, this.geom);
+    for (const [x, y, r] of this.shelterRoom.lamps) this.addGlow(x, y, r);
+  }
+
+  /** Pacient sa presunie do garáže alebo do karantény (podľa `cat.ward`). */
+  private moveToWard(sprite: CatSprite): void {
+    const area = this.areaFor(sprite.cat);
+    const x = Phaser.Math.Between(area.left + 20, area.right - 20);
+    const y = Phaser.Math.Between(area.top + 10, area.bottom - 10);
+    sprite.teleport(x, y, area);
   }
 
   private openCafeRoom(): void {
@@ -297,9 +321,17 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     const bus = this.state.bus;
     const save = () => this.save();
     bus.on('catAdmitted', ({ cat }) => {
-      const cage =
-        CAGES[Math.min(this.cagesDrawn - 1, this.state.cagedCats.length - 1)] ?? CAGES[0];
+      // Nová mačka sa objaví pri svojej klietke – v garáži alebo v karanténe
+      const quarantine = cat.ward === 'quarantine' && this.shelterRoom;
+      const cages = quarantine ? QUARANTINE_CAGES : CAGES.slice(0, this.cagesDrawn);
+      const n = this.state.wardCats(quarantine ? 'quarantine' : 'garage').length;
+      const cage = cages[Math.min(cages.length - 1, Math.max(0, n - 1))] ?? CAGES[0];
       if (cage) this.spawnCat(cat, cage.x, cage.y + 8);
+      save();
+    });
+    bus.on('catMoved', ({ cat }) => {
+      const sprite = this.sprites.get(cat.id);
+      if (sprite) this.moveToWard(sprite);
       save();
     });
     bus.on('catChanged', ({ cat }) => this.refreshCat(cat));
@@ -315,13 +347,18 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       if (sprite) {
         if (this.selected === sprite) this.selected = null;
         this.sprites.delete(record.cat.id);
-        sprite.leave(EXIT.x, EXIT.y, () => undefined);
+        // odchádza dverami miestnosti, v ktorej práve je
+        sprite.leave(roomX(roomAt(sprite.x)) + EXIT.x, EXIT.y, () => undefined);
       }
       save();
     });
     bus.on('reportDeclined', save);
     bus.on('upgradeBought', ({ kind }) => {
       if (kind === 'cage') this.drawCages(true);
+      if (kind === 'shelter') {
+        this.openShelterRoom();
+        this.showRoom('shelter');
+      }
       if (kind === 'cafe') {
         this.openCafeRoom();
         for (const sprite of this.sprites.values())
@@ -395,7 +432,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private createLighting(): void {
     this.nightOverlay = this.add
-      .rectangle(0, 0, WORLD_W * 2, WORLD_H, 0x000000, 0)
+      .rectangle(0, 0, WORLD_W * 3, WORLD_H, 0x000000, 0)
       .setOrigin(0)
       .setDepth(5000);
     // Mäkké svetlo lámp: radiálny prechod v textúre, sčítaný s obrazom

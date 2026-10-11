@@ -54,7 +54,7 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Ukladanie v2 s migráciou starých savov, „Nová hra" v menu
 - [ ] Ukladanie (3 sloty, autosave)
 - [x] Ekonomika: úrovne útulku podľa ★, obchod s vybavením (5 kusov × 3 stupne) a dekoráciami (15, útulnosť) – GDD §6.1
-- [ ] Fáza 2 – Komunitný útulok (odomkne sa pri 100 ★)
+- [x] Fáza 2 – Komunitný útulok: karanténa (+4 klietky), ambulancia (otoskop, ušné roztoče, očkovanie), mačacia rodinka
 - [x] Hudba: 6 skladieb – lo-fi cez deň, pokojné večer a v noci, načítanie na pozadí
 - [x] UI zvuky (Kenney) v rozhraní aj minihrách
 - [x] Hra pripravená na voliteľné zvuky – **dopĺňa autor** (ASSETS.md §7)
@@ -67,9 +67,9 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 ## M3 – Komunitný útulok (Fáza 2)
 - [ ] Systém stavby miestností na mriežke
 - [x] **Mačacia kaviareň** pre stálice – druhá miestnosť, hostia s objednávkami, obsluha ťuknutím, dary, dokupovanie stolov (GDD §5.5; presunuté do Fázy 1)
-- [ ] Karanténa, ambulancia
+- [x] Karanténa, ambulancia (Komunitný útulok)
 - [x] Nové minihry: kúpanie (blchy), strihanie pazúrikov (dlhé pazúriky)
-- [ ] Minihra očkovanie
+- [x] Minihra očkovanie, minihra kvapky do uška
 - [ ] Prvé udalosti: Zima prichádza, Deň otvorených dverí
 - [x] Rozšírenie na 15 rysov, 12 plemien, 13 farieb (album 84 políčok)
 

@@ -111,6 +111,17 @@
       "rep": 4,
       "weight": 3,
       "requires": "cafe"
+    },
+    {
+      "id": "vaccinate",
+      "kind": "vaccinated",
+      "name_key": "CH_VACCINATE",
+      "base": 2,
+      "step": 2,
+      "money": 50,
+      "rep": 5,
+      "weight": 3,
+      "requires": "shelter"
     }
   ]
 }
