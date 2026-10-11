@@ -1,5 +1,5 @@
 {
-  "_comment": "Srdiečka a kozmetika (GDD §7.6). hearts = koľko ❤ hráč dostane za čo. accessories = ozdoby pre stálice (farba obojku, doplnok). walls = farby stien garáže a kaviarne (tón cez celú stenu).",
+  "_comment": "Srdiečka a kozmetika (GDD §7.6). hearts = koľko ❤ hráč dostane za čo. walls = farby stien garáže a kaviarne (tón cez celú stenu).",
   "hearts": {
     "postcard": 3,
     "album": 2,
@@ -7,43 +7,6 @@
     "event_bonus": 3,
     "rare": 5
   },
-  "accessories": [
-    {
-      "id": "collar_red",
-      "icon": "🔴",
-      "price": 5,
-      "color": "#d94a4a",
-      "extra": "none"
-    },
-    {
-      "id": "collar_blue",
-      "icon": "🔵",
-      "price": 5,
-      "color": "#4a7ad9",
-      "extra": "none"
-    },
-    {
-      "id": "collar_bell",
-      "icon": "🔔",
-      "price": 8,
-      "color": "#3a9a5a",
-      "extra": "bell"
-    },
-    {
-      "id": "bow_pink",
-      "icon": "🎀",
-      "price": 10,
-      "color": "#f27a9b",
-      "extra": "bow"
-    },
-    {
-      "id": "bandana",
-      "icon": "🧣",
-      "price": 12,
-      "color": "#f2a03a",
-      "extra": "bandana"
-    }
-  ],
   "walls": [
     {
       "id": "mint",

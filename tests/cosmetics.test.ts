@@ -65,36 +65,22 @@ describe('Vzácne mačky (GDD §7.2)', () => {
 });
 
 describe('Srdiečka a kozmetika (GDD §7.6)', () => {
-  it('srdiečka za nové políčko albumu a úspech; kúpa ozdoby a farby stien', () => {
+  it('srdiečka za nové políčko albumu a úspech; kúpa farby stien', () => {
     const s = new GameState(data, 4);
-    const cat = resident(s); // album + úspechy
+    resident(s); // album + úspechy
     expect(s.hearts).toBeGreaterThanOrEqual(h.album + h.achievement);
-    const acc = data.cosmetics.accessories[0]!;
-    s.hearts = 0;
-    expect(s.buyCosmetic(acc.id)).toBe(false);
-    s.hearts = 100;
-    expect(s.buyCosmetic(acc.id)).toBe(true);
-    expect(s.hearts).toBe(100 - acc.price);
-    expect(s.buyCosmetic(acc.id)).toBe(false);
-    expect(s.setAccessory(cat.id, acc.id)).toBe(true);
-    expect(cat.accessory).toBe(acc.id);
-    expect(s.setAccessory(cat.id, null)).toBe(true);
-    expect(cat.accessory).toBeUndefined();
     const wall = data.cosmetics.walls[0]!;
+    s.hearts = 0;
+    expect(s.buyCosmetic(wall.id)).toBe(false);
     expect(s.setWall('garage', wall.id)).toBe(false);
-    s.buyCosmetic(wall.id);
+    s.hearts = 100;
+    expect(s.buyCosmetic(wall.id)).toBe(true);
+    expect(s.hearts).toBe(100 - wall.price);
+    expect(s.buyCosmetic(wall.id)).toBe(false);
     expect(s.setWall('garage', wall.id)).toBe(true);
     expect(s.cosmetics.walls.garage).toBe(wall.id);
-  });
-
-  it('ozdobu má iba stálica', () => {
-    const s = new GameState(data, 5);
-    s.hearts = 100;
-    s.devSpawnReport();
-    const cat = s.acceptReport(s.reports[0]!.id)!;
-    const acc = data.cosmetics.accessories[0]!;
-    s.buyCosmetic(acc.id);
-    expect(s.setAccessory(cat.id, acc.id)).toBe(false);
+    expect(s.setWall('garage', null)).toBe(true);
+    expect(s.cosmetics.walls.garage).toBeUndefined();
   });
 
   it('save v15: srdiečka a kozmetika sa uložia; staršie savy začnú s 0', () => {

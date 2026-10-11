@@ -2,7 +2,6 @@ import type {
   ActiveChallenge,
   AdopterVisit,
   AchievementDef,
-  AccessoryDef,
   WallColorDef,
   AdoptionRecord,
   AlbumEntry,
@@ -864,32 +863,17 @@ export class GameState {
     this.bus.emit('heartsChanged', { hearts: this.hearts, delta: n });
   }
 
-  accessoryDef(id: string): AccessoryDef | undefined {
-    return this.data.cosmetics?.accessories.find((a) => a.id === id);
-  }
-
   wallDef(id: string): WallColorDef | undefined {
     return this.data.cosmetics?.walls.find((w) => w.id === id);
   }
 
-  /** Kúpa ozdoby alebo farby stien za srdiečka (raz – potom sa dá použiť kdekoľvek). */
+  /** Kúpa farby stien za srdiečka (raz – potom sa dá použiť v oboch miestnostiach). */
   buyCosmetic(id: string): boolean {
-    const def = this.accessoryDef(id) ?? this.wallDef(id);
+    const def = this.wallDef(id);
     if (!def || this.cosmetics.owned.includes(id) || this.hearts < def.price) return false;
     this.hearts -= def.price;
     this.cosmetics.owned.push(id);
     this.bus.emit('heartsChanged', { hearts: this.hearts, delta: -def.price });
-    return true;
-  }
-
-  /** Ozdoba pre stálicu (null = zložiť). */
-  setAccessory(catId: string, id: string | null): boolean {
-    const cat = this.getCat(catId);
-    if (!cat || !cat.resident) return false;
-    if (id && !this.cosmetics.owned.includes(id)) return false;
-    if (id) cat.accessory = id;
-    else delete cat.accessory;
-    this.changed(cat);
     return true;
   }
 

@@ -39,50 +39,6 @@ const FEET_OFFSET = -2.5;
  * Mačka v útulku: zobrazuje CatData a sama sa prechádza.
  * Rozhodnutia o správaní sú jednoduché a čisto vizuálne – herné pravidlá sú v core/.
  */
-/** Krk mačky v snímke 32×32 podľa smeru: [sedí, ide, leží] (meranie z hárku Pop Shop). */
-const NECK: Record<CatDir, [number, number][]> = {
-  down: [
-    [16, 17],
-    [16, 18],
-    [16, 19],
-  ],
-  down_left: [
-    [11, 16],
-    [10, 17],
-    [9, 19],
-  ],
-  left: [
-    [13, 17],
-    [12, 18],
-    [12, 19],
-  ],
-  up_left: [
-    [9, 13],
-    [9, 16],
-    [10, 18],
-  ],
-  up: [
-    [16, 16],
-    [16, 17],
-    [16, 18],
-  ],
-  up_right: [
-    [23, 13],
-    [23, 16],
-    [22, 18],
-  ],
-  right: [
-    [19, 17],
-    [20, 18],
-    [20, 19],
-  ],
-  down_right: [
-    [21, 16],
-    [22, 17],
-    [23, 19],
-  ],
-};
-
 export class CatSprite extends Phaser.GameObjects.Sprite {
   readonly cat: CatData;
   private dir: CatDir = 'down';
@@ -92,8 +48,6 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   private readonly shadow: Phaser.GameObjects.Ellipse;
   private readonly ring: Phaser.GameObjects.Ellipse;
   private readonly badge: Phaser.GameObjects.Image;
-  /** Ozdoba stálice (obojok, mašlička…) – GDD §7.6. */
-  private readonly accessory: Phaser.GameObjects.Image;
   private badgeKind: CatBadge = null;
   /** Kedy pustiť ďalšie „z" (spánok) alebo iskričku (čistá srsť). */
   private nextFxAt = 0;
@@ -126,7 +80,6 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     this.ring = scene.add.ellipse(x, y, 24, 9).setStrokeStyle(1, 0xfff4d6, 1).setVisible(false);
     ensurePixelIcons(scene);
     this.badge = scene.add.image(x, y, 'badge_exam').setOrigin(0.5, 1).setVisible(false);
-    this.accessory = scene.add.image(x, y, '__DEFAULT').setVisible(false);
     scene.add.existing(this);
 
     // Väčšia plocha na ťuknutie, aby sa mačka dala ľahko trafiť prstom
@@ -471,27 +424,7 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
       const top = this.behaviour === 'laying' ? 18 : 27;
       this.badge.setPosition(Math.round(this.x), Math.round(this.y - top + bob)).setDepth(4500);
     }
-    this.updateAccessory();
     if (time >= this.nextFxAt) this.ambientFx(time);
-  }
-
-  /** Ozdoba sedí na krku – poloha podľa smeru a toho, či mačka sedí, ide alebo leží. */
-  private updateAccessory(): void {
-    const id = this.cat.accessory;
-    const key = id ? `acc-${id}` : '';
-    if (!id || !this.scene.textures.exists(key) || !this.visible) {
-      this.accessory.setVisible(false);
-      return;
-    }
-    const anim = this.anims.currentAnim?.key ?? '';
-    const kind = /:(walk|run):/.test(anim) ? 1 : /:lay/.test(anim) ? 2 : 0;
-    const p = NECK[this.dir][kind] ?? [16, 17];
-    if (this.accessory.texture.key !== key) this.accessory.setTexture(key);
-    this.accessory
-      .setVisible(true)
-      .setAlpha(this.alpha)
-      .setPosition(Math.round(this.x + p[0] - 16), Math.round(this.y + p[1] - 27.2))
-      .setDepth(this.depth + 0.1);
   }
 
   /** Pri hosťovi: sadne si a pozerá hore na neho, alebo si ľahne vedľa – chvíľu ostane. */
@@ -564,7 +497,6 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     this.shadow.destroy();
     this.ring.destroy();
     this.badge.destroy();
-    this.accessory.destroy();
     super.destroy(fromScene);
   }
 }

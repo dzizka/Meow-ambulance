@@ -1038,38 +1038,10 @@ export class UI {
     });
     if (feedLeft > 0) feedBtn.append(el('small', {}, t('UI_RESTING', { s: feedLeft })));
     care.append(feedBtn);
-    return [care, ...this.accessoryPicker(cat)];
+    return [care];
   }
 
-  /** Ozdoba pre stálicu – iba kúpené (GDD §7.6). */
-  private accessoryPicker(cat: CatData): HTMLElement[] {
-    const s = this.state;
-    if (!cat.resident) return [];
-    const owned = (s.data.cosmetics?.accessories ?? []).filter((a) =>
-      s.cosmetics.owned.includes(a.id),
-    );
-    if (!owned.length) return [el('p', { class: 'hint' }, t('UI_ACC_NONE_OWNED'))];
-    const pick = (id: string | null) => () => {
-      if (s.setAccessory(cat.id, id)) this.renderSheet();
-    };
-    return [
-      el('h3', {}, t('UI_ACC_TITLE')),
-      el(
-        'div',
-        { class: 'actions' },
-        button(`✖ ${t('UI_ACC_OFF')}`, pick(null), {
-          class: cat.accessory ? 'btn' : 'btn primary',
-        }),
-        ...owned.map((a) =>
-          button(`${a.icon} ${t(`ACC_${a.id.toUpperCase()}`)}`, pick(a.id), {
-            class: cat.accessory === a.id ? 'btn primary' : 'btn',
-          }),
-        ),
-      ),
-    ];
-  }
-
-  /** Obchod → Ozdoby: srdiečka, ozdoby pre stálice a farby stien (GDD §7.6). */
+  /** Obchod → Ozdoby: srdiečka a farby stien (GDD §7.6). */
   private cosmeticsContent(): HTMLElement[] {
     const s = this.state;
     const c = s.data.cosmetics;
@@ -1117,9 +1089,6 @@ export class UI {
     return [
       el('p', { class: 'hearts-line' }, t('UI_HEARTS_LINE', { n: s.hearts })),
       el('p', { class: 'hint' }, t('UI_HEARTS_HINT')),
-      el('h3', {}, t('UI_ACC_TITLE')),
-      ...c.accessories.map((a) => item(a.id, a.icon, t(`ACC_${a.id.toUpperCase()}`), a.price)),
-      el('p', { class: 'hint' }, t('UI_ACC_HINT')),
       el('h3', {}, t('UI_WALLS_TITLE')),
       ...c.walls.map((w) => item(w.id, w.icon, t(`WALL_${w.id.toUpperCase()}`), w.price)),
       wallRow('garage'),

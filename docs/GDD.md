@@ -458,7 +458,7 @@ Pri prechode stavu: krátka „premena" s efektom a zvukom (dopamínový moment)
 
 ### 7.6 Srdiečka ❤ a kozmetika 🟢
 - **Srdiečka** sa nedajú kúpiť za €: +3 za pohľadnicu, +2 za nové políčko albumu, +5 za vzácnu mačku v albume, +5 za úspech, +3 za splnený cieľ udalosti (`public/data/cosmetics.json → hearts`).
-- **Obchod → ❤️ Ozdoby:** ozdoby pre stálice (červený a modrý obojok 5 ❤, obojok so zvončekom 8 ❤, ružová mašlička 10 ❤, šatka 12 ❤) – kúpenú ozdobu dá hráč stálici v jej karte (Opatera); ozdoba sa kreslí na krku mačky v každom smere.
+- **Obchod → ❤️ Ozdoby:** za srdiečka sa kupujú farby stien. (Ozdoby na mačkách – obojky, mašličky – boli skúšobne pridané a odstránené: pôsobili neprirodzene.)
 - **Farba stien** garáže a kaviarne (mätová, levanduľová, broskyňová, nebeská – po 8 ❤); kúpená farba sa dá použiť v oboch miestnostiach a kedykoľvek vrátiť pôvodnú.
 
 ---

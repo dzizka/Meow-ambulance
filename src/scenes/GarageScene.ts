@@ -25,7 +25,6 @@ import { Furnishings } from './Furnishings';
 import { StaffSprites } from './StaffSprites';
 import { QUARANTINE_AREA, QUARANTINE_CAGES, ShelterRoom } from './ShelterRoom';
 import { ClinicRoom, type Floor1Room } from './ClinicRoom';
-import { ensureAccessoryTextures } from './pixelIcons';
 import { Clinic2Room, type Floor2Room } from './Clinic2Room';
 import { CATIO_AREA, CatioRoom } from './CatioRoom';
 import { HOTEL_AREA, HotelRoom } from './HotelRoom';
@@ -129,7 +128,6 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     const offline = this.registry.get('offline') as OfflineSummary | null;
 
     this.registerFrames();
-    ensureAccessoryTextures(this, this.state.data.cosmetics?.accessories ?? []);
     this.buildBackground();
     this.placeFurniture();
     this.drawCages(false);
