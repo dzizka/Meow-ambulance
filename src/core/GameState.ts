@@ -574,6 +574,7 @@ export class GameState {
     cat.neutered = true;
     this.counters.neutered += 1;
     this.changed(cat);
+    this.bus.emit('clinicVisit', { cat, room: 'or', recover: true });
     return true;
   }
 
@@ -601,6 +602,8 @@ export class GameState {
     if (!cat) return [];
     const found = Care.examine(cat, tool, this.data);
     this.changed(cat);
+    if (tool === 'bloodtest' || tool === 'xray')
+      this.bus.emit('clinicVisit', { cat, room: tool === 'xray' ? 'xray' : 'lab', recover: false });
     return found;
   }
 
@@ -608,6 +611,9 @@ export class GameState {
     const cat = this.getCat(catId);
     if (!cat || (this.needsOperatingRoom(conditionId) && !this.hasClinicRoom('or'))) return false;
     if (!Care.treat(cat, conditionId, stars, this.data)) return false;
+    const game = this.data.conditions.find((d) => d.id === conditionId)?.minigame;
+    if (game === 'surgery' || game === 'splint')
+      this.bus.emit('clinicVisit', { cat, room: 'or', recover: game === 'surgery' });
     this.counters.treated += 1;
     if (conditionId === 'ticks') this.counters.ticks += 1;
     this.changed(cat);

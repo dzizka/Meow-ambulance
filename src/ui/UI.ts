@@ -7,6 +7,7 @@ import type { MatchResult } from '../core/systems/Match';
 import type {
   AdoptionRecord,
   CatData,
+  ClinicRoomId,
   CatStats,
   DecorDef,
   DiagnosticTool,
@@ -186,7 +187,9 @@ export class UI {
   private tabFor: string | null = null;
   private busy = false;
   private muted = false;
-  private modalKind: 'reports' | 'visitors' | 'menu' | 'welcome' | null = null;
+  private modalKind: 'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | null = null;
+  /** Prístroj kliniky, pri ktorom hráč vyberá pacienta. */
+  private stationRoom: ClinicRoomId = 'lab';
   private menuTab: MenuTab = 'challenges';
   private confirmReset = false;
   private selectedForVisit: string | null = null;
@@ -348,6 +351,16 @@ export class UI {
       }),
     );
     this.root.append(this.roomMenu);
+  }
+
+  /** Ťuknutie na prístroj kliniky: výber pacienta, alebo obchod, ak miestnosť ešte nie je. */
+  openStation(room: ClinicRoomId): void {
+    if (!this.state.hasClinicRoom(room)) {
+      this.openShop();
+      return;
+    }
+    this.stationRoom = room;
+    this.openModal('station');
   }
 
   /** Otvorí obchod (napr. ťuknutím na plachtu nekúpenej miestnosti kliniky). */
@@ -1018,7 +1031,7 @@ export class UI {
       waiting.length
         ? el('div', { class: 'cat-list' }, ...waiting.map((cat) => this.catTile(cat)))
         : el('p', { class: 'muted' }, t('UI_CLINIC_EMPTY')),
-      waiting.length ? el('p', { class: 'hint' }, t('UI_CLINIC_TAP')) : '',
+      el('p', { class: 'hint' }, t('UI_CLINIC_TAP')),
       this.staffHere('clinic'),
       missing.length
         ? button(`🛒 ${t('UI_CLINIC_BUY_ROOMS')}`, () => this.openShop(), { class: 'btn' })
@@ -1248,6 +1261,9 @@ export class UI {
       case 'menu':
         box.append(...this.menuContent(), closeBtn);
         break;
+      case 'station':
+        box.append(...this.stationContent(), closeBtn);
+        break;
       case 'welcome':
         box.append(
           el('h2', {}, t('UI_WELCOME')),
@@ -1261,6 +1277,84 @@ export class UI {
         return;
     }
     this.modal.replaceChildren(box);
+  }
+
+  /** Pacienti, ktorým pomôže tento prístroj kliniky (GDD §6.5). */
+  private stationContent(): HTMLElement[] {
+    const s = this.state;
+    const room = this.stationRoom;
+    const icons = { lab: '🔬', xray: '🩻', or: '🩺' } as const;
+    const go = (run: () => void) => () => {
+      this.closeModal();
+      run();
+    };
+    const rows: HTMLElement[] = [];
+    for (const cat of s.cats) {
+      if (cat.resident) continue;
+      const actions: HTMLElement[] = [];
+      if (room === 'lab' && !cat.examined.includes('bloodtest'))
+        actions.push(
+          button(
+            `🩸 ${t('UI_TOOL_BLOODTEST')}`,
+            go(() => void this.doExamine(cat, 'bloodtest')),
+            {
+              class: 'btn primary',
+            },
+          ),
+        );
+      if (room === 'xray' && !cat.examined.includes('xray'))
+        actions.push(
+          button(
+            `🩻 ${t('UI_TOOL_XRAY')}`,
+            go(() => void this.doExamine(cat, 'xray')),
+            {
+              class: 'btn primary',
+            },
+          ),
+        );
+      if (room === 'or') {
+        for (const c of cat.conditions) {
+          const def = s.data.conditions.find((d) => d.id === c.id);
+          if (
+            !c.revealed ||
+            c.treated ||
+            (def?.minigame !== 'surgery' && def?.minigame !== 'splint')
+          )
+            continue;
+          actions.push(
+            button(
+              `🩹 ${t(def.name_key)}`,
+              go(() => void this.doTreat(cat, c.id)),
+              {
+                class: 'btn primary',
+              },
+            ),
+          );
+        }
+        if (s.canNeuter(cat))
+          actions.push(
+            button(
+              `✂️ ${t('UI_NEUTER')}`,
+              go(() => void this.doNeuter(cat)),
+            ),
+          );
+      }
+      if (!actions.length) continue;
+      rows.push(
+        el(
+          'div',
+          { class: 'station-row' },
+          catPortrait(cat, 1.5),
+          el('strong', { class: 'grow' }, cat.name),
+          el('div', { class: 'actions' }, ...actions),
+        ),
+      );
+    }
+    return [
+      el('h2', {}, `${icons[room]} ${t(`CLINIC_${room.toUpperCase()}`)}`),
+      el('p', { class: 'hint' }, t(`CLINIC_${room.toUpperCase()}_DESC`)),
+      ...(rows.length ? rows : [el('p', { class: 'muted' }, t('UI_STATION_EMPTY'))]),
+    ];
   }
 
   private reportsContent(): HTMLElement[] {

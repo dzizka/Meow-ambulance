@@ -38,6 +38,8 @@ export interface GameEvents {
   albumAdded: { key: string };
   upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' | 'clinic' };
   clinicRoomBought: { room: import('../data/types').ClinicRoomId };
+  /** Mačka je na klinike pri prístroji (vyšetrenie, operácia) – iba pre zobrazenie. */
+  clinicVisit: { cat: CatData; room: import('../data/types').ClinicRoomId; recover: boolean };
   catMoved: { cat: CatData };
   staffHired: { id: StaffId };
   /** Personál niečo urobil (pre postavičky a oznámenia). */

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { GameState } from '../core/GameState';
 import type { ClinicRoomId } from '../data/types';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
+import { DPR } from './dpr';
 import { CLINIC_X, FLOOR_TOP, ROOM, WORLD_H, WORLD_W } from './layout';
 import { addProp, type WorldGeom } from './world';
 
@@ -13,6 +14,32 @@ const SECTIONS: Record<ClinicRoomId, [number, number]> = {
 };
 /** Priečky s dverami medzi miestnosťami. */
 const WALLS = [166, 316];
+/** Miesto pacienta pri prístroji (svet) – mačka tam leží/sedí počas zákroku. */
+export interface ClinicStation {
+  x: number;
+  y: number;
+  lay: boolean;
+  dir: 'down' | 'left' | 'right';
+  depthBoost: number;
+}
+const FT0 = FLOOR_TOP;
+const STATIONS: Record<ClinicRoomId, ClinicStation> = {
+  lab: { x: CLINIC_X + 72, y: FT0 + 50, lay: false, dir: 'down', depthBoost: 24 },
+  xray: { x: CLINIC_X + 229, y: FT0 + 99, lay: true, dir: 'right', depthBoost: 20 },
+  or: { x: CLINIC_X + 400, y: FT0 + 109, lay: true, dir: 'right', depthBoost: 25 },
+};
+/** Pelechy na zotavenie po operácii. */
+const RECOVERY = [
+  { x: CLINIC_X + 424, y: FT0 + 180 },
+  { x: CLINIC_X + 452, y: FT0 + 172 },
+];
+/** Ťuknuteľné prístroje (svet). */
+const HOTSPOTS: Record<ClinicRoomId, [number, number, number, number]> = {
+  lab: [CLINIC_X + 60, FT0 + 30, 64, 44],
+  xray: [CLINIC_X + 190, FT0 + 28, 94, 92],
+  or: [CLINIC_X + 370, FT0 + 20, 62, 114],
+};
+
 /** Kde sa prechádza veterinárka (laboratórium a röntgen). */
 export const CLINIC_WALK = new Phaser.Geom.Rectangle(CLINIC_X + 40, FLOOR_TOP + 130, 240, 50);
 
@@ -28,18 +55,138 @@ export class ClinicRoom {
   ];
   private readonly shown = new Set<ClinicRoomId>();
   private readonly tarps = new Map<ClinicRoomId, Phaser.GameObjects.Container>();
+  /** Blikajúce svetielka prístrojov (obnovujú sa časovačom). */
+  private readonly leds: {
+    room: ClinicRoomId;
+    g: Phaser.GameObjects.Rectangle;
+    colors: number[];
+  }[] = [];
+  private cone: Phaser.GameObjects.Image | null = null;
+  private beat: Phaser.GameObjects.Graphics | null = null;
+  private beatX = 0;
+  /** Obsadené pelechy na zotavenie (id mačky). */
+  private readonly beds: (string | null)[] = RECOVERY.map(() => null);
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly state: GameState,
     private readonly geom: WorldGeom,
-    private readonly onLockedTap: () => void,
+    /** Ťuknutie na prístroj (alebo na plachtu nekúpenej miestnosti). */
+    private readonly onTap: (room: ClinicRoomId) => void,
   ) {
     this.registerFrames();
     this.makeTextures();
     this.buildBackground();
     for (const room of Object.keys(SECTIONS) as ClinicRoomId[]) this.showRoom(room, false);
     state.bus.on('clinicRoomBought', ({ room }) => this.showRoom(room, true));
+    for (const room of Object.keys(HOTSPOTS) as ClinicRoomId[]) this.makeHotspot(room);
+    scene.time.addEvent({ delay: 450, loop: true, callback: () => this.blink() });
+    scene.events.on(Phaser.Scenes.Events.UPDATE, (_t: number, dt: number) => this.animate(dt));
+  }
+
+  /** Kde leží/sedí pacient pri prístroji. */
+  station(room: ClinicRoomId): ClinicStation {
+    return STATIONS[room];
+  }
+
+  /** Voľný pelech na zotavenie (alebo prvý, ak sú obsadené). */
+  takeBed(catId: string): { x: number; y: number } {
+    let i = this.beds.indexOf(catId);
+    if (i < 0) i = this.beds.indexOf(null);
+    if (i < 0) i = 0;
+    this.beds[i] = catId;
+    return RECOVERY[i] ?? RECOVERY[0]!;
+  }
+
+  freeBed(catId: string): void {
+    const i = this.beds.indexOf(catId);
+    if (i >= 0) this.beds[i] = null;
+  }
+
+  /** Efekt zákroku: záblesk röntgenu, bublinky v laboratóriu, jasnejšia lampa na sále. */
+  effect(room: ClinicRoomId): void {
+    const sc = this.scene;
+    if (room === 'xray') {
+      const [x0, x1] = SECTIONS.xray;
+      const flash = sc.add
+        .rectangle(CLINIC_X + x0, ROOM.y, x1 - x0, ROOM.wallH + ROOM.floorH, 0xdff4ff, 0)
+        .setOrigin(0)
+        .setDepth(4900);
+      sc.tweens.add({
+        targets: flash,
+        fillAlpha: 0.55,
+        yoyo: true,
+        repeat: 1,
+        duration: 140,
+        delay: 600,
+        onComplete: () => flash.destroy(),
+      });
+    } else if (room === 'lab') {
+      for (let i = 0; i < 10; i++) {
+        const b = sc.add
+          .circle(CLINIC_X + 100 + Phaser.Math.Between(0, 10), FLOOR_TOP + 48, 1, 0xbfe8ff)
+          .setDepth(4900);
+        sc.tweens.add({
+          targets: b,
+          y: b.y - Phaser.Math.Between(8, 16),
+          alpha: 0,
+          delay: i * 250,
+          duration: 900,
+          onComplete: () => b.destroy(),
+        });
+      }
+    } else if (this.cone) {
+      sc.tweens.add({ targets: this.cone, alpha: 0.6, yoyo: true, hold: 5000, duration: 400 });
+    }
+  }
+
+  /** Neviditeľná plocha nad prístrojom – ťuknutie otvorí výber pacienta. */
+  private makeHotspot(room: ClinicRoomId): void {
+    const [x, y, w, h] = HOTSPOTS[room];
+    const zone = this.scene.add.zone(x, y, w, h).setOrigin(0).setDepth(4400);
+    zone.setInteractive({ useHandCursor: true });
+    // ťuknutie, nie posun obrazovky prstom
+    zone.on('pointerup', (p: Phaser.Input.Pointer) => {
+      if (this.isTap(p) && this.state.hasClinicRoom(room)) this.onTap(room);
+    });
+  }
+
+  /**
+   * Ťuknutie do sveta: začalo aj skončilo na plátne a prst sa takmer nepohol.
+   * (Phaser počúva pustenie aj nad HTML oknom – bez kontroly by ťuknutie na tlačidlo
+   * v okne nad prístrojom okno hneď znova otvorilo.)
+   */
+  private isTap(p: Phaser.Input.Pointer): boolean {
+    const canvas = this.scene.game.canvas;
+    return p.downElement === canvas && p.upElement === canvas && p.getDistance() < 12 * DPR;
+  }
+
+  /** Svetielka na prístrojoch blikajú. */
+  private blink(): void {
+    for (const led of this.leds) {
+      if (!this.state.hasClinicRoom(led.room)) continue;
+      led.g.setFillStyle(Phaser.Utils.Array.GetRandom(led.colors));
+    }
+  }
+
+  /** Bod na monitoroch nad operačným stolom beží dookola. */
+  private animate(dt: number): void {
+    if (!this.beat) return;
+    this.beatX = (this.beatX + dt * 0.02) % 26;
+    const g = this.beat;
+    g.clear();
+    for (let i = 0; i < 3; i++) {
+      const x = CLINIC_X + 348 + i * 31 + this.beatX;
+      g.fillStyle(0xb8ffb8, 1).fillRect(x, ROOM.y + 40, 2, 2);
+    }
+  }
+
+  private led(room: ClinicRoomId, x: number, y: number, colors: number[]): void {
+    const g = this.scene.add
+      .rectangle(CLINIC_X + x, y, 2, 2, colors[0])
+      .setOrigin(0)
+      .setDepth(4300);
+    this.leds.push({ room, g, colors });
   }
 
   /** Vybavenie kúpenej miestnosti, alebo plachta, ak ešte nie je kúpená. */
@@ -167,7 +314,13 @@ export class ClinicRoom {
       this.img('clinic', 'pc', 112, FT + 50).setDepth(FT + 71),
       this.img('cl-centrifuge', undefined, 51, FT + 134, 8),
       this.img('interior', 'plant', 150, FT + 180, 8),
-    ];
+    ].map((img, i, all) => {
+      if (i === all.length - 1) {
+        this.led('lab', 50 + 17, FT + 131, [0x6ee08a, 0x2b6a3a]);
+        this.led('lab', 112 - 6, FT + 36, [0x9ad0ff, 0x5a8ac0, 0xffffff]);
+      }
+      return img;
+    });
   }
 
   private placeXray(): Phaser.GameObjects.Image[] {
@@ -179,7 +332,13 @@ export class ClinicRoom {
       this.wall('cl-apron', undefined, 295, RY + 30),
       this.img('cl-xray', undefined, 235, FT + 116, 12),
       this.img('cl-console', undefined, 195, FT + 172, 10),
-    ];
+    ].map((img, i, all) => {
+      if (i === all.length - 1) {
+        this.led('xray', 195 - 13 + 5, FT + 172 - 22 + 5, [0x6ee08a, 0x2b6a3a]);
+        this.led('xray', 195 - 13 + 13, FT + 172 - 22 + 5, [0xe05a5a, 0x6a2a2a]);
+      }
+      return img;
+    });
   }
 
   private placeOr(): Phaser.GameObjects.Image[] {
@@ -193,7 +352,12 @@ export class ClinicRoom {
       this.img('clinic', 'iv_stand', 360, FT + 130, 8),
       this.img('clinic', 'curtain', 334, FT + 190),
       this.img('cl-ortable', undefined, 400, tableY, 10),
+      // pelechy na zotavenie s infúziou
+      ...RECOVERY.map((r) =>
+        this.img('cl-recovery', undefined, r.x - CLINIC_X, r.y + 5).setDepth(r.y - 2),
+      ),
     ];
+    this.beat = this.scene.add.graphics().setDepth(-980);
     // Lampa nad stolom a jej svetlo (nad stolom, pod nocou)
     const lamp = this.scene.add
       .image(CLINIC_X + 400, ROOM.y + ROOM.wallH - 4, 'cl-orlamp')
@@ -205,6 +369,7 @@ export class ClinicRoom {
       .setDepth(tableY + 1)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.35);
+    this.cone = cone;
     return [...imgs, lamp, cone];
   }
 
@@ -229,7 +394,9 @@ export class ClinicRoom {
     const c = this.scene.add.container(CLINIC_X + x0 + 3, ROOM.y, [g]).setDepth(4500);
     c.setSize(w, h);
     c.setInteractive(new Phaser.Geom.Rectangle(w / 2, h / 2, w, h), Phaser.Geom.Rectangle.Contains);
-    c.on('pointerup', () => this.onLockedTap());
+    c.on('pointerup', (p: Phaser.Input.Pointer) => {
+      if (this.isTap(p)) this.onTap(room);
+    });
     return c;
   }
 
@@ -344,6 +511,13 @@ export class ClinicRoom {
       px('#6ee08a', 5, 5, 4, 3);
       px('#e05a5a', 13, 5, 4, 3);
       px('#1d1824', 4, 12, 18, 6);
+    });
+    // Pelech na zotavenie (nízky, s dekou)
+    make('cl-recovery', 26, 10, (px) => {
+      px(OUT, 0, 2, 26, 8);
+      px('#e8ecef', 1, 3, 24, 4);
+      px('#8fb8d0', 1, 6, 24, 3);
+      px('#c9e8ff', 2, 3, 6, 2);
     });
     // Operačný stôl
     make('cl-ortable', 52, 24, (px) => {

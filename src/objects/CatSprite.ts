@@ -53,6 +53,12 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   private nextFxAt = 0;
   /** Ide k hosťovi (kaviareň). */
   private visiting = false;
+  /** Leží/sedí na jednom mieste (napr. na operačnom stole) – nerozhoduje sa sama. */
+  private pinned = false;
+  /** O koľko je vyššie poradie kreslenia (mačka na stole je pred stolom). */
+  private depthBoost = 0;
+  /** Spí aj cez deň (zotavuje sa po operácii). */
+  private pinSleepy = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -121,6 +127,9 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   teleport(x: number, y: number, area: Phaser.Geom.Rectangle): void {
     this.walkArea = area;
     this.target = null;
+    this.pinned = false;
+    this.depthBoost = 0;
+    this.pinSleepy = false;
     this.scene.tweens.add({
       targets: [this, this.shadow],
       alpha: 0,
@@ -133,6 +142,39 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
         this.scene.tweens.add({ targets: [this, this.shadow], alpha: 1, duration: 300 });
       },
     });
+  }
+
+  /**
+   * Presun na jedno miesto (stôl na klinike, pelech na zotavenie) – mačka tam leží alebo sedí,
+   * kým ju niekto znova nepresunie (`teleport`).
+   */
+  pin(
+    x: number,
+    y: number,
+    opts: { lay: boolean; dir?: CatDir; depthBoost?: number; sleepy?: boolean },
+  ): void {
+    this.target = null;
+    this.visiting = false;
+    this.scene.tweens.add({
+      targets: [this, this.shadow],
+      alpha: 0,
+      duration: 250,
+      onComplete: () => {
+        this.walkArea = new Phaser.Geom.Rectangle(x, y, 1, 1);
+        this.setPosition(x, y);
+        this.pinned = true;
+        this.depthBoost = opts.depthBoost ?? 0;
+        this.pinSleepy = opts.sleepy ?? false;
+        this.behaviour = opts.lay ? 'laying' : 'sitting';
+        this.dir = opts.dir ?? 'down';
+        this.setAnim(opts.lay ? 'lay_idle' : 'sit_idle');
+        this.scene.tweens.add({ targets: [this, this.shadow], alpha: 1, duration: 300 });
+      },
+    });
+  }
+
+  get isPinned(): boolean {
+    return this.pinned;
   }
 
   /** Príde k hosťovi a chvíľu pri ňom posedí alebo poleží. */
@@ -343,12 +385,12 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
           this.y = ny;
         }
       }
-    } else if (this.behaviour !== 'leaving' && time >= this.nextDecisionAt) {
+    } else if (!this.pinned && this.behaviour !== 'leaving' && time >= this.nextDecisionAt) {
       this.decide(time);
     }
 
-    this.setDepth(this.y);
-    this.shadow.setPosition(this.x, this.y + FEET_OFFSET).setDepth(this.y - 1);
+    this.setDepth(this.y + this.depthBoost);
+    this.shadow.setPosition(this.x, this.y + FEET_OFFSET).setDepth(this.y + this.depthBoost - 1);
     this.ring.setPosition(this.x, this.y + FEET_OFFSET).setDepth(this.y - 0.5);
     if (this.badge.visible) {
       const bob = Math.round(Math.sin(time / 300) * 1);
@@ -377,7 +419,7 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   private ambientFx(time: number): void {
     this.nextFxAt = time + Phaser.Math.Between(1400, 2600);
     if (this.behaviour === 'leaving') return;
-    if (this.behaviour === 'laying' && this.sleepy) {
+    if (this.behaviour === 'laying' && (this.sleepy || this.pinSleepy)) {
       const z = this.scene.add
         .image(this.x + 6, this.y - 16, 'zzz')
         .setDepth(4500)

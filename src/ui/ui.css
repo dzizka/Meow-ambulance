@@ -328,6 +328,18 @@ body.minigame .toast:not(:last-child) {
   align-items: center;
   text-align: left;
 }
+.station-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--ui-bg-deep);
+}
+.station-row .actions {
+  flex-basis: 100%;
+}
 .cat-tile .needs {
   margin-left: 4px;
   font-size: 0.85em;

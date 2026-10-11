@@ -411,7 +411,7 @@
   "TOAST_NEUTERED": "{cat} is neutered ✂️",
   "UI_CLINIC_CASE": "Case from another shelter – more ★ and a bigger fee after adoption.",
   "UI_CLINIC_EMPTY": "Nobody is waiting here right now. Cats the clinic can help will show up here.",
-  "UI_CLINIC_TAP": "Tap a cat – exam, treatment or neutering",
+  "UI_CLINIC_TAP": "Tap a machine – microscope, X-ray or operating table – and pick a patient.",
   "UI_CLINIC_BUY_ROOMS": "Buy more rooms",
   "MG_INSULIN_TITLE": "Insulin",
   "MG_SPLINT_TITLE": "Splint",
@@ -429,5 +429,6 @@
   "MG_SURG_EXTRACT": "Slowly pull the object out of the wound with tweezers.",
   "MG_SURG_STITCH": "Stitch the wound – tap the dots from left to right.",
   "MG_SPLINT_HINT": "Circle your finger around the paw to wrap it. Slowly – not too tight!",
-  "MG_TOO_TIGHT": "Too tight!"
+  "MG_TOO_TIGHT": "Too tight!",
+  "UI_STATION_EMPTY": "Nobody needs this right now."
 }
