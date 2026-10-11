@@ -169,7 +169,9 @@ export class MinigameScene extends Phaser.Scene {
       font,
       '#f2c14e',
       true,
-    ).setOrigin(0.5);
+    )
+      .setOrigin(0.5)
+      .setDepth(100); // vždy navrchu (nad mikroskopom, bazénom…)
     this.catSprite.play(catAnimKey(this.cfg.cat.sprite, 'look', 'down'));
     this.sfx('success', 0.5);
     this.sfx('mewPurr', 0.6);
@@ -192,7 +194,9 @@ export class MinigameScene extends Phaser.Scene {
         '❤',
         this.S * 2.4,
         '#e86a6a',
-      ).setOrigin(0.5);
+      )
+        .setOrigin(0.5)
+        .setDepth(100);
       this.tweens.add({
         targets: h,
         y: h.y - this.S * 10,
@@ -1280,6 +1284,7 @@ export class MinigameScene extends Phaser.Scene {
         this.flash('✓', hit.x, hit.y - cellR * 2, '#9ad17b');
         this.sfx('pluck', 0.5);
         this.hearts(1);
+        if (found >= 3) label.setVisible(false);
         if (found >= 3)
           this.finish((misses === 0 && elapsed < 15000 ? 3 : misses <= 2 ? 2 : 1) as Stars);
       } else {
@@ -1442,7 +1447,7 @@ export class MinigameScene extends Phaser.Scene {
         const ring = this.add.graphics().setDepth(7);
         ring.lineStyle(Math.max(3, S * 0.5), 0x9ad17b, 1).strokeCircle(target.x, target.y, S * 3);
         this.sfx('found', 0.5);
-        this.finish((misses === 0 && elapsed < 10000 ? 3 : misses <= 1 ? 2 : 1) as Stars);
+        this.finish((misses === 0 && elapsed < 14000 ? 3 : misses <= 1 ? 2 : 1) as Stars);
       } else {
         misses += 1;
         this.flash(t('MG_MISS'), p.x, p.y - S * 3, '#e86a6a');
@@ -1454,7 +1459,7 @@ export class MinigameScene extends Phaser.Scene {
       if (phase !== 'frame') return;
       elapsed += dt;
       // mačka sa vrtí zo strany na stranu
-      const catX = cx + Math.sin(elapsed / 900) * S * 9 + Math.sin(elapsed / 330) * S * 2.5;
+      const catX = cx + Math.sin(elapsed / 1500) * S * 7 + Math.sin(elapsed / 520) * S * 1.2;
       this.catSprite.x = catX;
       const ptr = this.input.activePointer;
       if (ptr.isDown) {
@@ -1462,8 +1467,8 @@ export class MinigameScene extends Phaser.Scene {
         fy = ptr.y;
       }
       const inside =
-        ptr.isDown && Math.abs(catX - fx) < fw / 2 - S * 6 && Math.abs(cy - fy) < fh / 2 - S * 4;
-      progress = inside ? Math.min(1, progress + dt / 1800) : Math.max(0, progress - dt / 2500);
+        ptr.isDown && Math.abs(catX - fx) < fw / 2 - S * 4 && Math.abs(cy - fy) < fh / 2 - S * 3;
+      progress = inside ? Math.min(1, progress + dt / 1700) : Math.max(0, progress - dt / 4500);
       frame.clear();
       frame.lineStyle(Math.max(3, S * 0.5), inside ? 0x9ad17b : 0xf2c14e, 1);
       frame.strokeRect(fx - fw / 2, fy - fh / 2, fw, fh);
@@ -1540,22 +1545,29 @@ export class MinigameScene extends Phaser.Scene {
       const mx = cx - mw / 2;
       const my = cy + S * 16;
       let v = 0.15;
+      let vel = 0; // ručička má zotrvačnosť – pohybuje sa plynulo, neskáče
       let inZone = 0;
-      let left = false;
+      let stay = 0; // ako dlho je ručička v zelenom bez prerušenia
+      let slips = 0;
       let elapsed = 0;
-      const zone: [number, number] = [0.45, 0.72];
+      const zone: [number, number] = [0.38, 0.76];
       stepUpdate = (dt) => {
         elapsed += dt;
         const down = this.input.activePointer.isDown;
-        v += (down ? dt / 1100 : -dt / 1300) + Math.sin(elapsed / 260) * 0.0012 * dt;
-        v = Phaser.Math.Clamp(v, 0, 1);
+        const want = down ? 1 / 1700 : -1 / 2000;
+        vel += (want - vel) * Math.min(1, dt / 260);
+        v = Phaser.Math.Clamp(v + vel * dt + Math.sin(elapsed / 900) * 0.00008 * dt, 0, 1);
         const ok = v >= zone[0] && v <= zone[1];
         if (ok) {
           inZone += dt;
-          left = true;
-        } else if (left) {
-          left = false;
-          faults += 0.5;
+          stay += dt;
+        } else {
+          // vypadnutie z dlhšieho držania v zelenom sa počíta (najviac 1 chyba za krok)
+          if (stay > 400 && slips < 2) {
+            slips += 1;
+            faults += 0.5;
+          }
+          stay = 0;
         }
         g.clear();
         g.fillStyle(0x10202a, 1).fillRoundedRect(mx, my - S * 7, mw, S * 6, S);
@@ -1584,7 +1596,7 @@ export class MinigameScene extends Phaser.Scene {
           mw * Math.min(1, inZone / 2500),
           S * 0.6,
         );
-        if (inZone >= 2500) {
+        if (inZone >= 2200) {
           this.catSprite.play(catAnimKey(this.cfg.cat.sprite, 'lay_idle', 'down'));
           done();
         }
@@ -1832,7 +1844,8 @@ export class MinigameScene extends Phaser.Scene {
       if (wiggle > 0) {
         wiggle -= dt;
         this.catSprite.x = cx + Math.sin(wiggle / 30) * S * 0.8;
-        if (down && !faulted) {
+        // na reakciu je chvíľa (350 ms) – až potom sa držanie počíta ako rozmazaná snímka
+        if (down && !faulted && wiggle < 1100 - 350) {
           faulted = true;
           faults += 1;
           this.flash(t('MG_CT_BLUR'), cx, cy - S * 9, '#e86a6a');

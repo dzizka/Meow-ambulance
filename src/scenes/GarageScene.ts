@@ -138,8 +138,11 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.staff = new StaffSprites(this, this.state, (id) => this.sprites.get(id));
 
     [...this.state.cats, ...this.state.hotel.guests].forEach((cat, i) => {
+      // rozostup v rámci vlastnej oblasti (nie cez celý svet – inak by mačka v úzkej
+      // karanténe skončila za priečkou)
       const area = this.areaFor(cat);
-      this.spawnCat(cat, area.x + 30 + (i % 8) * 40, area.centerY);
+      const span = Math.max(1, area.width - 40);
+      this.spawnCat(cat, area.x + 20 + ((i * 47) % span), area.centerY);
     });
     this.listen();
 

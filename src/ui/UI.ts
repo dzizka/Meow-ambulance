@@ -15,7 +15,7 @@ import type {
 } from '../data/types';
 import { generateCat } from '../core/systems/CatGenerator';
 import { Rng } from '../core/Rng';
-import { t } from '../i18n/t';
+import { lang, setLang, t } from '../i18n/t';
 import { button, el } from './dom';
 import { DevMenu } from './DevMenu';
 import { computeLayout, type Room } from '../scenes/layout';
@@ -1108,7 +1108,7 @@ export class UI {
     );
     const missing = (['lab', 'xray', 'or'] as const).filter((r) => !s.hasClinicRoom(r));
     this.setSheet(
-      el('h2', {}, `⚕️ ${t('UI_CLINIC')}`),
+      el('h2', {}, `⚕️ ${t('UI_ROOM_CLINIC')}`),
       el('p', { class: 'hint' }, roomLine),
       waiting.length
         ? el('div', { class: 'cat-list' }, ...waiting.map((cat) => this.catTile(cat)))
@@ -1176,7 +1176,7 @@ export class UI {
           s.canRehab(c)),
     );
     this.setSheet(
-      el('h2', {}, `🏢 ${t('UI_CLINIC2')}`),
+      el('h2', {}, `🏢 ${t('UI_ROOM_CLINIC2')}`),
       el('p', { class: 'hint' }, roomLine),
       waiting.length
         ? el('div', { class: 'cat-list' }, ...waiting.map((cat) => this.catTile(cat)))
@@ -1407,8 +1407,29 @@ export class UI {
       (this.selectedId ? s.getCat(this.selectedId) : undefined) ??
       s.cats[0] ??
       generateCat(s.data, new Rng(7), { id: 'dev-cat' });
-    const stars = await this.runMinigame({ kind, cat, title: `🛠 ${kind}`, ...extra });
-    this.toast(stars === null ? '🛠 Zrušené' : `🛠 ${kind}: ${'★'.repeat(stars)}`);
+    const titles: Partial<Record<MinigameKind, string>> = {
+      tick_removal: 'MG_TICK_TITLE',
+      bandage: 'HOLD_BANDAGE',
+      ears: 'HOLD_EAR',
+      syrup: 'HOLD_SYRUP',
+      breath: 'MG_BREATH_TITLE',
+      bath: 'MG_BATH_TITLE',
+      claws: 'MG_CLAWS_TITLE',
+      drops: 'MG_DROPS_TITLE',
+      vaccine: 'MG_VACCINE_TITLE',
+      feather: 'MG_FEATHER_TITLE',
+      hold: 'HOLD_BRUSH',
+      quiet: 'ACT_SIT_QUIETLY',
+      bloodtest: 'MG_BLOOD_TITLE',
+      xray: 'MG_XRAY_TITLE',
+      surgery: extra.neuter ? 'MG_NEUTER_TITLE' : 'MG_SURGERY_TITLE',
+      splint: 'MG_SPLINT_TITLE',
+      ct: 'MG_CT_TITLE',
+      swim: 'MG_SWIM_TITLE',
+    };
+    const title = t(titles[kind] ?? kind);
+    const stars = await this.runMinigame({ kind, cat, title, ...extra });
+    this.toast(stars === null ? '🛠 Zrušené' : `🛠 ${title}: ${'★'.repeat(stars)}`);
   }
 
   private async runMinigame(req: MinigameRequest): Promise<Stars | null> {
@@ -2096,6 +2117,22 @@ export class UI {
       ),
       button(this.muted ? `🔇 ${t('UI_SOUND_OFF')}` : `🔊 ${t('UI_SOUND_ON')}`, () =>
         this.toggleMute(),
+      ),
+      el(
+        'div',
+        { class: 'actions' },
+        ...(['sk', 'en'] as const).map((l) =>
+          button(
+            l === 'sk' ? '🇸🇰 Slovenčina' : '🇬🇧 English',
+            () => {
+              if (l === lang) return;
+              setLang(l);
+              this.game.saveNow();
+              location.reload();
+            },
+            { class: l === lang ? 'btn primary' : 'btn' },
+          ),
+        ),
       ),
     ];
     if (!this.confirmReset) {

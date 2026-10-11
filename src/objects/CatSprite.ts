@@ -59,6 +59,8 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   private depthBoost = 0;
   /** Spí aj cez deň (zotavuje sa po operácii). */
   private pinSleepy = false;
+  /** Koľkokrát za sebou narazila do nábytku – pri zaseknutí sa presunie na voľné miesto. */
+  private bumps = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -171,6 +173,23 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
         this.scene.tweens.add({ targets: [this, this.shadow], alpha: 1, duration: 300 });
       },
     });
+  }
+
+  /** Presun na voľné miesto vo vlastnej oblasti (keď sa zasekne o nábytok alebo stenu). */
+  private unstick(): void {
+    const a = this.walkArea;
+    let x = a.centerX;
+    let y = a.centerY;
+    for (let i = 0; i < 30; i++) {
+      const tx = Phaser.Math.Between(a.left, a.right);
+      const ty = Phaser.Math.Between(a.top, a.bottom);
+      if (this.isFreeSpot(tx, ty)) {
+        x = tx;
+        y = ty;
+        break;
+      }
+    }
+    this.teleport(x, y, a);
   }
 
   get isPinned(): boolean {
@@ -362,6 +381,7 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
         this.target = null;
         this.arriveAtGuest(time);
       } else if (dist <= step) {
+        this.bumps = 0;
         this.setPosition(this.target.x, this.target.y);
         this.target = null;
         this.behaviour = 'idle';
@@ -375,6 +395,13 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
         const ny = this.y + (dy / dist) * step;
         if (this.blocked(nx, ny) && !this.blocked(this.x, this.y) && this.behaviour !== 'leaving') {
           // Nábytok v ceste – zastav, ovoňaj a vyber si iný smer
+          this.bumps += 1;
+          if (this.bumps >= 3) {
+            // zaseknutá (napr. za priečkou mimo svojej oblasti) – preskoč na voľné miesto
+            this.bumps = 0;
+            this.unstick();
+            return;
+          }
           this.target = null;
           this.visiting = false;
           this.behaviour = 'idle';
