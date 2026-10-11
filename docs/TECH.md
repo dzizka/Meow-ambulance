@@ -81,7 +81,7 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - Web a Tauri: `localStorage` (kľúč `meow-ambulance:save:1`); Capacitor: plugin Preferences/Filesystem – za spoločným rozhraním `SaveStorage` (`src/core/SaveManager.ts`).
 - Ukladá sa každých 15 s, po dôležitých udalostiach a pri skrytí/zatvorení stránky. Pri načítaní sa dopočíta offline čas (`GameState.applyOffline`).
 - Adresa končiaca `#novahra` zmaže uloženú hru (na testovanie).
-- Pole `version` (aktuálne 2); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
+- Pole `version` (aktuálne 7); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
 - „Nová hra" v menu (☰ → Obchod) zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
 
 ## Testy a CI
@@ -116,6 +116,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Dekorácie: `public/data/decor.json` (pevné miesta, `layer` wall/floor/prop), útulnosť `GameState.coziness(room)`.
 - Zobrazenie vo svete: `src/scenes/Furnishings.ts` (kŕmidlo, mačací strom, klbko a myška sú nakreslené kódom).
 - Save v5 pridal `equipment` a `decor`.
+- Personál: `public/data/staff.json` (rola, cena, sprite, miestnosť), balans `balance.json → staff`. Stav `GameState.staff` (save v7, `MIGRATIONS[6]`), práca v `advanceStaff` (volá `tick`), udalosti `staffHired` a `staffAction`. Zobrazenie `src/scenes/StaffSprites.ts` (baristku zastupuje statická baristka v kaviarni).
 
 ## Správanie mačiek
 - `CatSprite` dostáva `CatWorld` (`GarageScene.catWorld`): pôdorysy nábytku (`obstacles`), miesta za vysokým nábytkom (`hideZones` – tam nezastaví), ostatné mačky (rozostup ~18 × 10 px, aby nesedeli na sebe) a miesta pri hosťoch v kaviarni (`CafeRoom.guestSpotFor`).

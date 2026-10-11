@@ -27,7 +27,7 @@ describe('Úrovne útulku (GDD §6.1.1)', () => {
     expect(s.hasUnlock('cafe')).toBe(true);
     s.devGive(0, levels[3]!.rep); // preskočí dve úrovne naraz
     expect(ups).toEqual([1, 2, 3]);
-    expect(s.nextLevelDef).toBeNull();
+    expect(s.nextLevelDef).toBe(levels[4]);
     expect(s.unlockRep('equipment_3')).toBe(levels[2]!.rep);
   });
 

@@ -117,6 +117,19 @@ export interface BalanceData {
   levels: LevelDef[];
   /** Účinok útulnosti (GDD §6.1.3). */
   coziness: { garage_trust_per_point: number; cafe_tip_per_point: number };
+  /** Personál (GDD §6.4). */
+  staff: {
+    caretaker: {
+      interval_s: number;
+      feed_below_satisfaction: number;
+      brush_below_cleanliness: number;
+      brush_cleanliness: number;
+      brush_cooldown_s: number;
+    };
+    vet: { interval_s: number };
+    barista: { delay_s: number; tip_multiplier: number };
+    social: { adopter_interval_mult: number; extra_waiting: number; best_match_chance: number };
+  };
   /** Komunitný útulok – Fáza 2 (GDD §6.2). */
   shelter: {
     price: number;
@@ -207,6 +220,7 @@ export interface GameData {
   balance: BalanceData;
   equipment: EquipmentDef[];
   decor: DecorDef[];
+  staff: StaffDef[];
 }
 
 export interface CatStats {
@@ -293,6 +307,8 @@ export interface CafeGuest {
   leaveAt: number;
   /** Stálica, ktorú si hosť pohladká. */
   catId: string | null;
+  /** Obslúžil ho barista (menší dar ako hráč). */
+  servedByStaff?: boolean;
 }
 
 export interface CafeState {
@@ -313,7 +329,15 @@ export type Unlock =
   | 'decor_3'
   | 'adopters_plus'
   | 'rare_cats'
-  | 'shelter_2';
+  | 'shelter_2'
+  | 'staff'
+  | 'clinic'
+  | 'catio'
+  | 'hotel'
+  | 'floors'
+  | 'ct'
+  | 'pool'
+  | 'education';
 
 export interface LevelDef {
   rep: number;
@@ -348,4 +372,19 @@ export interface DecorDef {
   price: number;
   unlock?: Unlock;
   footprint?: number;
+}
+
+export type StaffId = 'caretaker' | 'vet' | 'barista' | 'social';
+
+/** Člen personálu (GDD §6.4). */
+export interface StaffDef {
+  id: StaffId;
+  name_key: string;
+  desc_key: string;
+  icon: string;
+  sprite: string;
+  price: number;
+  room: 'garage' | 'cafe' | 'shelter';
+  /** Má zmysel až s touto budovou. */
+  requires?: 'cafe' | 'shelter';
 }

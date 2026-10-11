@@ -337,14 +337,17 @@ Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v garáži alebo 
 - Každá miestnosť má povinné predmety (napr. ambulancia = stôl + skrinka s liekmi).
 - Dekorácie zvyšujú **Spokojnosť** mačiek v miestnosti a atraktivitu pre návštevníkov.
 
-### 6.4 Personál 🟡 v1.0 (Fáza 3+)
-| Rola | Automatizuje | Úroveň zručnosti zlepšuje |
+### 6.4 Personál 🟢 (úroveň 5, 200 ★)
+Personál sa najíma **raz** v Obchode (bez mzdy) a dá sa kedykoľvek poslať na voľno. Hráč môže stále všetko robiť aj sám.
+
+| Rola | Cena | Čo robí sám |
 |---|---|---|
-| Dobrovoľník | Kŕmenie, upratovanie | – (zadarmo, ale pomalý) |
-| Ošetrovateľ | Socializácia, kúpanie | Rýchlosť, šanca na ✨ |
-| Veterinár | Diagnostika a jednoduchá liečba | Zložité diagnózy |
-| Správca sociálnych sietí | Priláka viac adoptérov | Kvalita adoptérov |
-| Recepčný | Spracovanie hlásení | Viac hlásení naraz |
+| 🧺 Ošetrovateľ Peťo | 600 € | Nakŕmi hladnú mačku (spokojnosť < 60) alebo učeše špinavú (čistota < 45), raz za 8 s |
+| 🩺 Veterinárka Hanka | 800 € | Raz za 6 s vyšetrí jedným nástrojom mačku v klietke a odhalí diagnózu – **liečbu (minihry) robí hráč** |
+| ☕ Baristka Ema | 500 € | Obslúži hosťa, ktorý čaká dlhšie ako 8 s (dar o niečo menší ako pri obsluhe hráčom). Potrebuje kaviareň |
+| 📱 Správca sietí Tomáš | 700 € | Záujemcovia chodia častejšie (×0,6), čaká ich o 1 viac a častejšie prídu tí, čo sa k mačke hodia najlepšie |
+
+Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde pracuje, a pri práci ukáže ikonku nad mačkou.
 
 > Kľúčové pravidlo: **automatizácia nikdy nezoberie hráčovi zábavné časti**. Personál robí rutinu, hráč môže vždy zasiahnuť sám (a dostať lepší výsledok).
 

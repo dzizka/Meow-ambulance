@@ -7,6 +7,7 @@ import type {
   DecorDef,
   LevelDef,
   Report,
+  StaffId,
 } from '../data/types';
 
 /** Súhrn toho, čo sa udialo, kým bola hra zatvorená (GDD §2.3). */
@@ -37,6 +38,14 @@ export interface GameEvents {
   albumAdded: { key: string };
   upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' };
   catMoved: { cat: CatData };
+  staffHired: { id: StaffId };
+  /** Personál niečo urobil (pre postavičky a oznámenia). */
+  staffAction: {
+    id: StaffId;
+    kind: 'feed' | 'brush' | 'examine' | 'serve';
+    cat?: CatData;
+    found?: string[];
+  };
   guestArrived: { guest: CafeGuest };
   guestServed: { guest: CafeGuest };
   guestLeft: { guest: CafeGuest; amount: number };
