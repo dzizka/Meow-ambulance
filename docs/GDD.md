@@ -407,9 +407,11 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 - Percentá dokončenia a odmeny za dokončené strany (dekorácie, nové typy hlásení).
 - **84 políčok** (menu ☰ → Album): 8 bežných plemien × 10 farieb + 4 plemená s vlastnou farbou. Zapisuje sa prvá mačka každého políčka, ďalšie zvyšujú počítadlo ×N.
 
-### 7.2 Vzácne mačky 🟡 v1.0
-- Vzácne farby (napr. dymová, čokoládová), heterochrómia, polydaktylia („palčiaky"), bezsrsté, trojfarebný kocúr (ultra vzácny).
-- Šanca na výskyt rastie s reputáciou a vybavením.
+### 7.2 Vzácne mačky 🟢
+- Vzácne znaky (`balance.json → rare`): **rôznofarebné oči** (2 %), **palčiaky** – 6 prstov (2,5 %), **trojfarebný kocúr** (12 % trojfarebných mačiek). Od úrovne 4 (vzácne plemená) 2× častejšie.
+- Vzácna mačka sa občas zaligoce zlatou iskričkou, na karte má ✨. Pri adopcii **príspevok +30 % a +3 ★**; pri adopcii alebo ako stálica vyplní políčko na strane **Vzácnosti** v albume (+5 ❤).
+
+
 
 ### 7.3 Výzvy a udalosti
 **Nástenka výziev** 🟢 MVP (menu ☰ → Výzvy) – 3 aktívne úlohy bez časového limitu. Odmenu si hráč vyzdvihne ťuknutím; na miesto výzvy príde nová. Každá ďalšia výzva rovnakého typu má vyšší cieľ (`public/data/challenges.json`). Príklady:
@@ -452,6 +454,12 @@ Pri prechode stavu: krátka „premena" s efektom a zvukom (dopamínový moment)
 - 24 úspechov v menu ☰ → **🏆 Úspechy** (`public/data/achievements.json`): záchrany (1 / 10 / 50 / 150), adopcie (1 / 25 / 100), dokonalé zhody, plaché mačky, mačiatka, liečba, socializácia, kŕmenie, kaviareň, očkovanie, kastrácia, hotel, prednášky, stálice, album (25 aj celý), úroveň 7, celý personál, všetky budovy.
 - Každý má odmenu v € (20 – 1 000), ktorá sa pripíše hneď pri odomknutí (oznámenie 🏆). Neodomknuté ukazujú postup.
 - Staré uložené hry dostanú úspechy za to, čo už hráč dokázal, hneď pri načítaní.
+
+
+### 7.6 Srdiečka ❤ a kozmetika 🟢
+- **Srdiečka** sa nedajú kúpiť za €: +3 za pohľadnicu, +2 za nové políčko albumu, +5 za vzácnu mačku v albume, +5 za úspech, +3 za splnený cieľ udalosti (`public/data/cosmetics.json → hearts`).
+- **Obchod → ❤️ Ozdoby:** ozdoby pre stálice (červený a modrý obojok 5 ❤, obojok so zvončekom 8 ❤, ružová mašlička 10 ❤, šatka 12 ❤) – kúpenú ozdobu dá hráč stálici v jej karte (Opatera); ozdoba sa kreslí na krku mačky v každom smere.
+- **Farba stien** garáže a kaviarne (mätová, levanduľová, broskyňová, nebeská – po 8 ❤); kúpená farba sa dá použiť v oboch miestnostiach a kedykoľvek vrátiť pôvodnú.
 
 ---
 

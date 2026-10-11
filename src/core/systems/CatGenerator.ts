@@ -1,4 +1,4 @@
-import type { AgeGroup, CatCondition, CatData, GameData } from '../../data/types';
+import type { AgeGroup, CatCondition, CatData, GameData, RareMark } from '../../data/types';
 import { Rng } from '../Rng';
 
 /** „Nikdy" pre časové značky (bezpečne sa uloží do JSON, na rozdiel od -Infinity). */
@@ -28,6 +28,18 @@ export interface CatOptions {
   clinicCase?: boolean;
   /** Práve prebiehajúca udalosť – iba vtedy padnú jej diagnózy. */
   event?: string;
+}
+
+/** Vzácny znak: trojfarebný kocúr iba z trojfarebných, inak rôznofarebné oči alebo palčiaky. */
+function rollRare(data: GameData, rng: Rng, coatId: string, boost?: boolean): RareMark | undefined {
+  const r = data.balance.rare;
+  if (!r) return undefined;
+  const m = boost ? r.boost : 1;
+  const roll = rng.next();
+  if (coatId === 'calico' && roll < r.tortie_male * m) return 'tortie_male';
+  if (roll < r.hetero * m) return 'hetero';
+  if (roll < (r.hetero + r.poly) * m) return 'poly';
+  return undefined;
 }
 
 /** Vygeneruje novú mačku pri príjme do útulku (GDD §3.2). */
@@ -72,6 +84,8 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
   }
 
   const shy = traits.some((t) => t.id === 'shy' || t.id === 'wild' || t.id === 'grumpy');
+  // Vzácny znak (GDD §7.2) – losuje sa až nakoniec, aby sa ostatné náhodné výsledky nezmenili
+  const special = rollRare(data, rng, coat.id, opts.rareBoost);
   const dirty = conditions.some((c) => c.id === 'dirty');
 
   return {
@@ -94,6 +108,7 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
     lastSocialAt: NEVER,
     lastFedAt: NEVER,
     reportId: opts.reportId ?? '',
+    ...(special ? { special } : {}),
     ...(opts.clinicCase ? { clinicCase: true } : {}),
     admittedAt: opts.now ?? 0,
   };

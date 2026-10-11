@@ -630,7 +630,7 @@ body.minigame .toast:not(:last-child) {
 
 /* ---------- Menu ---------- */
 .shop-tabs {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 2px;
   position: sticky;
   top: -16px;
@@ -927,9 +927,23 @@ body.minigame .toast:not(:last-child) {
 }
 
 /* Úzke okno: v záložkách menu iba ikony, text len pri aktívnej */
+.shop-tab-name {
+  display: none;
+}
 @media (max-width: 520px) {
-  .menu-tabs .tab .tab-txt {
+  .menu-tabs .tab .tab-txt,
+  .shop-tabs .tab .tab-txt {
     display: none;
+  }
+  .shop-tabs .tab {
+    font-size: 17px;
+  }
+  .shop-tab-name {
+    display: block;
+    grid-column: 1 / -1;
+    font-weight: 800;
+    color: var(--ui-accent);
+    padding-top: 4px;
   }
   .menu-tabs .tab {
     font-size: 17px;
@@ -979,4 +993,18 @@ body.minigame .toast:not(:last-child) {
   .event-pill.offer {
     animation: none;
   }
+}
+
+/* ---------- Srdiečka a kozmetika (GDD §7.6) ---------- */
+.hearts-line {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #f27a9b;
+}
+.album-cell.rare {
+  outline: 2px solid #f2c14e;
+}
+.hint.rare {
+  color: #f2c14e;
 }

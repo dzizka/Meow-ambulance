@@ -60,6 +60,8 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v14 → v15: srdiečka a kozmetika (GDD §7.6). */
+  14: (s) => ({ ...s, version: 15, hearts: 0, cosmetics: { owned: [], walls: {} } }),
   /** v13 → v14: udalosti (GDD §7.3) – prvá ponuka o 15 minút. */
   13: (s) => ({
     ...s,

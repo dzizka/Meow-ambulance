@@ -2,6 +2,8 @@ import type {
   ActiveChallenge,
   AdopterVisit,
   AchievementDef,
+  AccessoryDef,
+  WallColorDef,
   AdoptionRecord,
   AlbumEntry,
   CafeGuest,
@@ -29,7 +31,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -75,6 +77,15 @@ export interface SaveData {
   achievements: Record<string, number>;
   // od verzie 14
   events: EventsState;
+  // od verzie 15
+  hearts: number;
+  cosmetics: CosmeticsState;
+}
+
+/** Kozmetika (GDD §7.6): kúpené ozdoby a farby stien, zvolená farba v miestnostiach. */
+export interface CosmeticsState {
+  owned: string[];
+  walls: Partial<Record<'garage' | 'cafe', string>>;
 }
 
 /** Udalosti (GDD §7.3): ponuka, prebiehajúca udalosť a počty dokončených. */
@@ -201,6 +212,9 @@ export class GameState {
   achievements: Record<string, number> = {};
   /** Udalosti (GDD §7.3). */
   events: EventsState;
+  /** Srdiečka ❤ – za pohľadnice, album, úspechy a udalosti (GDD §7.6). */
+  hearts = 0;
+  cosmetics: CosmeticsState = { owned: [], walls: {} };
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
   /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
@@ -503,6 +517,7 @@ export class GameState {
       if (!rec.postcardDelivered && rec.postcardDueAt !== null && this.now >= rec.postcardDueAt) {
         rec.postcardDelivered = true;
         count += 1;
+        this.addHearts(this.heartRate('postcard'));
         this.bus.emit('postcardArrived', { record: rec });
       }
     }
@@ -837,6 +852,56 @@ export class GameState {
     return cat;
   }
 
+  // ---------- Srdiečka a kozmetika (GDD §7.6) ----------
+
+  private heartRate(kind: keyof GameState['data']['cosmetics']['hearts']): number {
+    return this.data.cosmetics?.hearts[kind] ?? 0;
+  }
+
+  private addHearts(n: number): void {
+    if (n <= 0) return;
+    this.hearts += n;
+    this.bus.emit('heartsChanged', { hearts: this.hearts, delta: n });
+  }
+
+  accessoryDef(id: string): AccessoryDef | undefined {
+    return this.data.cosmetics?.accessories.find((a) => a.id === id);
+  }
+
+  wallDef(id: string): WallColorDef | undefined {
+    return this.data.cosmetics?.walls.find((w) => w.id === id);
+  }
+
+  /** Kúpa ozdoby alebo farby stien za srdiečka (raz – potom sa dá použiť kdekoľvek). */
+  buyCosmetic(id: string): boolean {
+    const def = this.accessoryDef(id) ?? this.wallDef(id);
+    if (!def || this.cosmetics.owned.includes(id) || this.hearts < def.price) return false;
+    this.hearts -= def.price;
+    this.cosmetics.owned.push(id);
+    this.bus.emit('heartsChanged', { hearts: this.hearts, delta: -def.price });
+    return true;
+  }
+
+  /** Ozdoba pre stálicu (null = zložiť). */
+  setAccessory(catId: string, id: string | null): boolean {
+    const cat = this.getCat(catId);
+    if (!cat || !cat.resident) return false;
+    if (id && !this.cosmetics.owned.includes(id)) return false;
+    if (id) cat.accessory = id;
+    else delete cat.accessory;
+    this.changed(cat);
+    return true;
+  }
+
+  /** Farba stien miestnosti (null = pôvodná). */
+  setWall(room: 'garage' | 'cafe', id: string | null): boolean {
+    if (id && !this.cosmetics.owned.includes(id)) return false;
+    if (id) this.cosmetics.walls[room] = id;
+    else delete this.cosmetics.walls[room];
+    this.bus.emit('wallChanged', { room, id });
+    return true;
+  }
+
   // ---------- Udalosti (GDD §7.3) ----------
 
   eventDef(id: EventDef['id']): EventDef | undefined {
@@ -934,6 +999,7 @@ export class GameState {
     this.events.done[def.id] = (this.events.done[def.id] ?? 0) + 1;
     this.addMoney(money, true);
     this.gainRep(rep);
+    if (bonus) this.addHearts(this.heartRate('event_bonus'));
     this.bus.emit('eventEnded', { def, bonus, money, rep });
   }
 
@@ -1128,6 +1194,7 @@ export class GameState {
     if (!cat || cat.resident || !this.isReady(cat) || this.freeResidentSlots <= 0) return false;
     cat.resident = true;
     this.addToAlbum(cat, 'resident');
+    this.addRareToAlbum(cat, 'resident');
     this.bus.emit('catBecameResident', { cat });
     this.changed(cat);
     return true;
@@ -1165,7 +1232,9 @@ export class GameState {
           // kastrácia a prípad z inej útulne (GDD §6.5)
           (cat.neutered ? 1 + this.data.balance.clinic.neuter_fee_bonus : 1) *
           (cat.clinicCase ? 1 + this.data.balance.clinic.case_fee_bonus : 1) *
-          (cat.rehabbed ? 1 + this.data.balance.clinic.rehab_fee_bonus : 1)) /
+          (cat.rehabbed ? 1 + this.data.balance.clinic.rehab_fee_bonus : 1) *
+          // vzácna mačka (GDD §7.2)
+          (cat.special ? 1 + this.data.balance.rare.fee_bonus : 1)) /
           5,
       ) * 5;
     const rep =
@@ -1176,7 +1245,8 @@ export class GameState {
           : r.rep_poor) +
       (cat.vaccinated ? this.data.balance.shelter.vaccine_rep_bonus : 0) +
       (cat.neutered ? this.data.balance.clinic.neuter_rep_bonus : 0) +
-      (cat.clinicCase ? this.data.balance.clinic.case_rep_bonus : 0);
+      (cat.clinicCase ? this.data.balance.clinic.case_rep_bonus : 0) +
+      (cat.special ? this.data.balance.rare.rep_bonus : 0);
     const postcard =
       match.quality === 'perfect' ||
       (match.quality === 'good' && this.rng.chance(r.postcard_chance_good));
@@ -1202,6 +1272,7 @@ export class GameState {
     if (match.quality === 'perfect') this.counters.perfect += 1;
     if (cat.traits.some((t) => t.id === 'shy')) this.counters.shy_homed += 1;
     if (!cat.resident) this.addToAlbum(cat, 'adopted');
+    if (!cat.resident) this.addRareToAlbum(cat, 'adopted');
     this.addMoney(fee, true);
     this.gainRep(rep);
     this.bus.emit('catAdopted', { record });
@@ -1306,6 +1377,7 @@ export class GameState {
       if (p.have < p.need) continue;
       this.achievements[def.id] = this.now;
       this.addMoney(def.money, true);
+      this.addHearts(this.heartRate('achievement'));
       this.bus.emit('achievementUnlocked', { def });
     }
   }
@@ -1355,6 +1427,21 @@ export class GameState {
       return;
     }
     this.album[key] = { name: cat.name, sprite: cat.sprite, how, at: this.now, count: 1 };
+    this.addHearts(this.heartRate('album'));
+    this.bus.emit('albumAdded', { key });
+  }
+
+  /** Strana vzácností v albume (GDD §7.2) – kľúč `special:<znak>`. */
+  private addRareToAlbum(cat: CatData, how: AlbumEntry['how']): void {
+    if (!cat.special) return;
+    const key = `special:${cat.special}`;
+    const existing = this.album[key];
+    if (existing) {
+      existing.count += 1;
+      return;
+    }
+    this.album[key] = { name: cat.name, sprite: cat.sprite, how, at: this.now, count: 1 };
+    this.addHearts(this.heartRate('rare'));
     this.bus.emit('albumAdded', { key });
   }
 
@@ -1791,6 +1878,8 @@ export class GameState {
       education: structuredClone(this.education),
       achievements: { ...this.achievements },
       events: structuredClone(this.events),
+      hearts: this.hearts,
+      cosmetics: structuredClone(this.cosmetics),
     };
   }
 
@@ -1827,6 +1916,8 @@ export class GameState {
     s.education = structuredClone(save.education ?? emptyEducation());
     s.achievements = { ...(save.achievements ?? {}) };
     if (save.events) s.events = structuredClone(save.events);
+    s.hearts = save.hearts ?? 0;
+    s.cosmetics = structuredClone(save.cosmetics ?? { owned: [], walls: {} });
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();

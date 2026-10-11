@@ -16,6 +16,7 @@ export const DATA_FILES = {
   staff: 'data/staff.json',
   achievements: 'data/achievements.json',
   events: 'data/events.json',
+  cosmetics: 'data/cosmetics.json',
 } as const;
 
 export const IMAGES = {

@@ -190,6 +190,15 @@ export interface BalanceData {
     rep_happy: number;
     receptionist_sprite: string;
   };
+  /** Vzácne mačky (GDD §7.2). */
+  rare: {
+    hetero: number;
+    poly: number;
+    tortie_male: number;
+    boost: number;
+    fee_bonus: number;
+    rep_bonus: number;
+  };
   /** Catio – vonkajší výbeh (GDD §6.6). */
   catio: { price: number; satisfaction_decay_mult: number };
   /** Mačacia kaviareň (GDD §5.5). */
@@ -280,6 +289,7 @@ export interface GameData {
   staff: StaffDef[];
   achievements: AchievementDef[];
   events: EventsData;
+  cosmetics: CosmeticsData;
 }
 
 export interface CatStats {
@@ -332,6 +342,10 @@ export interface CatData {
   rehabbed?: boolean;
   /** Prišla ako prípad z inej útulne – bonus pri adopcii. */
   clinicCase?: boolean;
+  /** Vzácny znak (GDD §7.2). */
+  special?: RareMark;
+  /** Ozdoba stálice (GDD §7.6) – id z cosmetics.json. */
+  accessory?: string;
   /** Hosť mačacieho hotela (GDD §6.7) – nie je naša, majiteľ si ju vyzdvihne. */
   hotel?: HotelStay;
   /** Herný čas (ms simulácie) posledného kontaktu – kvôli prestávkam medzi aktivitami. */
@@ -455,6 +469,35 @@ export interface DecorDef {
 export type StaffId = 'caretaker' | 'vet' | 'barista' | 'social';
 
 /** Člen personálu (GDD §6.4). */
+/** Vzácne znaky mačky (GDD §7.2). */
+export type RareMark = 'hetero' | 'poly' | 'tortie_male';
+
+/** Kozmetika za srdiečka (GDD §7.6). */
+export interface AccessoryDef {
+  id: string;
+  icon: string;
+  price: number;
+  color: string;
+  extra: 'none' | 'bell' | 'bow' | 'bandana';
+}
+export interface WallColorDef {
+  id: string;
+  icon: string;
+  price: number;
+  color: string;
+}
+export interface CosmeticsData {
+  hearts: {
+    postcard: number;
+    album: number;
+    achievement: number;
+    event_bonus: number;
+    rare: number;
+  };
+  accessories: AccessoryDef[];
+  walls: WallColorDef[];
+}
+
 /** Úspech (GDD §7.5). */
 export interface AchievementDef {
   id: string;

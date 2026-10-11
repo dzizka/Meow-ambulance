@@ -134,6 +134,17 @@ export class DevMenu {
         act('+100 €', () => s.devGive(100)),
         act('+1000 €', () => s.devGive(1000)),
         act('+50 ★', () => s.devGive(0, 50)),
+        act('+20 ❤', () => {
+          s.hearts += 20;
+          return `Srdiečka: ${s.hearts}`;
+        }),
+        act('Vybraná: vzácna', () => {
+          const c = h.selectedCatId() ? s.getCat(h.selectedCatId() ?? '') : undefined;
+          if (!c) return false;
+          const marks = ['hetero', 'poly', 'tortie_male'] as const;
+          c.special = marks[(marks.indexOf(c.special as (typeof marks)[number]) + 1) % 3];
+          return `${c.name}: ${c.special}`;
+        }),
       ),
       section(
         '📋 Prichádzajúci',
