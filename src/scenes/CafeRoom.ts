@@ -26,6 +26,9 @@ const TABLES = [
 /** Hostia prichádzajú a odchádzajú dverami vpravo dole a chodia uličkou pri spodnej stene. */
 const DOOR = { x: ROOM.x + ROOM.w - 4, y: FLOOR_TOP + 182 };
 const WALK_SPEED = 32; // px za sekundu
+/** Sediaci hosť: o koľko je vyššie (na sedadle) a koľko riadkov nôh sa skryje. */
+const SIT_RAISE = 9;
+const SIT_CROP = 8;
 
 interface GuestView {
   sprite: Phaser.GameObjects.Sprite;
@@ -173,13 +176,13 @@ export class CafeRoom {
     for (; this.tablesDrawn < want; this.tablesDrawn++) {
       const t = TABLES[this.tablesDrawn];
       if (!t) continue;
-      const table = this.prop('table_small', t.x, t.y, 10);
+      // Poradie odzadu: stolička → sediaci hosť → stôl (hosť má kolená pod stolom)
+      const table = this.prop('table_small', t.x, t.y, 10).setDepth(t.y + 6);
       const seat = this.seat(this.tablesDrawn);
       const chair = this.scene.add
         .image(seat.x, seat.y + 3, 'interior', 'chair_side')
         .setOrigin(0.5, 1)
-        // stolička je pred hosťom – zakryje mu nohy, takže vyzerá, že sedí
-        .setDepth(seat.y + 3)
+        .setDepth(seat.y + 2)
         .setFlipX(t.side < 0);
       this.addObstacle(seat.x, seat.y + 3, 14, 8);
       if (animate) {
@@ -215,7 +218,7 @@ export class CafeRoom {
       .setDepth(start.y);
     const shadow = scene.add.ellipse(start.x, start.y, 14, 5, 0x000000, 0.25).setDepth(start.y - 1);
     const bubble = scene.add
-      .image(seat.x, seat.y - 34, `order_${g.order}`)
+      .image(seat.x, seat.y - 34 - SIT_RAISE, `order_${g.order}`)
       .setOrigin(0.5, 1)
       .setDepth(4500)
       .setVisible(false);
@@ -232,6 +235,12 @@ export class CafeRoom {
       view.seated = true;
       sprite.anims.stop();
       sprite.setFrame(personIdleFrame(seat.dir));
+      // Sadne si na stoličku: vyššie, bez nôh, nad stoličkou a pod stolom
+      sprite
+        .setPosition(seat.x, seat.y - SIT_RAISE)
+        .setCrop(0, 0, sprite.width, sprite.height - SIT_CROP)
+        .setDepth(seat.y + 4);
+      shadow.setVisible(false);
       if (g.served) this.putItem(g, view);
       else {
         bubble.setVisible(true).setScale(0.2);
@@ -266,7 +275,7 @@ export class CafeRoom {
     view.item = this.scene.add
       .image(CAFE_X + t.x + t.side * 6, t.y - 14, `item_${g.order}`)
       .setOrigin(0.5, 1)
-      .setDepth(t.y + 0.5);
+      .setDepth(t.y + 7);
   }
 
   private removeGuest(g: CafeGuest): void {
@@ -277,6 +286,10 @@ export class CafeRoom {
     view.item?.destroy();
     this.hearts(view.sprite.x, view.sprite.y - 30);
     const seat = this.seat(g.table);
+    // Vstane zo stoličky
+    view.seated = false;
+    view.sprite.setPosition(seat.x, seat.y).setCrop().setDepth(seat.y);
+    view.shadow.setPosition(seat.x, seat.y).setVisible(true);
     this.walk(
       view,
       g.sprite,
