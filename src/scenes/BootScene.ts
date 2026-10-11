@@ -56,10 +56,7 @@ export class BootScene extends Phaser.Scene {
         breeds: GameData['breeds'];
         coats: GameData['coats'];
       };
-      const sheets = new Set<string>([
-        ...breeds.coats.flatMap((c) => c.sprites),
-        ...breeds.breeds.flatMap((b) => (b.sprite_override ? [b.sprite_override] : [])),
-      ]);
+      const sheets = new Set<string>(breeds.coats.flatMap((c) => c.sprites));
       for (const s of sheets)
         this.load.spritesheet(s, catSheetPath(s), { frameWidth: 32, frameHeight: 32 });
     });

@@ -1,5 +1,5 @@
 {
-  "_comment": "Plemená MVP (6) a farby (6) = 36 slotov albumu (GDD §7.1). rarity: 1 bežná – 5 legendárna. sprites = hárky z public/assets/sprites/cats/popshop/; coat_override = plemeno má vždy túto farbu.",
+  "_comment": "Plemená (12) a farby (GDD §4.4, §7.1). rarity: 1 bežná – 5 legendárna. coat = plemeno má vždy túto farbu (napr. siamská). coat_care: long = rýchlejšie špinavá srsť, none = takmer vôbec (sfinga). Farby so special: true padnú iba s plemenom. Album = bežné plemená × bežné farby + 1 slot za každé plemeno s pevnou farbou.",
   "breeds": [
     {
       "id": "domestic_short",
@@ -9,7 +9,8 @@
     {
       "id": "domestic_long",
       "name_key": "BREED_DOMESTIC_LONG",
-      "rarity": 1
+      "rarity": 1,
+      "coat_care": "long"
     },
     {
       "id": "european_short",
@@ -17,20 +18,58 @@
       "rarity": 2
     },
     {
+      "id": "british_short",
+      "name_key": "BREED_BRITISH_SHORT",
+      "rarity": 2
+    },
+    {
       "id": "persian",
       "name_key": "BREED_PERSIAN",
-      "rarity": 3
+      "rarity": 3,
+      "coat_care": "long"
     },
     {
       "id": "maine_coon",
       "name_key": "BREED_MAINE_COON",
+      "rarity": 3,
+      "coat_care": "long"
+    },
+    {
+      "id": "norwegian_forest",
+      "name_key": "BREED_NORWEGIAN_FOREST",
+      "rarity": 3,
+      "coat_care": "long"
+    },
+    {
+      "id": "scottish_fold",
+      "name_key": "BREED_SCOTTISH_FOLD",
       "rarity": 3
+    },
+    {
+      "id": "russian_blue",
+      "name_key": "BREED_RUSSIAN_BLUE",
+      "rarity": 3,
+      "coat": "blue"
     },
     {
       "id": "siamese",
       "name_key": "BREED_SIAMESE",
       "rarity": 4,
-      "sprite_override": "seal_point_0"
+      "coat": "seal_point"
+    },
+    {
+      "id": "ragdoll",
+      "name_key": "BREED_RAGDOLL",
+      "rarity": 4,
+      "coat": "colorpoint",
+      "coat_care": "long"
+    },
+    {
+      "id": "sphynx",
+      "name_key": "BREED_SPHYNX",
+      "rarity": 4,
+      "coat": "hairless",
+      "coat_care": "none"
     }
   ],
   "coats": [
@@ -53,6 +92,12 @@
       "sprites": ["brown_7", "grey_2", "orange_3"]
     },
     {
+      "id": "grey",
+      "name_key": "COAT_GREY",
+      "rarity": 2,
+      "sprites": ["grey_0", "grey_1"]
+    },
+    {
       "id": "tuxedo",
       "name_key": "COAT_TUXEDO",
       "rarity": 2,
@@ -65,10 +110,49 @@
       "sprites": ["calico_0"]
     },
     {
+      "id": "cream",
+      "name_key": "COAT_CREAM",
+      "rarity": 2,
+      "sprites": ["creme_0", "brown_8"]
+    },
+    {
       "id": "white",
       "name_key": "COAT_WHITE",
       "rarity": 3,
       "sprites": ["white_0", "white_grey_0"]
+    },
+    {
+      "id": "chocolate",
+      "name_key": "COAT_CHOCOLATE",
+      "rarity": 3,
+      "sprites": ["brown_0", "brown_1", "brown_3", "brown_6"]
+    },
+    {
+      "id": "blue",
+      "name_key": "COAT_BLUE",
+      "rarity": 3,
+      "sprites": ["blue_0", "blue_1", "blue_2", "blue_3"]
+    },
+    {
+      "id": "seal_point",
+      "name_key": "COAT_SEAL_POINT",
+      "rarity": 4,
+      "special": true,
+      "sprites": ["seal_point_0"]
+    },
+    {
+      "id": "colorpoint",
+      "name_key": "COAT_COLORPOINT",
+      "rarity": 4,
+      "special": true,
+      "sprites": ["creme_1"]
+    },
+    {
+      "id": "hairless",
+      "name_key": "COAT_HAIRLESS",
+      "rarity": 4,
+      "special": true,
+      "sprites": ["hairless_0", "hairless_1"]
     }
   ]
 }

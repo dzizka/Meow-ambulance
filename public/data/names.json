@@ -16,7 +16,15 @@
     "Mňauka",
     "Kapitán",
     "Pusinka",
-    "Oskar"
+    "Oskar",
+    "Pampúšik",
+    "Mufinka",
+    "Lotrík",
+    "Bodka",
+    "Figa",
+    "Chlpáčik",
+    "Maťko",
+    "Zlatica"
   ],
   "by_coat": {
     "black": ["Uhlík", "Noc", "Černica", "Mak"],
@@ -24,6 +32,13 @@
     "tabby": ["Tigrík", "Pruhovka", "Lesík"],
     "tuxedo": ["Smokíng", "Pán Barón", "Domino"],
     "calico": ["Patchwork", "Pestrka", "Mozaika"],
-    "white": ["Snehulka", "Mráčik", "Vločka", "Mlieko"]
+    "white": ["Snehulka", "Mráčik", "Vločka", "Mlieko"],
+    "grey": ["Popolka", "Hmlička", "Šedko"],
+    "cream": ["Vanilka", "Smotanka", "Karamelka"],
+    "chocolate": ["Čokoláda", "Kakao", "Lieskovec"],
+    "blue": ["Modráčik", "Bridlica", "Dymko"],
+    "seal_point": ["Princezná", "Safír", "Lord"],
+    "colorpoint": ["Oblačik", "Plyšák", "Krémik"],
+    "hairless": ["Broskyňa", "Holúšik", "Ramzes"]
   }
 }

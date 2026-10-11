@@ -59,10 +59,7 @@ describe('CatGenerator', () => {
   it('každý hárok spritu, na ktorý dáta odkazujú, existuje (ak sú assety stiahnuté)', () => {
     const base = resolve(import.meta.dirname, '../public/assets/sprites');
     if (!existsSync(base)) return; // CI bez prístupu k súkromným assetom
-    const cats = [
-      ...data.coats.flatMap((c) => c.sprites),
-      ...data.breeds.flatMap((b) => (b.sprite_override ? [b.sprite_override] : [])),
-    ];
+    const cats = [...data.coats.flatMap((c) => c.sprites)];
     for (const s of cats) expect(existsSync(`${base}/cats/popshop/${s}.png`), s).toBe(true);
     for (const s of data.adopters.flatMap((a) => a.sprites))
       expect(existsSync(`${base}/people/gbtl/${s}.png`), s).toBe(true);

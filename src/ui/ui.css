@@ -635,7 +635,8 @@ body.minigame .toast:not(:last-child) {
 /* Album: 6 farieb v riadku, nad každým riadkom názov plemena */
 .album {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 64px));
+  justify-content: start;
   gap: 4px;
 }
 .album-breed {

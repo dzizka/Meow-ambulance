@@ -60,6 +60,26 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v3 → v4: plemená s pevnou farbou (siamská = seal_point) – oprava farby mačiek a albumu. */
+  3: (s) => {
+    const fixed: Record<string, string> = { siamese: 'seal_point' };
+    const fixCat = (c: SaveData['cats'][number]) => {
+      const coat = fixed[c.breedId];
+      if (coat) c.coatId = coat;
+    };
+    s.cats.forEach(fixCat);
+    s.adoptions.forEach((a) => fixCat(a.cat));
+    const album: SaveData['album'] = {};
+    for (const [key, entry] of Object.entries(s.album)) {
+      const [breed] = key.split(':');
+      const coat = breed ? fixed[breed] : undefined;
+      const k = coat ? `${breed}:${coat}` : key;
+      const prev = album[k];
+      if (prev) prev.count += entry.count;
+      else album[k] = { ...entry };
+    }
+    return { ...s, version: 4, album };
+  },
   /** v2 → v3: mačacia kaviareň (GDD §5.5), počítadlo obslúžených hostí. */
   2: (s) => ({
     ...s,

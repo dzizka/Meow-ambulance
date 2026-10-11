@@ -188,7 +188,9 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     const roll = Math.random();
     // Unavená/nespokojná mačka viac leží, hravá viac chodí
     const lazy = this.cat.traits.some((t) => t.id === 'lazy');
-    const playful = this.cat.traits.some((t) => t.id === 'playful');
+    const playful = this.cat.traits.some(
+      (t) => t.id === 'playful' || t.id === 'curious' || t.id === 'hunter',
+    );
     const walkChance = this.sleepy ? 0.1 : playful ? 0.65 : lazy ? 0.25 : 0.45;
     const layChance = this.sleepy ? 0.75 : 0.2;
 

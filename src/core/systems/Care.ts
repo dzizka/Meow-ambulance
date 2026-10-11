@@ -125,7 +125,14 @@ export function passTime(cat: CatData, minutes: number, data: GameData): void {
   const b = data.balance;
   const floor = b.stat_floor;
   const dec = (v: number, by: number) => (v <= floor ? v : Math.max(floor, v - by));
-  cat.stats.cleanliness = dec(cat.stats.cleanliness, b.decay_per_min.cleanliness * minutes);
-  cat.stats.satisfaction = dec(cat.stats.satisfaction, b.decay_per_min.satisfaction * minutes);
+  // Dlhá srsť sa zašpiní rýchlejšie, sfinga takmer vôbec; nezávislá mačka sa menej nudí
+  const care = data.breeds.find((x) => x.id === cat.breedId)?.coat_care;
+  const dirt = care === 'long' ? 1.5 : care === 'none' ? 0.3 : 1;
+  const bored = cat.traits.some((t) => t.id === 'independent') ? 0.5 : 1;
+  cat.stats.cleanliness = dec(cat.stats.cleanliness, b.decay_per_min.cleanliness * dirt * minutes);
+  cat.stats.satisfaction = dec(
+    cat.stats.satisfaction,
+    b.decay_per_min.satisfaction * bored * minutes,
+  );
   if (allTreated(cat)) addStats(cat, { health: b.recovery_health_per_min * minutes });
 }

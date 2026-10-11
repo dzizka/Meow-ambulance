@@ -1,47 +1,185 @@
 {
-  "_comment": "Povahové rysy MVP (GDD §4.4). Modifikátory socializácie = násobok prírastku Dôvery.",
+  "_comment": "Povahové rysy (GDD §4.4). social = násobok prírastku Dôvery pri aktivite. adopt_good/adopt_bad = značky adoptérov, ktorým sa hodí / nehodí. Ďalšie účinky v kóde: playful/curious/hunter viac chodia, lazy viac leží, foodie viac spokojnosti z jedla, independent pomalšie stráca spokojnosť, social/cuddly väčšie dary v kaviarni, shy/wild/grumpy prídu s nízkou dôverou.",
   "traits": [
     {
       "id": "shy",
       "name_key": "TRAIT_SHY",
-      "social": { "feather": 0.5, "brush": 1.0, "hand_feed": 1.5, "sit_quietly": 2.0 },
+      "social": {
+        "feather": 0.5,
+        "brush": 1.0,
+        "hand_feed": 1.5,
+        "sit_quietly": 2.0
+      },
       "adopt_good": ["quiet_home", "no_kids"],
       "adopt_bad": ["kids", "other_pets"]
     },
     {
       "id": "cuddly",
       "name_key": "TRAIT_CUDDLY",
-      "social": { "feather": 1.0, "brush": 2.0, "hand_feed": 1.0, "sit_quietly": 0.5 },
+      "social": {
+        "feather": 1.0,
+        "brush": 2.0,
+        "hand_feed": 1.0,
+        "sit_quietly": 0.5
+      },
       "adopt_good": ["home_often"],
       "adopt_bad": ["rarely_home"]
     },
     {
       "id": "wild",
       "name_key": "TRAIT_WILD",
-      "social": { "feather": 1.5, "brush": 0.5, "hand_feed": 1.0, "sit_quietly": 1.5 },
+      "social": {
+        "feather": 1.5,
+        "brush": 0.5,
+        "hand_feed": 1.0,
+        "sit_quietly": 1.5
+      },
       "adopt_good": ["garden", "experienced"],
       "adopt_bad": ["flat", "kids"]
     },
     {
       "id": "foodie",
       "name_key": "TRAIT_FOODIE",
-      "social": { "feather": 1.0, "brush": 1.0, "hand_feed": 2.0, "sit_quietly": 0.5 },
+      "social": {
+        "feather": 1.0,
+        "brush": 1.0,
+        "hand_feed": 2.0,
+        "sit_quietly": 0.5
+      },
       "adopt_good": [],
       "adopt_bad": []
     },
     {
       "id": "playful",
       "name_key": "TRAIT_PLAYFUL",
-      "social": { "feather": 2.0, "brush": 1.0, "hand_feed": 1.0, "sit_quietly": 0.5 },
+      "social": {
+        "feather": 2.0,
+        "brush": 1.0,
+        "hand_feed": 1.0,
+        "sit_quietly": 0.5
+      },
       "adopt_good": ["kids", "active"],
       "adopt_bad": ["senior"]
     },
     {
       "id": "lazy",
       "name_key": "TRAIT_LAZY",
-      "social": { "feather": 0.5, "brush": 1.5, "hand_feed": 1.0, "sit_quietly": 1.0 },
+      "social": {
+        "feather": 0.5,
+        "brush": 1.5,
+        "hand_feed": 1.0,
+        "sit_quietly": 1.0
+      },
       "adopt_good": ["senior", "flat"],
       "adopt_bad": ["active"]
+    },
+    {
+      "id": "curious",
+      "name_key": "TRAIT_CURIOUS",
+      "social": {
+        "feather": 1.5,
+        "brush": 1.0,
+        "hand_feed": 1.0,
+        "sit_quietly": 0.5
+      },
+      "adopt_good": ["active", "garden"],
+      "adopt_bad": ["quiet_home"]
+    },
+    {
+      "id": "talkative",
+      "name_key": "TRAIT_TALKATIVE",
+      "social": {
+        "feather": 1.0,
+        "brush": 1.0,
+        "hand_feed": 1.5,
+        "sit_quietly": 0.5
+      },
+      "adopt_good": ["home_often", "senior"],
+      "adopt_bad": ["quiet_home"]
+    },
+    {
+      "id": "independent",
+      "name_key": "TRAIT_INDEPENDENT",
+      "social": {
+        "feather": 0.8,
+        "brush": 0.8,
+        "hand_feed": 1.0,
+        "sit_quietly": 1.5
+      },
+      "adopt_good": ["rarely_home", "flat"],
+      "adopt_bad": ["home_often"]
+    },
+    {
+      "id": "gentle",
+      "name_key": "TRAIT_GENTLE",
+      "social": {
+        "feather": 1.0,
+        "brush": 1.5,
+        "hand_feed": 1.0,
+        "sit_quietly": 1.0
+      },
+      "adopt_good": ["kids", "senior"],
+      "adopt_bad": []
+    },
+    {
+      "id": "brave",
+      "name_key": "TRAIT_BRAVE",
+      "social": {
+        "feather": 1.5,
+        "brush": 1.0,
+        "hand_feed": 1.0,
+        "sit_quietly": 0.8
+      },
+      "adopt_good": ["other_pets", "garden"],
+      "adopt_bad": []
+    },
+    {
+      "id": "clever",
+      "name_key": "TRAIT_CLEVER",
+      "social": {
+        "feather": 1.5,
+        "brush": 1.0,
+        "hand_feed": 1.5,
+        "sit_quietly": 1.0
+      },
+      "adopt_good": ["experienced"],
+      "adopt_bad": ["rarely_home"]
+    },
+    {
+      "id": "grumpy",
+      "name_key": "TRAIT_GRUMPY",
+      "social": {
+        "feather": 0.5,
+        "brush": 0.7,
+        "hand_feed": 1.0,
+        "sit_quietly": 2.0
+      },
+      "adopt_good": ["experienced", "quiet_home"],
+      "adopt_bad": ["kids"]
+    },
+    {
+      "id": "social",
+      "name_key": "TRAIT_SOCIAL",
+      "social": {
+        "feather": 1.0,
+        "brush": 1.5,
+        "hand_feed": 1.0,
+        "sit_quietly": 0.5
+      },
+      "adopt_good": ["other_pets", "kids"],
+      "adopt_bad": ["rarely_home"]
+    },
+    {
+      "id": "hunter",
+      "name_key": "TRAIT_HUNTER",
+      "social": {
+        "feather": 2.0,
+        "brush": 0.8,
+        "hand_feed": 1.0,
+        "sit_quietly": 1.0
+      },
+      "adopt_good": ["garden"],
+      "adopt_bad": ["flat"]
     }
   ]
 }

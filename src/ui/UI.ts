@@ -1138,11 +1138,20 @@ export class UI {
   private albumContent(): HTMLElement[] {
     const s = this.state;
     const data = s.data;
-    const filled = Object.keys(s.album).length;
+    const filled = s.albumFilled;
     const grid = el('div', { class: 'album' });
-    for (const breed of data.breeds) {
-      grid.append(el('div', { class: 'album-breed' }, t(breed.name_key)));
-      for (const coat of data.coats) {
+    const regular = data.coats.filter((c) => !c.special);
+    // Bežné plemená majú riadok, plemená s pevnou farbou sú spolu v jednom riadku na konci
+    const ordered = [...data.breeds.filter((b) => !b.coat), ...data.breeds.filter((b) => b.coat)];
+    let specialHeader = false;
+    for (const breed of ordered) {
+      if (!breed.coat) grid.append(el('div', { class: 'album-breed' }, t(breed.name_key)));
+      else if (!specialHeader) {
+        specialHeader = true;
+        grid.append(el('div', { class: 'album-breed' }, t('UI_ALBUM_FIXED')));
+      }
+      const fixed = data.coats.find((c) => c.id === breed.coat);
+      for (const coat of fixed ? [fixed] : regular) {
         const entry = s.album[GameState.albumKey(breed.id, coat.id)];
         const label = `${t(breed.name_key)} · ${t(coat.name_key)}`;
         if (!entry) {
@@ -1167,7 +1176,7 @@ export class UI {
         );
         cell.addEventListener('click', () =>
           this.toast(
-            `${t(entry.how === 'adopted' ? 'UI_ALBUM_ADOPTED' : 'UI_ALBUM_RESIDENT', { cat: entry.name })} (${t(coat.name_key)})`,
+            `${t(entry.how === 'adopted' ? 'UI_ALBUM_ADOPTED' : 'UI_ALBUM_RESIDENT', { cat: entry.name })} (${label})`,
           ),
         );
         grid.append(cell);
