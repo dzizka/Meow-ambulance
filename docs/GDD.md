@@ -424,6 +424,14 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 | **Záchrana z množiarne** | 15 mačiatok naraz, dočasné klietky, pomoc susedov | Veľký grant, ★ |
 | **Deň otvorených dverí** | 3× viac návštevníkov kaviarne a adoptérov | Peniaze, ★ |
 | **Povodne** | Mokré, vystrašené mačky, núdzová kapacita | Unikátne pohľadnice |
+
+**Implementované (🟢)** – `public/data/events.json`: ponuka príde asi každých 20 minút hrania (prvá po ~5 min od úrovne 2), v hornom paneli bliká pilulka s ikonou udalosti. Hráč ju **prijme** alebo dá **Neskôr** (ďalšia o 10 min). Počas udalosti pilulka odpočítava čas. Na konci vždy základná odmena, za splnený cieľ bonus.
+
+| Udalosť | Od | Trvanie | Účinok | Cieľ (bonus) | Odmena |
+|---|---|---|---|---|---|
+| ❄️ Zima prichádza | úroveň 2 | 10 min | hlásenia 2× častejšie, nová diagnóza **podchladenie** (teplomer, zahriať v deke), sneh | zachrániť 4 mačky | 120 € + 5 ★ (+150 € + 5 ★) |
+| 🎈 Deň otvorených dverí | úroveň 2, kaviareň | 8 min | hostia kaviarne 2,5× častejšie, záujemcovia ~3× častejšie a o 1 viac, girlandy | 2 adopcie | 100 € + 5 ★ (+200 € + 8 ★) |
+| 🏚️ Záchrana z množiarne | úroveň 4, útulok | 15 min | hneď príde mama s 4–5 mačiatkami, +4 dočasné klietky v karanténe | vyliečiť 6 diagnóz | 300 € + 8 ★ (+300 € + 10 ★) |
 | **Sezónne** (Vianoce, Halloween…) 🔵 | Kozmetika, tematické mačky | Dekorácie |
 
 ### 7.4 Vizuálna spätná väzba 🟢 MVP

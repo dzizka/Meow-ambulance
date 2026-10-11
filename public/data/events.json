@@ -1,0 +1,52 @@
+{
+  "_comment": "Udalosti (GDD §7.3): prídu ako ponuka, hráč ich prijme alebo odloží; nikdy nezlyhajú – základná odmena vždy, bonus za splnený cieľ. goal.kind = počítadlo z Counters.",
+  "interval_s": 1200,
+  "first_delay_s": 900,
+  "decline_delay_s": 600,
+  "events": [
+    {
+      "id": "winter",
+      "icon": "❄️",
+      "min_level": 2,
+      "duration_s": 600,
+      "goal": {
+        "kind": "rescued",
+        "target": 4
+      },
+      "money": 120,
+      "rep": 5,
+      "bonus_money": 150,
+      "bonus_rep": 5
+    },
+    {
+      "id": "openday",
+      "icon": "🎈",
+      "min_level": 2,
+      "requires": "cafe",
+      "duration_s": 480,
+      "goal": {
+        "kind": "adopted",
+        "target": 2
+      },
+      "money": 100,
+      "rep": 5,
+      "bonus_money": 200,
+      "bonus_rep": 8
+    },
+    {
+      "id": "mill",
+      "icon": "🏚️",
+      "min_level": 4,
+      "requires": "shelter",
+      "duration_s": 900,
+      "goal": {
+        "kind": "treated",
+        "target": 6
+      },
+      "money": 300,
+      "rep": 8,
+      "bonus_money": 300,
+      "bonus_rep": 10
+    }
+  ]
+}

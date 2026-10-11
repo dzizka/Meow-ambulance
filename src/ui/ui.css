@@ -956,3 +956,27 @@ body.minigame .toast:not(:last-child) {
 .achievement .chip {
   white-space: nowrap;
 }
+
+/* ---------- Udalosti (GDD §7.3) ---------- */
+.event-pill {
+  border: 0;
+  color: var(--ui-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.event-pill.offer {
+  background: #f2c14e;
+  color: #3b2f45;
+  animation: event-pulse 1.4s ease-in-out infinite;
+}
+@keyframes event-pulse {
+  50% {
+    transform: scale(1.08);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .event-pill.offer {
+    animation: none;
+  }
+}

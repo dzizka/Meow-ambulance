@@ -70,14 +70,14 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Karanténa, ambulancia (Komunitný útulok)
 - [x] Nové minihry: kúpanie (blchy), strihanie pazúrikov (dlhé pazúriky)
 - [x] Minihra očkovanie, minihra kvapky do uška
-- [ ] Prvé udalosti: Zima prichádza, Deň otvorených dverí
+- [x] Prvé udalosti: Zima prichádza, Deň otvorených dverí (GDD §7.3)
 - [x] Rozšírenie na 15 rysov, 12 plemien, 13 farieb (album 84 políčok)
 
 ## M4 – Klinika (Fáza 3)
 - [x] Personál a automatizácia – ošetrovateľ, veterinárka, baristka, správca sietí (úroveň 5, GDD §6.4)
 - [x] Klinika: laboratórium, röntgen, operačná sála, 4 nové minihry, kastrácia, prípady z iných útulní (GDD §6.5)
 - [x] Catio – vonkajší výbeh pre stálice (GDD §6.6)
-- [ ] Udalosť Záchrana z množiarne
+- [x] Udalosť Záchrana z množiarne (GDD §7.3)
 - [ ] Vzácne mačky, Srdiečka a kozmetika
 
 ## M5 – Národné centrum (Fáza 4) a vydanie v1.0

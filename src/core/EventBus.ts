@@ -51,6 +51,10 @@ export interface GameEvents {
       | 'floor'
       | 'education';
   };
+  /** Udalosti (GDD §7.3). */
+  eventOffered: { def: import('../data/types').EventDef };
+  eventStarted: { def: import('../data/types').EventDef };
+  eventEnded: { def: import('../data/types').EventDef; bonus: boolean; money: number; rep: number };
   /** Úspech odomknutý (GDD §7.5). */
   achievementUnlocked: { def: import('../data/types').AchievementDef };
   /** Edukačné centrum (GDD §6.9). */

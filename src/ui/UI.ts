@@ -84,6 +84,7 @@ const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> 
   insulin: { kind: 'vaccine', titleKey: 'MG_INSULIN_TITLE' },
   splint: { kind: 'splint', titleKey: 'MG_SPLINT_TITLE' },
   swim: { kind: 'swim', titleKey: 'MG_SWIM_TITLE' },
+  warm: { kind: 'hold', titleKey: 'MG_WARM_TITLE' },
   surgery: { kind: 'surgery', titleKey: 'MG_SURGERY_TITLE' },
 };
 const SOCIAL: {
@@ -190,6 +191,8 @@ export class UI {
   private clockPill = el('div', { class: 'pill' });
   private moneyPill = el('div', { class: 'pill money' });
   private repPill = el('div', { class: 'pill' });
+  /** Ponuka alebo prebiehajúca udalosť (GDD §7.3) – skrytá, keď nič nie je. */
+  private eventPill = el('button', { class: 'pill event-pill', type: 'button', hidden: true });
   private badges = {
     reports: el('span', { class: 'badge', hidden: true }),
     visitors: el('span', { class: 'badge', hidden: true }),
@@ -209,7 +212,8 @@ export class UI {
   private tabFor: string | null = null;
   private busy = false;
   private muted = false;
-  private modalKind: 'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | null = null;
+  private modalKind: 'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | 'event' | null =
+    null;
   /** Prístroj kliniky, pri ktorom hráč vyberá pacienta. */
   private stationRoom: ClinicRoomId = 'lab';
   private shopTab: ShopTab = 'build';
@@ -300,10 +304,12 @@ export class UI {
       else this.toggleRoomMenu(others);
     });
     document.addEventListener('click', () => this.roomMenu.remove());
+    this.eventPill.addEventListener('click', () => this.openModal('event'));
     this.hud.append(
       this.clockPill,
       this.moneyPill,
       this.repPill,
+      this.eventPill,
       el('div', { class: 'spacer' }),
       this.roomBtn,
       iconBtn('📋', t('UI_REPORTS'), this.badges.reports, () => this.openModal('reports')),
@@ -326,6 +332,7 @@ export class UI {
     this.setBadge(this.badges.visitors, s.adopters.length);
     this.setBadge(this.badges.menu, s.claimableChallenges + this.unseenPostcards);
     this.updateRoomButton();
+    this.updateEventPill();
     this.updateZuzka();
   }
 
@@ -366,6 +373,23 @@ export class UI {
       (room === 'cafe' ? 0 : s.waitingGuests.length) +
         (room !== 'education' && s.education.trip ? 1 : 0),
     );
+  }
+
+  /** Pilulka udalosti: ponuka s „!", prebiehajúca s odpočtom. */
+  private updateEventPill(): void {
+    const s = this.state;
+    const a = s.events.active;
+    const id = a?.id ?? s.events.offer;
+    const def = id ? s.eventDef(id) : undefined;
+    this.eventPill.hidden = !def;
+    if (!def) return;
+    let text: string;
+    if (a) {
+      const left = Math.max(0, Math.ceil((a.endsAt - s.now) / 1000));
+      text = `${def.icon} ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    } else text = `${def.icon} !`;
+    if (this.eventPill.textContent !== text) this.eventPill.textContent = text;
+    this.eventPill.classList.toggle('offer', !a);
   }
 
   private toggleRoomMenu(rooms: Room[]): void {
@@ -551,6 +575,27 @@ export class UI {
       this.updateHud();
     });
     bus.on('hotelCheckIn', ({ cat }) => this.toast(t('TOAST_HOTEL_IN', { cat: cat.name })));
+    bus.on('eventOffered', ({ def }) => {
+      this.toast(t('TOAST_EVENT_OFFER', { name: t(`EVENT_${def.id.toUpperCase()}`) }));
+      this.game.playSound('notify', 0.5);
+      this.updateHud();
+    });
+    bus.on('eventStarted', ({ def }) => {
+      this.toast(t('TOAST_EVENT_START', { name: t(`EVENT_${def.id.toUpperCase()}`) }));
+      this.updateHud();
+    });
+    bus.on('eventEnded', ({ def, bonus, money, rep }) => {
+      this.toast(
+        t(bonus ? 'TOAST_EVENT_END_BONUS' : 'TOAST_EVENT_END', {
+          name: t(`EVENT_${def.id.toUpperCase()}`),
+          money,
+          rep,
+        }),
+      );
+      this.game.playSound('success', 0.5);
+      this.updateHud();
+      if (this.modalKind === 'event') this.renderModal();
+    });
     bus.on('achievementUnlocked', ({ def }) => {
       this.toast(
         t('TOAST_ACHIEVEMENT', { name: t(`ACH_${def.id.toUpperCase()}`), money: def.money }),
@@ -1590,6 +1635,9 @@ export class UI {
       case 'station':
         box.append(...this.stationContent(), closeBtn);
         break;
+      case 'event':
+        box.append(...this.eventContent(closeBtn));
+        break;
       case 'welcome':
         box.append(
           el('h2', {}, t('UI_WELCOME')),
@@ -1609,6 +1657,77 @@ export class UI {
     this.modalViewKey = key;
     this.modal.replaceChildren(box);
     box.scrollTop = scroll;
+  }
+
+  /** Udalosť: ponuka (prijať / odložiť) alebo prebiehajúca s postupom (GDD §7.3). */
+  private eventContent(closeBtn: HTMLElement): HTMLElement[] {
+    const s = this.state;
+    const a = s.events.active;
+    const id = a?.id ?? s.events.offer;
+    const def = id ? s.eventDef(id) : undefined;
+    if (!def) return [el('p', { class: 'muted' }, t('UI_EVENT_NONE')), closeBtn];
+    const key = def.id.toUpperCase();
+    const out: HTMLElement[] = [
+      el('h2', {}, `${def.icon} ${t(`EVENT_${key}`)}`),
+      el('p', {}, t(`EVENT_${key}_DESC`)),
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_EVENT_GOAL', {
+          goal: t(`EVENT_${key}_GOAL`, { n: def.goal.target }),
+          min: Math.round(def.duration_s / 60),
+        }),
+      ),
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_EVENT_REWARD', {
+          money: def.money,
+          rep: def.rep,
+          bm: def.bonus_money,
+          br: def.bonus_rep,
+        }),
+      ),
+    ];
+    if (a) {
+      const p = s.eventProgress;
+      const left = Math.max(0, Math.ceil((a.endsAt - s.now) / 60_000));
+      if (p)
+        out.push(
+          el(
+            'div',
+            { class: 'stat' },
+            el('span', {}, t(`EVENT_${key}_GOAL`, { n: p.need })),
+            el('span', { class: 'val' }, `${p.have}/${p.need}`),
+            el(
+              'div',
+              { class: 'bar' },
+              el('i', { style: `width:${(p.have / p.need) * 100}%;background:#f2c14e` }),
+            ),
+          ),
+          el('p', { class: 'hint' }, t('UI_EVENT_LEFT', { min: left })),
+        );
+      out.push(closeBtn);
+      return out;
+    }
+    out.push(
+      el(
+        'div',
+        { class: 'actions' },
+        button(
+          `✅ ${t('UI_EVENT_ACCEPT')}`,
+          () => {
+            if (s.acceptEvent()) this.closeModal();
+          },
+          { class: 'btn primary' },
+        ),
+        button(`⏳ ${t('UI_EVENT_LATER')}`, () => {
+          s.declineEvent();
+          this.closeModal();
+        }),
+      ),
+    );
+    return out;
   }
 
   /** Pacienti, ktorým pomôže tento prístroj kliniky (GDD §6.5). */

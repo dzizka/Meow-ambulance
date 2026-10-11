@@ -9,6 +9,7 @@ import type {
   ChallengeDef,
   DecorDef,
   EquipmentDef,
+  EventDef,
   LevelDef,
   StaffDef,
   StaffId,
@@ -28,7 +29,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -72,7 +73,23 @@ export interface SaveData {
   education: EducationState;
   // od verzie 13
   achievements: Record<string, number>;
+  // od verzie 14
+  events: EventsState;
 }
+
+/** Udalosti (GDD §7.3): ponuka, prebiehajúca udalosť a počty dokončených. */
+export interface EventsState {
+  offer: EventDef['id'] | null;
+  active: { id: EventDef['id']; startedAt: number; endsAt: number; start: number } | null;
+  timer: number;
+  done: Partial<Record<EventDef['id'], number>>;
+}
+export const emptyEvents = (first: number): EventsState => ({
+  offer: null,
+  active: null,
+  timer: first,
+  done: {},
+});
 
 /** Školský výlet: deti s učiteľkou čakajú na prednášku (GDD §6.9). */
 export interface SchoolTrip {
@@ -182,6 +199,8 @@ export class GameState {
   education: EducationState = emptyEducation();
   /** Odomknuté úspechy (id → herný čas odomknutia) – GDD §7.5. */
   achievements: Record<string, number> = {};
+  /** Udalosti (GDD §7.3). */
+  events: EventsState;
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
   /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
@@ -204,6 +223,8 @@ export class GameState {
     // Prvé hlásenie a prvý adoptér prídu skôr ako ďalšie
     this.reportTimer = (b.rescue.interval_s - b.rescue.first_delay_s) * 1000;
     this.adopterTimer = (b.adopters.interval_s - b.adopters.first_delay_s) * 1000;
+    const ev = data.events;
+    this.events = emptyEvents(ev ? (ev.interval_s - ev.first_delay_s) * 1000 : 0);
     this.fillChallenges();
   }
 
@@ -284,7 +305,9 @@ export class GameState {
 
   /** Klietky v karanténe Komunitného útulku. */
   get quarantineCages(): number {
-    return this.shelter.open ? this.data.balance.shelter.quarantine_cages : 0;
+    if (!this.shelter.open) return 0;
+    // počas záchrany z množiarne pomôžu susedia dočasnými klietkami
+    return this.data.balance.shelter.quarantine_cages + (this.eventActive('mill') ? 4 : 0);
   }
 
   get totalCages(): number {
@@ -369,6 +392,7 @@ export class GameState {
       Care.passTime(cat, minutes, this.data, this.catio.open && cat.resident ? outside : mods);
     this.advanceHotel(deltaMs, true);
     this.advanceEducation(deltaMs);
+    this.advanceEvents(deltaMs);
     this.addMoney(this.donationsPerMinute * minutes, false);
     this.advanceReports(deltaMs);
     this.advanceAdopters(deltaMs);
@@ -409,7 +433,8 @@ export class GameState {
 
   private advanceReports(deltaMs: number): void {
     const r = this.data.balance.rescue;
-    const interval = r.interval_s * 1000;
+    // v zime prichádza 2× viac hlásení
+    const interval = r.interval_s * 1000 * (this.eventActive('winter') ? 0.5 : 1);
     this.reportTimer += deltaMs;
     while (this.reportTimer >= interval) {
       if (this.reports.length >= r.max_waiting) {
@@ -419,6 +444,7 @@ export class GameState {
       this.reportTimer -= interval;
       const pool = this.data.reports.filter(
         (d) =>
+          d.requires !== 'event' &&
           (d.requires !== 'shelter' || this.shelter.open) &&
           // prípady z inej útulne, až keď je čím ich odhaliť
           (d.requires !== 'clinic' || this.hasClinicRoom('lab') || this.hasClinicRoom('xray')),
@@ -435,11 +461,16 @@ export class GameState {
     // Adoptéri chodia iba vtedy, keď je komu nájsť domov
     if (!this.cats.some((c) => this.isReady(c))) return;
     const social = this.staffWorking('social') ? this.data.balance.staff.social : null;
-    const interval = a.interval_s * 1000 * (social?.adopter_interval_mult ?? 1);
+    const openDay = this.eventActive('openday');
+    const interval =
+      a.interval_s * 1000 * (social?.adopter_interval_mult ?? 1) * (openDay ? 0.35 : 1);
     this.adopterTimer += deltaMs;
     if (this.adopterTimer < interval) return;
     const maxWaiting =
-      a.max_waiting + (this.hasUnlock('adopters_plus') ? 1 : 0) + (social?.extra_waiting ?? 0);
+      a.max_waiting +
+      (this.hasUnlock('adopters_plus') ? 1 : 0) +
+      (social?.extra_waiting ?? 0) +
+      (openDay ? 1 : 0);
     if (this.adopters.length >= maxWaiting) {
       this.adopterTimer = interval;
       return;
@@ -508,6 +539,7 @@ export class GameState {
         surgery: this.hasClinicRoom('or'),
         pool: this.hasClinicRoom('pool'),
         clinicCase: !!def.clinic_case && age !== 'kitten',
+        event: this.events.active?.id,
       });
     const cat = make(def.age, def.difficulty);
     const family = [cat];
@@ -803,6 +835,106 @@ export class GameState {
     this.hotel.guests.push(cat);
     this.bus.emit('hotelCheckIn', { cat });
     return cat;
+  }
+
+  // ---------- Udalosti (GDD §7.3) ----------
+
+  eventDef(id: EventDef['id']): EventDef | undefined {
+    return this.data.events?.events.find((e) => e.id === id);
+  }
+
+  eventActive(id: EventDef['id']): boolean {
+    return this.events.active?.id === id;
+  }
+
+  /** Udalosti, ktoré sa môžu ponúknuť (úroveň, kaviareň, útulok). */
+  private eligibleEvents(): EventDef[] {
+    return (this.data.events?.events ?? []).filter(
+      (e) =>
+        this.level + 1 >= e.min_level &&
+        (e.requires !== 'cafe' || this.cafe.open) &&
+        (e.requires !== 'shelter' || this.shelter.open),
+    );
+  }
+
+  /** Postup cieľa prebiehajúcej udalosti. */
+  get eventProgress(): { have: number; need: number } | null {
+    const a = this.events.active;
+    const def = a && this.eventDef(a.id);
+    if (!a || !def) return null;
+    return {
+      have: Math.min(def.goal.target, this.counters[def.goal.kind] - a.start),
+      need: def.goal.target,
+    };
+  }
+
+  private advanceEvents(deltaMs: number): void {
+    const ev = this.data.events;
+    if (!ev) return;
+    const a = this.events.active;
+    if (a) {
+      if (this.now >= a.endsAt) this.endEvent();
+      return;
+    }
+    if (this.events.offer) return;
+    this.events.timer += deltaMs;
+    if (this.events.timer < ev.interval_s * 1000) return;
+    const pool = this.eligibleEvents();
+    if (!pool.length) {
+      this.events.timer = ev.interval_s * 1000;
+      return;
+    }
+    this.events.timer = 0;
+    // najmenej hraná udalosť má prednosť
+    const least = Math.min(...pool.map((e) => this.events.done[e.id] ?? 0));
+    const def = this.rng.pick(pool.filter((e) => (this.events.done[e.id] ?? 0) === least));
+    this.events.offer = def.id;
+    this.bus.emit('eventOffered', { def });
+  }
+
+  acceptEvent(): boolean {
+    const id = this.events.offer;
+    const def = id && this.eventDef(id);
+    if (!def || this.events.active) return false;
+    this.events.offer = null;
+    this.events.active = {
+      id: def.id,
+      startedAt: this.now,
+      endsAt: this.now + def.duration_s * 1000,
+      start: this.counters[def.goal.kind],
+    };
+    // množiareň: hneď príde veľká rodinka (mama a mačiatka)
+    if (def.id === 'mill') {
+      const report: Report = { id: this.newId('r'), defId: 'mill' };
+      this.reports.push(report);
+      this.bus.emit('reportAdded', { report });
+    }
+    this.bus.emit('eventStarted', { def });
+    return true;
+  }
+
+  /** Odložiť ponuku – ďalšia príde neskôr. */
+  declineEvent(): void {
+    const ev = this.data.events;
+    if (!this.events.offer || !ev) return;
+    this.events.offer = null;
+    this.events.timer = (ev.interval_s - ev.decline_delay_s) * 1000;
+  }
+
+  /** Koniec udalosti: odmena vždy, bonus za splnený cieľ (udalosti nikdy nezlyhajú). */
+  private endEvent(): void {
+    const a = this.events.active;
+    const def = a && this.eventDef(a.id);
+    if (!a || !def) return;
+    const p = this.eventProgress;
+    const bonus = !!p && p.have >= p.need;
+    const money = def.money + (bonus ? def.bonus_money : 0);
+    const rep = def.rep + (bonus ? def.bonus_rep : 0);
+    this.events.active = null;
+    this.events.done[def.id] = (this.events.done[def.id] ?? 0) + 1;
+    this.addMoney(money, true);
+    this.gainRep(rep);
+    this.bus.emit('eventEnded', { def, bonus, money, rep });
   }
 
   // ---------- Edukačné centrum (GDD §6.9) ----------
@@ -1567,7 +1699,7 @@ export class GameState {
     // Príchody – iba cez deň, keď je na koho sa prísť pozrieť a je voľný stôl
     const residents = this.residents;
     if (residents.length === 0 || !this.cafeOpenNow) return;
-    const interval = c.guest_interval_s * 1000;
+    const interval = c.guest_interval_s * 1000 * (this.eventActive('openday') ? 0.4 : 1);
     this.cafe.timer += deltaMs;
     if (this.cafe.timer < interval) return;
     const taken = new Set(this.cafe.guests.map((g) => g.table));
@@ -1658,6 +1790,7 @@ export class GameState {
       hotel: structuredClone(this.hotel),
       education: structuredClone(this.education),
       achievements: { ...this.achievements },
+      events: structuredClone(this.events),
     };
   }
 
@@ -1693,6 +1826,7 @@ export class GameState {
     s.hotel = structuredClone(save.hotel ?? emptyHotel());
     s.education = structuredClone(save.education ?? emptyEducation());
     s.achievements = { ...(save.achievements ?? {}) };
+    if (save.events) s.events = structuredClone(save.events);
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();
@@ -1815,6 +1949,23 @@ export class GameState {
       this.clinic.rooms.push(room);
       this.bus.emit('clinicRoomBought', { room });
     }
+    return true;
+  }
+
+  /** Ponuka udalosti hneď (vývojárske menu). */
+  devOfferEvent(id: EventDef['id']): boolean {
+    if (this.events.active) return false;
+    this.events.offer = id;
+    const def = this.eventDef(id);
+    if (def) this.bus.emit('eventOffered', { def });
+    return true;
+  }
+
+  /** Prebiehajúca udalosť skončí hneď (s odmenou podľa postupu). */
+  devEndEvent(): boolean {
+    if (!this.events.active) return false;
+    this.events.active.endsAt = this.now;
+    this.endEvent();
     return true;
   }
 
