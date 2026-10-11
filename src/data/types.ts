@@ -65,7 +65,12 @@ export interface NamesData {
 }
 
 export interface BalanceData {
-  clock: { real_seconds_per_game_hour: number; start_hour: number };
+  /** Hodiny: reálne sekundy na hernú hodinu cez deň a v noci (22–6 h). */
+  clock: {
+    real_seconds_per_game_hour: number;
+    night_seconds_per_game_hour: number;
+    start_hour: number;
+  };
   rescue: { interval_s: number; first_delay_s: number; max_waiting: number };
   adopters: { interval_s: number; first_delay_s: number; max_waiting: number };
   decay_per_min: { cleanliness: number; satisfaction: number };

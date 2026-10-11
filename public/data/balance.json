@@ -2,6 +2,7 @@
   "_comment": "Štartovacie hodnoty balansu (GDD §2–§6). Časy sú v reálnych sekundách. Meniť tu, nie v kóde.",
   "clock": {
     "real_seconds_per_game_hour": 60,
+    "night_seconds_per_game_hour": 20,
     "start_hour": 8
   },
   "rescue": {

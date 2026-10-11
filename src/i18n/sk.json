@@ -316,5 +316,8 @@
   "DECOR_C_CURTAINS": "Záclony",
   "TOAST_LEVEL_UP": "Nová úroveň: {name}! Odomknuté: {list}",
   "TOAST_BOUGHT": "Kúpené: {name}",
-  "UI_EQ_MAX": "Max ✓"
+  "UI_EQ_MAX": "Max ✓",
+  "UI_CAFE_CLOSED": "🌙 V noci je kaviareň zatvorená – mačky spia. Otvárame o 6:00.",
+  "TOAST_CAFE_NIGHT": "🌙 Kaviareň zatvorila, mačky idú spať",
+  "TOAST_CAFE_MORNING": "☀️ Dobré ráno! Kaviareň je otvorená"
 }

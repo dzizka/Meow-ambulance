@@ -170,6 +170,7 @@ export class UI {
   private confirmReset = false;
   private selectedForVisit: string | null = null;
   private dev: DevMenu;
+  private cafeWasOpen: boolean | null = null;
 
   constructor(
     private state: GameState,
@@ -338,6 +339,13 @@ export class UI {
 
   private tick(): void {
     this.updateHud();
+    // Kaviareň v noci zatvára a ráno otvára (GDD §5.5)
+    const open = this.state.cafeOpenNow;
+    if (this.cafeWasOpen !== null && open !== this.cafeWasOpen && this.state.cafe.open) {
+      this.toast(t(open ? 'TOAST_CAFE_MORNING' : 'TOAST_CAFE_NIGHT'));
+      if (!this.selectedId && this.game.room === 'cafe') this.renderSheet();
+    }
+    this.cafeWasOpen = open;
     // Odpočet prestávok na karte
     if (this.selectedId && !this.busy) this.renderSheet();
   }
@@ -767,7 +775,7 @@ export class UI {
       s.residents.length === 0
         ? el('p', { class: 'warning' }, t('UI_CAFE_NO_RESIDENTS'))
         : rows.length === 0
-          ? el('p', { class: 'muted' }, t('UI_CAFE_NO_GUESTS'))
+          ? el('p', { class: 'muted' }, t(s.cafeOpenNow ? 'UI_CAFE_NO_GUESTS' : 'UI_CAFE_CLOSED'))
           : el('div', { class: 'guests' }, ...rows),
       residents.length ? el('div', { class: 'cat-list' }, ...residents) : '',
     );
