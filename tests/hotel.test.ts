@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GameState, type SaveData } from '../src/core/GameState';
 import { SaveManager, type SaveStorage } from '../src/core/SaveManager';
-import { loadTestData } from './loadData';
+import { levelRep, loadTestData } from './loadData';
 
 const data = loadTestData();
 const h = data.balance.hotel;
@@ -17,7 +17,7 @@ function storage(): SaveStorage {
 
 function withHotel(): GameState {
   const s = new GameState(data, 11);
-  s.devGive(20_000, 350);
+  s.devGive(20_000, levelRep(6));
   expect(s.buyHotel()).toBe(true);
   return s;
 }
@@ -27,7 +27,7 @@ describe('Mačací hotel (GDD §6.7)', () => {
     const s = new GameState(data, 1);
     s.money = 20_000;
     expect(s.buyHotel()).toBe(false);
-    s.devGive(0, 350);
+    s.devGive(0, levelRep(6));
     expect(s.buyHotel()).toBe(true);
     expect(s.suiteCount).toBe(h.suites);
     expect(s.buySuite()).toBe(true);

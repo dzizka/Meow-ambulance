@@ -3,7 +3,7 @@ import { GameState, type SaveData } from '../src/core/GameState';
 import { SaveManager, type SaveStorage } from '../src/core/SaveManager';
 import { generateCat } from '../src/core/systems/CatGenerator';
 import { Rng } from '../src/core/Rng';
-import { loadTestData } from './loadData';
+import { levelRep, loadTestData } from './loadData';
 
 const data = loadTestData();
 const c = data.balance.clinic;
@@ -20,7 +20,7 @@ function storage(): SaveStorage {
 /** Úroveň 5, útulok a peniaze na všetko. */
 function ready(): GameState {
   const s = new GameState(data, 31);
-  s.devGive(20_000, 200);
+  s.devGive(20_000, levelRep(5));
   s.devOpenShelter();
   return s;
 }
@@ -30,7 +30,7 @@ describe('Klinika (GDD §6.5)', () => {
     const s = new GameState(data, 1);
     s.money = 20_000;
     expect(s.buyClinic()).toBe(false); // málo ★
-    s.devGive(0, 200);
+    s.devGive(0, levelRep(5));
     expect(s.clinicMissing.shelter).toBe(true);
     expect(s.buyClinic()).toBe(false); // bez útulku
     s.devOpenShelter();
@@ -178,7 +178,7 @@ describe('Klinika – 2. poschodie (GDD §6.8)', () => {
     s.buyClinic();
     expect(s.buyFloor()).toBe(false); // úroveň 5 nestačí
     expect(s.buyClinicRoom('ct')).toBe(false);
-    s.devGive(0, 300);
+    s.devGive(0, levelRep(7) - levelRep(5));
     expect(s.buyFloor()).toBe(true);
     expect(s.buyClinicRoom('ct')).toBe(true);
     expect(s.tools).toContain('ct');
@@ -199,7 +199,7 @@ describe('Klinika – 2. poschodie (GDD §6.8)', () => {
     expect(gen(true).has('spine')).toBe(true);
     expect(gen(false).has('heart')).toBe(true);
     const s = ready();
-    s.devGive(0, 300);
+    s.devGive(0, levelRep(7) - levelRep(5));
     s.devOpenClinic();
     s.buyFloor();
     s.buyClinicRoom('ct');

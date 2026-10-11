@@ -23,3 +23,8 @@ export function loadTestData(): GameData {
     staff: read<{ staff: GameData['staff'] }>('staff.json').staff,
   };
 }
+
+/** Koľko ★ treba na úroveň n (1 = začiatok) – testy nezávislé od balansu. */
+export function levelRep(n: number): number {
+  return loadTestData().balance.levels[n - 1]?.rep ?? 0;
+}

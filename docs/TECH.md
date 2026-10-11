@@ -85,6 +85,7 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - „Nová hra" v menu (☰ → Obchod) zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
 
 ## Testy a CI
+- Simulácia balansu (bot hrá 8 h, 3 semienka): `SIM=1 npx vitest run tests/balance.sim.test.ts --silent=false` – výsledky v GDD §12a. Testy berú ★ úrovní z dát (`levelRep(n)` v `tests/loadData.ts`), takže zmena balansu ich nerozbije.
 - Vitest pre `src/core/`: generovanie mačky, starostlivosť, výpočet zhody, hlásenia a adoptéri v čase, offline, ukladanie.
 - Pri testovaní v headless Chromiu s emuláciou mobilu môže byť plátno WebGL na snímke čierne, ak je nad ním vysoký rolovací HTML panel – je to obmedzenie softvérového vykresľovania, nie chyba hry. Overiť na skutočnom zariadení.
 - GitHub Actions: `npm ci && npm run lint && npm test && npm run build` pri každom PR.
