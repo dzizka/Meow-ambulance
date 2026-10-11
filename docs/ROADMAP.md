@@ -76,7 +76,7 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 ## M4 – Klinika (Fáza 3)
 - [x] Personál a automatizácia – ošetrovateľ, veterinárka, baristka, správca sietí (úroveň 5, GDD §6.4)
 - [x] Klinika: laboratórium, röntgen, operačná sála, 4 nové minihry, kastrácia, prípady z iných útulní (GDD §6.5)
-- [ ] Catio
+- [x] Catio – vonkajší výbeh pre stálice (GDD §6.6)
 - [ ] Udalosť Záchrana z množiarne
 - [ ] Vzácne mačky, Srdiečka a kozmetika
 

@@ -352,7 +352,7 @@
   "LEVEL_7": "Národné centrum felíd",
   "UNLOCK_STAFF": "personál",
   "UNLOCK_CLINIC": "klinika",
-  "UNLOCK_CATIO": "catio (pripravujeme)",
+  "UNLOCK_CATIO": "catio (výbeh)",
   "UNLOCK_HOTEL": "mačací hotel (pripravujeme)",
   "UNLOCK_FLOORS": "ďalšie poschodia (pripravujeme)",
   "UNLOCK_CT": "CT (pripravujeme)",
@@ -430,5 +430,14 @@
   "MG_SURG_STITCH": "Zašij ranu – ťukaj na bodky zľava doprava.",
   "MG_SPLINT_HINT": "Krúž prstom okolo labky a omotaj ju. Pomaly – nie príliš tesne!",
   "MG_TOO_TIGHT": "Príliš tesne!",
-  "UI_STATION_EMPTY": "Momentálne tu nikto nič nepotrebuje."
+  "UI_STATION_EMPTY": "Momentálne tu nikto nič nepotrebuje.",
+  "UI_CATIO": "Catio",
+  "UI_GO_CATIO": "Do výbehu",
+  "UI_CATIO_DESC": "Vonkajší výbeh pri kaviarni: stálice chodia cez deň von a spokojnosť im klesá o polovicu pomalšie.",
+  "TOAST_CATIO_OPEN": "Catio je hotové! 🌳 Stálice môžu von.",
+  "UI_CATIO_LINE": "Vonku: {n} z {all} stálic",
+  "UI_CATIO_NIGHT": "Je noc – stálice spia vnútri v kaviarni.",
+  "UI_CATIO_INSIDE": "Všetky stálice sú práve vnútri. O chvíľu niekto vybehne.",
+  "UI_CATIO_NONE": "Zatiaľ tu nikto nie je – vyliečenú mačku si nechaj ako stálicu.",
+  "UI_CATIO_HINT": "Stálice chodia von a dnu samy. Vo výbehu sa nudia pomalšie, takže prinášajú viac darov."
 }

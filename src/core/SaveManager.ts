@@ -60,6 +60,8 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v8 → v9: catio – vonkajší výbeh (GDD §6.6). */
+  8: (s) => ({ ...s, version: 9, catio: { open: false } }),
   /** v7 → v8: klinika, počítadlo kastrácií (GDD §6.5). */
   7: (s) => ({
     ...s,

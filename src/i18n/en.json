@@ -352,7 +352,7 @@
   "LEVEL_7": "National feline centre",
   "UNLOCK_STAFF": "staff",
   "UNLOCK_CLINIC": "clinic",
-  "UNLOCK_CATIO": "catio (coming soon)",
+  "UNLOCK_CATIO": "catio (outdoor run)",
   "UNLOCK_HOTEL": "cat hotel (coming soon)",
   "UNLOCK_FLOORS": "more floors (coming soon)",
   "UNLOCK_CT": "CT (coming soon)",
@@ -430,5 +430,14 @@
   "MG_SURG_STITCH": "Stitch the wound – tap the dots from left to right.",
   "MG_SPLINT_HINT": "Circle your finger around the paw to wrap it. Slowly – not too tight!",
   "MG_TOO_TIGHT": "Too tight!",
-  "UI_STATION_EMPTY": "Nobody needs this right now."
+  "UI_STATION_EMPTY": "Nobody needs this right now.",
+  "UI_CATIO": "Catio",
+  "UI_GO_CATIO": "To the catio",
+  "UI_CATIO_DESC": "An outdoor run by the café: residents go out during the day and their satisfaction drops half as fast.",
+  "TOAST_CATIO_OPEN": "The catio is ready! 🌳 Residents can go outside.",
+  "UI_CATIO_LINE": "Outside: {n} of {all} residents",
+  "UI_CATIO_NIGHT": "It's night – the residents are sleeping inside the café.",
+  "UI_CATIO_INSIDE": "All residents are inside right now. Someone will run out soon.",
+  "UI_CATIO_NONE": "Nobody here yet – keep a healed cat as a resident.",
+  "UI_CATIO_HINT": "Residents go in and out on their own. Outside they get bored more slowly, so they bring more donations."
 }

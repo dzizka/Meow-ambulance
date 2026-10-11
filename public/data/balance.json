@@ -166,5 +166,10 @@
     "neuter_match_bonus": 6,
     "case_fee_bonus": 0.25,
     "case_rep_bonus": 2
+  },
+  "catio": {
+    "_comment": "Catio – vonkajší výbeh pri kaviarni (GDD §6.6): stálice chodia cez deň von, spokojnosť im klesá pomalšie.",
+    "price": 2500,
+    "satisfaction_decay_mult": 0.5
   }
 }

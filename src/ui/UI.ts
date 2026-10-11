@@ -30,6 +30,8 @@ export interface GameBridge {
   /** Miestnosť, ktorú vidí kamera, a prepnutie do inej (GDD §5.5). */
   readonly room: Room;
   showRoom(room: Room): void;
+  /** Id stálic, ktoré sú práve vonku vo výbehu. */
+  catsOutside(): string[];
   /** Vývojárske menu: rýchlosť času a okamžité uloženie. */
   readonly speed: number;
   setSpeed(speed: number): void;
@@ -153,6 +155,7 @@ const ROOM_ICON: Record<Room, string> = {
   cafe: '☕',
   shelter: '🏠',
   clinic: '⚕️',
+  catio: '🌳',
 };
 const ORDER_ICON = { coffee: '☕', tea: '🍵', cake: '🍰' } as const;
 const round1 = (n: number): string =>
@@ -310,6 +313,7 @@ export class UI {
       'garage',
       ...(s.cafe.open ? ['cafe' as const] : []),
       ...(s.shelter.open ? ['shelter' as const] : []),
+      ...(s.catio.open ? ['catio' as const] : []),
       ...(s.clinic.open ? ['clinic' as const] : []),
     ];
   }
@@ -485,6 +489,7 @@ export class UI {
         table: 'TOAST_BOUGHT_TABLE',
         shelter: 'TOAST_SHELTER_OPEN',
         clinic: 'TOAST_CLINIC_OPEN',
+        catio: 'TOAST_CATIO_OPEN',
       }[kind];
       this.toast(t(key));
       this.game.playSound('upgrade', 0.6);
@@ -919,6 +924,10 @@ export class UI {
       this.renderClinicPanel();
       return;
     }
+    if (this.game.room === 'catio') {
+      this.renderCatioPanel();
+      return;
+    }
     const s = this.state;
     // V garáži sú pacienti z garáže; stálice iba dovtedy, kým nie je kaviareň
     const cats = [...s.wardCats('garage'), ...(s.cafe.open ? [] : s.residents)];
@@ -1036,6 +1045,27 @@ export class UI {
       missing.length
         ? button(`🛒 ${t('UI_CLINIC_BUY_ROOMS')}`, () => this.openShop(), { class: 'btn' })
         : '',
+      this.panelButtons(),
+    );
+  }
+
+  /** Panel výbehu: kto je práve vonku (GDD §6.6). */
+  private renderCatioPanel(): void {
+    const s = this.state;
+    const outside = this.game.catsOutside();
+    const cats = s.residents.filter((c) => outside.includes(c.id));
+    const night = s.dayPhase === 'night';
+    this.setSheet(
+      el('h2', {}, `🌳 ${t('UI_CATIO')}`),
+      el('p', { class: 'hint' }, t('UI_CATIO_LINE', { n: cats.length, all: s.residents.length })),
+      cats.length
+        ? el('div', { class: 'cat-list' }, ...cats.map((cat) => this.catTile(cat)))
+        : el(
+            'p',
+            { class: 'muted' },
+            t(night ? 'UI_CATIO_NIGHT' : s.residents.length ? 'UI_CATIO_INSIDE' : 'UI_CATIO_NONE'),
+          ),
+      el('p', { class: 'hint' }, t('UI_CATIO_HINT')),
       this.panelButtons(),
     );
   }
@@ -1732,6 +1762,7 @@ export class UI {
           : buy(t('UI_BUY_SLOT', { price: slotPrice }), slotPrice, () => s.buySlot()),
       ),
       this.cafeUpgrade(),
+      this.catioUpgrade(),
       this.shelterUpgrade(),
       ...this.clinicUpgrade(),
     ];
@@ -1951,6 +1982,45 @@ export class UI {
               if (s.buyShelter()) this.closeModal();
             },
             { class: 'btn primary', disabled: s.money < b.price },
+          ),
+    );
+  }
+
+  /** Catio – vonkajší výbeh pri kaviarni (GDD §6.6). */
+  private catioUpgrade(): HTMLElement {
+    const s = this.state;
+    const price = s.data.balance.catio.price;
+    if (s.catio.open)
+      return el(
+        'div',
+        { class: 'upgrade' },
+        el('strong', {}, `🌳 ${t('UI_CATIO')}`),
+        el('span', { class: 'chip good' }, '✓'),
+      );
+    const miss = s.catioMissing;
+    const locks: HTMLElement[] = [];
+    if (miss.rep > 0)
+      locks.push(
+        el('span', { class: 'chip lock' }, t('UI_LOCKED', { rep: s.unlockRep('catio') ?? '?' })),
+      );
+    if (miss.cafe) locks.push(el('span', { class: 'chip lock' }, t('UI_STAFF_NEEDS_CAFE')));
+    return el(
+      'div',
+      { class: 'upgrade cafe' },
+      el(
+        'div',
+        {},
+        el('strong', {}, `🌳 ${t('UI_CATIO')}`),
+        el('p', { class: 'hint' }, t('UI_CATIO_DESC')),
+      ),
+      locks.length
+        ? el('div', { class: 'locks' }, ...locks)
+        : button(
+            t('UI_BUY_CLINIC', { price }),
+            () => {
+              if (s.buyCatio()) this.closeModal();
+            },
+            { class: 'btn primary', disabled: s.money < price },
           ),
     );
   }

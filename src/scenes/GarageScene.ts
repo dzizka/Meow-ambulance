@@ -25,6 +25,7 @@ import { Furnishings } from './Furnishings';
 import { StaffSprites } from './StaffSprites';
 import { QUARANTINE_AREA, QUARANTINE_CAGES, ShelterRoom } from './ShelterRoom';
 import { ClinicRoom } from './ClinicRoom';
+import { CATIO_AREA, CatioRoom } from './CatioRoom';
 import { addProp, type WorldGeom } from './world';
 import type { CafeGuest } from '../data/types';
 import { DPR } from './dpr';
@@ -97,6 +98,10 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private cafe: CafeRoom | null = null;
   private shelterRoom: ShelterRoom | null = null;
   private clinicRoom: ClinicRoom | null = null;
+  private catioRoom: CatioRoom | null = null;
+  /** Stálice, ktoré sú práve vonku vo výbehu. */
+  private readonly outside = new Set<string>();
+  private sinceCatio = 0;
   /** Mačky práve na klinike (pri prístroji alebo na zotavení) – kedy sa vrátia. */
   private readonly visits = new Map<string, Phaser.Time.TimerEvent>();
   private staff: StaffSprites | null = null;
@@ -121,6 +126,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.state.cafe.open) this.openCafeRoom();
     if (this.state.shelter.open) this.openShelterRoom();
     if (this.state.clinic.open) this.openClinicRoom();
+    if (this.state.catio.open) this.openCatioRoom();
     new Furnishings(this, this.state, this.geom);
 
     this.staff = new StaffSprites(this, this.state, (id) => this.sprites.get(id));
@@ -170,6 +176,11 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       this.sinceStaff = 0;
       this.staff?.refresh();
     }
+    this.sinceCatio += delta;
+    if (this.sinceCatio > 12_000) {
+      this.sinceCatio = 0;
+      this.wanderOutside();
+    }
     this.sinceSparkle += delta;
     if (this.sinceSparkle > 1400) {
       this.sinceSparkle = 0;
@@ -215,7 +226,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       room === this.room ||
       (room === 'cafe' && !this.cafe) ||
       (room === 'shelter' && !this.shelterRoom) ||
-      (room === 'clinic' && !this.clinicRoom)
+      (room === 'clinic' && !this.clinicRoom) ||
+      (room === 'catio' && !this.catioRoom)
     )
       return;
     const cam = this.cameras.main;
@@ -239,6 +251,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private areaFor(cat: CatData): Phaser.Geom.Rectangle {
     if (!cat.resident)
       return cat.ward === 'quarantine' && this.shelterRoom ? QUARANTINE_AREA : PATIENT_AREA;
+    if (this.catioRoom && this.outside.has(cat.id)) return CATIO_AREA;
     return this.cafe ? CAFE_AREA : RESIDENT_AREA;
   }
 
@@ -247,6 +260,36 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.shelterRoom) return;
     this.shelterRoom = new ShelterRoom(this, this.geom);
     for (const [x, y, r] of this.shelterRoom.lamps) this.addGlow(x, y, r);
+  }
+
+  /** Catio – vonkajší výbeh pri kaviarni (GDD §6.6). */
+  private openCatioRoom(): void {
+    if (this.catioRoom) return;
+    this.catioRoom = new CatioRoom(this, this.geom);
+    for (const [x, y, r] of this.catioRoom.lamps) this.addGlow(x, y, r);
+  }
+
+  /**
+   * Stálice chodia cez deň von do výbehu a späť do kaviarne; v noci sú všetky vnútri.
+   * Volá sa pravidelne z update.
+   */
+  private wanderOutside(): void {
+    if (!this.catioRoom || !this.cafe) return;
+    const night = this.phase === 'night';
+    for (const sprite of this.sprites.values()) {
+      const cat = sprite.cat;
+      if (!cat.resident || sprite.isPinned || sprite.leaving) continue;
+      const out = this.outside.has(cat.id);
+      if (night ? !out : Math.random() > 0.3) continue;
+      if (out) this.outside.delete(cat.id);
+      else this.outside.add(cat.id);
+      const a = this.areaFor(cat);
+      sprite.teleport(
+        Phaser.Math.Between(a.left + 10, a.right - 10),
+        Phaser.Math.Between(a.top + 5, a.bottom - 5),
+        a,
+      );
+    }
   }
 
   /** Klinika – štvrtá budova (GDD §6.5). */
@@ -326,6 +369,10 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     const x = Phaser.Math.Between(CAFE_AREA.left + 20, CAFE_AREA.right - 20);
     const y = Phaser.Math.Between(CAFE_AREA.top + 10, CAFE_AREA.bottom - 10);
     sprite.teleport(x, y, CAFE_AREA);
+  }
+
+  catsOutside(): string[] {
+    return [...this.outside];
   }
 
   setSpeed(speed: number): void {
@@ -432,6 +479,11 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
         this.openClinicRoom();
         this.showRoom('clinic');
       }
+      if (kind === 'catio') {
+        this.openCatioRoom();
+        this.showRoom('catio');
+        this.sinceCatio = 99_000; // stálice hneď vybehnú von
+      }
       if (kind === 'cafe') {
         this.openCafeRoom();
         for (const sprite of this.sprites.values())
@@ -505,7 +557,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private createLighting(): void {
     this.nightOverlay = this.add
-      .rectangle(0, 0, WORLD_W * 4, WORLD_H, 0x000000, 0)
+      .rectangle(0, 0, WORLD_W * 5, WORLD_H, 0x000000, 0)
       .setOrigin(0)
       .setDepth(5000);
     // Mäkké svetlo lámp: radiálny prechod v textúre, sčítaný s obrazom
