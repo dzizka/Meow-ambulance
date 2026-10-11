@@ -54,7 +54,7 @@
   },
   "residents": {
     "slots": 2,
-    "donation_per_min": 0.5,
+    "donation_per_min": 0.8,
     "offline_cap_h": 8
   },
   "phase_1": {
@@ -77,8 +77,8 @@
     "guest_interval_s": 55,
     "guest_first_delay_s": 6,
     "guest_stay_s": 70,
-    "tip_base": 2,
-    "tip_per_resident": 1,
+    "tip_base": 4,
+    "tip_per_resident": 2,
     "served_multiplier": 1.5,
     "pet_satisfaction": 8,
     "guest_sprites": ["005", "006", "007", "027", "029", "032", "033", "000", "003", "010", "015"],
@@ -101,22 +101,22 @@
       "unlocks": ["equipment_3", "decor_3", "adopters_plus"]
     },
     {
-      "rep": 100,
+      "rep": 110,
       "name_key": "LEVEL_4",
       "unlocks": ["rare_cats", "shelter_2"]
     },
     {
-      "rep": 200,
+      "rep": 220,
       "name_key": "LEVEL_5",
       "unlocks": ["staff", "clinic"]
     },
     {
-      "rep": 350,
+      "rep": 450,
       "name_key": "LEVEL_6",
       "unlocks": ["catio", "hotel"]
     },
     {
-      "rep": 500,
+      "rep": 800,
       "name_key": "LEVEL_7",
       "unlocks": ["floors", "ct", "pool", "education"]
     }
@@ -155,31 +155,31 @@
   },
   "clinic": {
     "_comment": "Klinika (GDD §6.5): budova, potom miestnosti. Bonusy pri adopcii kastrovanej mačky a prípadu z inej útulne. floor_price = 2. poschodie (CT, bazén); rehabilitácia v bazéne: +zdravie a vyšší príspevok.",
-    "price": 1500,
+    "price": 1200,
     "rooms": {
-      "lab": 2000,
-      "xray": 2500,
-      "or": 3500,
-      "ct": 4000,
-      "pool": 3500
+      "lab": 1500,
+      "xray": 2000,
+      "or": 2500,
+      "ct": 3000,
+      "pool": 2500
     },
     "neuter_fee_bonus": 0.15,
     "neuter_rep_bonus": 1,
     "neuter_match_bonus": 6,
     "case_fee_bonus": 0.25,
     "case_rep_bonus": 2,
-    "floor_price": 4000,
+    "floor_price": 3000,
     "rehab_fee_bonus": 0.1,
     "rehab_health": 20
   },
   "catio": {
     "_comment": "Catio – vonkajší výbeh pri kaviarni (GDD §6.6): stálice chodia cez deň von, spokojnosť im klesá pomalšie.",
-    "price": 2500,
+    "price": 2000,
     "satisfaction_decay_mult": 0.5
   },
   "hotel": {
     "_comment": "Mačací hotel (GDD §6.7): majitelia zveria mačku na pár minút; platba = fee × (0,5 + priemerná spokojnosť/100), pri spokojnosti ≥ happy_at aj ★. decay_mult = hostia sa nudia rýchlejšie (chýba im domov).",
-    "price": 3000,
+    "price": 2500,
     "suites": 2,
     "suite_prices": [900, 1400, 2000],
     "first_delay_s": 15,
@@ -193,7 +193,7 @@
   },
   "education": {
     "_comment": "Edukačné centrum (GDD §6.9): školské výlety cez deň; prednáška = kvíz, odmena ★ podľa hviezdičiek, dar za každé dieťa, skorší záujemca o adopciu. Ak prednášku nespravíš do wait_s, deti odídu s polovičným darom.",
-    "price": 3500,
+    "price": 3000,
     "first_delay_s": 30,
     "interval_s": 200,
     "wait_s": 150,

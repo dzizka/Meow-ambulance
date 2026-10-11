@@ -293,7 +293,10 @@ Všetko sa kupuje v menu ☰ → **🛒 Obchod** (ťuknutie na ★ v hornom pane
 | 1 | 0 | Garážová záchranka | vybavenie 1. stupňa, prvé dekorácie |
 | 2 | 25 | Známa v susedstve | **mačacia kaviareň**, vybavenie 2. stupňa, ďalšie dekorácie |
 | 3 | 60 | Obľúbený útulok | vybavenie 3. stupňa, ďalšie dekorácie, o 1 záujemcu viac naraz |
-| 4 | 100 | Pýcha mesta | vzácne plemená prichádzajú 2× častejšie, **Fáza 2 – Komunitný útulok** (pripravuje sa) |
+| 4 | 110 | Pýcha mesta | vzácne plemená prichádzajú 2× častejšie, **Komunitný útulok** |
+| 5 | 220 | Špecializovaná klinika | **personál**, **klinika** |
+| 6 | 450 | Regionálne centrum | **catio**, **mačací hotel** |
+| 7 | 800 | Národné centrum felíd | **2. poschodie kliniky** (CT, bazén), **edukačné centrum** |
 
 Pri novej úrovni: oznámenie, iskričky a zoznam toho, čo sa odomklo. Úrovne sú v `balance.json → levels`.
 
@@ -316,7 +319,7 @@ Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v garáži alebo 
 
 #### 6.1.4 Rozšírenie útulku
 - **Fáza 1:** 3. a 4. klietka (120 / 180 €), kútik pre stálice +1 / +2 (150 / 220 €), kaviareň (350 €, od 25 ★), 3. a 4. stôl (180 / 260 €).
-- **Fáza 2 – Komunitný útulok** 🟢 (od 100 ★ a 10 záchran, 1 500 €): tretia budova vedľa garáže a kaviarne – **garáž aj kaviareň zostávajú**, hráč nič nestratí. Prepínanie miestností cez ponuku v hornom paneli.
+- **Fáza 2 – Komunitný útulok** 🟢 (od 110 ★ a 10 záchran, 1 500 €): tretia budova vedľa garáže a kaviarne – **garáž aj kaviareň zostávajú**, hráč nič nestratí. Prepínanie miestností cez ponuku v hornom paneli.
   - **Karanténa:** +4 klietky (spolu až 8 pacientov). Keď je garáž plná, nová mačka ide do karantény; pacienta možno presúvať tlačidlom na karte.
   - **Ambulancia:** nástroj **otoskop** → diagnóza **ušné roztoče** (minihra kvapky do uška); **očkovanie** zdravej mačky (minihra: upokojiť hladkaním, ťuknúť na krk) → pri adopcii +25 % príspevok a +3 ★. Dobrovoľné, bez trestu.
   - **Mačacia rodinka:** nové hlásenie – mama a 2–3 mačiatka rovnakej farby naraz (potrebuje až 4 klietky).
@@ -326,8 +329,8 @@ Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v garáži alebo 
 | Fáza | Názov | Podmienka odomknutia | Kapacita | Nové prvky |
 |---|---|---|---|---|
 | **1** 🟢 | Garážová záchranka | štart | 2 klietky → max 4, kútik pre 2 stálice | Stôl, misky, teplomer, ruka, stetoskop. Pomocníčka: dobrovoľníčka **Zuzka** (tutoriál). |
-| **2** 🟢 | Komunitný útulok | 10 záchran, ★ 100, 1 500 € | 8–12 | Prenajatý domček: karanténa, **mačacia kaviareň** pre stálice (násobí dary), ambulancia na očkovanie, otoskop |
-| **3** 🟢 | Špecializovaná klinika | ★ 200 (úroveň 5), Komunitný útulok, 1 500 € | – (liečba, nie klietky) | Personál (veterinár, ošetrovateľ, správca sociálnych sietí), laboratórium, röntgen, operačná sála, catio (vonkajší výbeh) |
+| **2** 🟢 | Komunitný útulok | 10 záchran, ★ 110, 1 500 € | 8–12 | Prenajatý domček: karanténa, **mačacia kaviareň** pre stálice (násobí dary), ambulancia na očkovanie, otoskop |
+| **3** 🟢 | Špecializovaná klinika | ★ 220 (úroveň 5), Komunitný útulok, 1 200 € | – (liečba, nie klietky) | Personál (veterinár, ošetrovateľ, správca sociálnych sietí), laboratórium, röntgen, operačná sála, catio (vonkajší výbeh) |
 | **4** 🔵 | Národné centrum felíd | 120 záchran, ★ 2000 | 50+ | Viac poschodí, CT, rehabilitačný bazén, mačací hotel, edukačné centrum (školské výlety) |
 
 > **MVP obsahuje iba Fázu 1** a „okno" do Fázy 2 (zamknutá budova, ktorú hráč vidí na mape – motivácia).
@@ -337,7 +340,7 @@ Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v garáži alebo 
 - Každá miestnosť má povinné predmety (napr. ambulancia = stôl + skrinka s liekmi).
 - Dekorácie zvyšujú **Spokojnosť** mačiek v miestnosti a atraktivitu pre návštevníkov.
 
-### 6.4 Personál 🟢 (úroveň 5, 200 ★)
+### 6.4 Personál 🟢 (úroveň 5, 220 ★)
 Personál sa najíma **raz** v Obchode (bez mzdy) a dá sa kedykoľvek poslať na voľno. Hráč môže stále všetko robiť aj sám.
 
 | Rola | Cena | Čo robí sám |
@@ -352,14 +355,14 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 > Kľúčové pravidlo: **automatizácia nikdy nezoberie hráčovi zábavné časti**. Personál robí rutinu, hráč môže vždy zasiahnuť sám (a dostať lepší výsledok).
 
 
-### 6.5 Klinika 🟢 (úroveň 5, 200 ★)
-Štvrtá budova vedľa útulku (treba Komunitný útulok). Najprv sa postaví budova (**1 500 €**), potom sa v Obchode dokupujú miestnosti. Nekúpené sú zakryté plachtou (ťuknutím sa otvorí obchod).
+### 6.5 Klinika 🟢 (úroveň 5, 220 ★)
+Štvrtá budova vedľa útulku (treba Komunitný útulok). Najprv sa postaví budova (**1 200 €**), potom sa v Obchode dokupujú miestnosti. Nekúpené sú zakryté plachtou (ťuknutím sa otvorí obchod).
 
 | Miestnosť | Cena | Čo prináša | Diagnózy |
 |---|---|---|---|
-| 🔬 Laboratórium | 2 000 € | nástroj **Krvný test** (minihra: ťuknúť na 3 zvláštne bunky v mikroskope) | cukrovka (inzulín – injekcia), choroba obličiek (iba staršie mačky, sirup), zápal močových ciest (sirup) |
-| 🩻 Röntgen | 2 500 € | nástroj **Röntgen** (minihra: podržať rám nad vrtiacou sa mačkou, potom ťuknúť na problém na snímke) | zlomená labka (minihra **Dlaha** – krúživé omotávanie, príliš rýchlo = príliš tesne), prehltnutý predmet |
-| 🩺 Operačná sála | 3 500 € | minihra **Operácia** (uspať – ručička v zelenom, vybrať predmet pinzetou pomaly, zašiť ťukaním na bodky) | prehltnutý predmet; **kastrácia** dospelej zdravej mačky (voliteľne) |
+| 🔬 Laboratórium | 1 500 € | nástroj **Krvný test** (minihra: ťuknúť na 3 zvláštne bunky v mikroskope) | cukrovka (inzulín – injekcia), choroba obličiek (iba staršie mačky, sirup), zápal močových ciest (sirup) |
+| 🩻 Röntgen | 2 000 € | nástroj **Röntgen** (minihra: podržať rám nad vrtiacou sa mačkou, potom ťuknúť na problém na snímke) | zlomená labka (minihra **Dlaha** – krúživé omotávanie, príliš rýchlo = príliš tesne), prehltnutý predmet |
+| 🩺 Operačná sála | 2 500 € | minihra **Operácia** (uspať – ručička v zelenom, vybrať predmet pinzetou pomaly, zašiť ťukaním na bodky) | prehltnutý predmet; **kastrácia** dospelej zdravej mačky (voliteľne) |
 
 - Nové diagnózy dostanú mačky iba vtedy, keď ich hráč má čím odhaliť; prehltnutý predmet iba s operačnou sálou.
 - **Prípad z inej útulne** 💗 – nové hlásenie (s laboratóriom alebo röntgenom), mačka má aspoň jednu diagnózu kliniky; pri adopcii +2 ★ a príspevok +25 %.
@@ -368,28 +371,28 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 - Veterinárka (personál) robí aj krvný test a röntgen automaticky a presťahuje sa na kliniku. Operácie, dlahu a liečbu robí vždy hráč.
 
 
-### 6.6 Catio – vonkajší výbeh 🟢 (úroveň 6, 350 ★)
-- Kúpa v Obchode za **2 500 €**, treba kaviareň. Piata miestnosť (ikona 🌳): tráva, plot so živým plotom, stromček, prelézačka, búdka, napájadlo, záhradné lampy, motýle a vtáčiky na plote.
+### 6.6 Catio – vonkajší výbeh 🟢 (úroveň 6, 450 ★)
+- Kúpa v Obchode za **2 000 €**, treba kaviareň. Piata miestnosť (ikona 🌳): tráva, plot so živým plotom, stromček, prelézačka, búdka, napájadlo, záhradné lampy, motýle a vtáčiky na plote.
 - Stálice samy chodia cez deň von a späť do kaviarne (každých ~12 s sa niektoré rozhodnú); v noci sú všetky vnútri.
 - Účinok: stáliciam s výbehom klesá spokojnosť **o polovicu pomalšie** (`balance.json → catio`), takže prinášajú viac darov.
 
 
-### 6.7 Mačací hotel 🟢 (úroveň 6, 350 ★)
-- Šiesta miestnosť (🏨), kúpa v Obchode → Stavby za **3 000 €**; na začiatok 2 apartmány, dokúpiť ďalšie 3 (900 / 1 400 / 2 000 €).
+### 6.7 Mačací hotel 🟢 (úroveň 6, 450 ★)
+- Šiesta miestnosť (🏨), kúpa v Obchode → Stavby za **2 500 €**; na začiatok 2 apartmány, dokúpiť ďalšie 3 (900 / 1 400 / 2 000 €).
 - Cez deň, keď je voľný apartmán, príde majiteľ s mačkou (~každých 70 s) a nechá ju u nás na 4–7 minút. Hosť nie je naša mačka – nedá sa adoptovať ani liečiť, iba sa oň staráme (kŕmenie, česanie, hra). Ošetrovateľ Peťo pomáha aj v hoteli.
 - Hosťom klesá spokojnosť 1,5× rýchlejšie (chýba im domov). Majiteľ zaplatí **140 € × (0,5 + priemerná spokojnosť/100)**; pri priemere aspoň 75 % pridá **+1 ★**.
 - Hostia si občas ľahnú do apartmánu, v noci tam spia. Prehľad hotela ukazuje, kedy kto odchádza a ako je spokojný; karta hosťa má záložku Pobyt.
 
 
-### 6.8 Klinika – 2. poschodie: CT a rehabilitačný bazén 🟢 (úroveň 7, 500 ★)
-- „Viac poschodí": klinika dostane **2. poschodie** (4 000 €, Obchod → Stavby), vlastná miestnosť 🏢 so schodmi.
-- **CT** (4 000 €): nový nástroj. Minihra – držať prst, prstenec skenuje; keď sa mačka zavrtí (!), treba pustiť, inak je snímka rozmazaná. Odhalí **srdcovú chorobu** (dospelé a staršie, liečba tabletkami – sirup) a **ochorenie chrbtice**.
-- **Rehabilitačný bazén** (3 500 €): minihra **Plávanie** – striedavo ťukať ľavou a pravou labkou, mačka v plávacej veste preplává bazén. Lieči ochorenie chrbtice (bez bazéna sa nedá – mačky ho bez bazéna ani nedostanú) a ponúka **rehabilitáciu** po zlomenine, operácii alebo chrbtici: +20 zdravia, pri adopcii príspevok +10 %.
+### 6.8 Klinika – 2. poschodie: CT a rehabilitačný bazén 🟢 (úroveň 7, 800 ★)
+- „Viac poschodí": klinika dostane **2. poschodie** (3 000 €, Obchod → Stavby), vlastná miestnosť 🏢 so schodmi.
+- **CT** (3 000 €): nový nástroj. Minihra – držať prst, prstenec skenuje; keď sa mačka zavrtí (!), treba pustiť, inak je snímka rozmazaná. Odhalí **srdcovú chorobu** (dospelé a staršie, liečba tabletkami – sirup) a **ochorenie chrbtice**.
+- **Rehabilitačný bazén** (2 500 €): minihra **Plávanie** – striedavo ťukať ľavou a pravou labkou, mačka v plávacej veste preplává bazén. Lieči ochorenie chrbtice (bez bazéna sa nedá – mačky ho bez bazéna ani nedostanú) a ponúka **rehabilitáciu** po zlomenine, operácii alebo chrbtici: +20 zdravia, pri adopcii príspevok +10 %.
 - Prístroje sú ťuknuteľné ako na prízemí, mačka leží na stole CT alebo pláva v bazéne; veterinárka robí CT aj sama.
 
 
-### 6.9 Edukačné centrum 🟢 (úroveň 7, 500 ★)
-- Kúpa v Obchode → Stavby za **3 500 €**, treba kaviareň. Miestnosť 🎓: tabuľa s nakreslenou mačkou, lavičky, plagáty, koberec na hranie.
+### 6.9 Edukačné centrum 🟢 (úroveň 7, 800 ★)
+- Kúpa v Obchode → Stavby za **3 000 €**, treba kaviareň. Miestnosť 🎓: tabuľa s nakreslenou mačkou, lavičky, plagáty, koberec na hranie.
 - Cez deň (nie večer a v noci) príde asi každé 3,5 minúty **školský výlet** (3–5 detí s pani učiteľkou). Deti si sadnú a čakajú 2,5 minúty.
 - **Prednáška** = minihra **Kvíz**: 3 otázky o starostlivosti o mačky (z 10), tri odpovede. Hviezdičky = správne odpovede (aspoň 1).
 - Odmena: dar 15 € za každé dieťa, ★ podľa výsledku (1 / 1 / 2), stálice sa potešia (deti sa s nimi pohrajú na koberci) a **záujemca o adopciu príde hneď**. Bez prednášky výlet odíde s polovičným darom.
@@ -559,6 +562,20 @@ Cieľ: **15–20 minút hrania**, ktoré dokážu, že slučka je zábavná.
 | Ťažká téma (týranie zvierat) | Negatívne vnímanie | Jemný tón, žiadne grafické zobrazenie, dôraz na záchranu |
 
 ---
+
+## 12a. Balans (simulácia aktívneho hráča)
+Bot v `tests/balance.sim.test.ts` hrá aktívne (každých 5 s urobí, čo sa dá, minihry na ★★, najlepší záujemca, šetrí na odomknutú budovu). Spustenie: `SIM=1 npx vitest run tests/balance.sim.test.ts --silent=false`. Skutočný hráč bude zhruba 1,5–2× pomalší.
+
+| | bot (min) | | bot (min) |
+|---|---|---|---|
+| úroveň 2 – kaviareň | 6–13 → 9–21 | úroveň 6 | 104–128 |
+| úroveň 3 | 24–33 | catio | 161–191 |
+| úroveň 4 – útulok | 36–55 → 60–69 | hotel | 222–244 |
+| úroveň 5 – personál | 66–85 | úroveň 7 | 185–196 |
+| klinika | 100–121 | 2. poschodie, CT, bazén | 267–307 |
+| | | edukačné centrum | 304–317 |
+
+Úpravy v tomto kole: ★ na úrovne 5–7 zvýšené (220 / 450 / 800 – ★ predbiehali peniaze), lacnejšie neskoré budovy (klinika 1 200 €, miestnosti 1 500–3 000 €, catio 2 000 €, hotel 2 500 €, edukácia 3 000 €), silnejšia kaviareň (dar hosťa 4 € + 2 € za stálicu, dary stálic 0,8 €/min). Hlavné príjmy po 8 h: adopcie ~29 000 €, hotel ~30 000 €, kaviareň ~7 000 €, dary stálic ~3 000 €.
 
 ## 13. Metriky úspechu (pre testovanie)
 - Testeri hrajú MVP bez vyzvania ďalej ako 15 minút.

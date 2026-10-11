@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GameState, type SaveData } from '../src/core/GameState';
 import { SaveManager, type SaveStorage } from '../src/core/SaveManager';
-import { loadTestData } from './loadData';
+import { levelRep, loadTestData } from './loadData';
 
 const data = loadTestData();
 const p = data.balance.staff;
@@ -17,7 +17,7 @@ function storage(): SaveStorage {
 
 function withStaffUnlocked(): GameState {
   const s = new GameState(data, 21);
-  s.devGive(10_000, 200);
+  s.devGive(10_000, levelRep(5));
   return s;
 }
 
@@ -26,7 +26,7 @@ describe('Personál (GDD §6.4)', () => {
     const s = new GameState(data, 1);
     s.money = 10_000;
     expect(s.hireStaff('caretaker')).toBe(false);
-    s.devGive(0, 200);
+    s.devGive(0, levelRep(5));
     const money = s.money;
     expect(s.hireStaff('caretaker')).toBe(true);
     expect(s.money).toBe(money - data.staff.find((x) => x.id === 'caretaker')!.price);

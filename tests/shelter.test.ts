@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GameState, type SaveData } from '../src/core/GameState';
 import { SaveManager, type SaveStorage } from '../src/core/SaveManager';
-import { loadTestData } from './loadData';
+import { levelRep, loadTestData } from './loadData';
 
 const data = loadTestData();
 const b = data.balance.shelter;
@@ -18,7 +18,7 @@ function storage(): SaveStorage {
 /** Hra pripravená na útulok: dosť ★, záchran a peňazí. */
 function ready(): GameState {
   const s = new GameState(data, 11);
-  s.devGive(5000, 100);
+  s.devGive(5000, levelRep(4));
   s.counters.rescued = b.min_rescued;
   return s;
 }
@@ -29,7 +29,7 @@ describe('Komunitný útulok (GDD §6.2)', () => {
     s.money = 10_000;
     expect(s.buyShelter()).toBe(false); // málo ★ aj záchran
     expect(s.shelterMissing.rep).toBeGreaterThan(0);
-    s.devGive(0, 100);
+    s.devGive(0, levelRep(4));
     expect(s.buyShelter()).toBe(false); // málo záchran
     expect(s.shelterMissing.rescued).toBe(b.min_rescued);
     s.counters.rescued = b.min_rescued;

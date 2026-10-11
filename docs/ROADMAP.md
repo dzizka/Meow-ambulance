@@ -84,6 +84,7 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Mačací hotel (GDD §6.7)
 - [x] Viac poschodí, CT, rehabilitačný bazén – 2. poschodie kliniky (GDD §6.8)
 - [x] Edukačné centrum – školské výlety a kvíz (GDD §6.9)
-- [ ] Balans celej hry, achievementy
+- [x] Balans celej hry – simulácia hráča, úpravy ★ a cien (GDD §12a)
+- [ ] Achievementy
 - [ ] Steam stránka / itch.io vydanie
 - [ ] Vydanie na Google Play a App Store

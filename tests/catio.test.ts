@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GameState, type SaveData } from '../src/core/GameState';
 import { SaveManager, type SaveStorage } from '../src/core/SaveManager';
-import { loadTestData } from './loadData';
+import { levelRep, loadTestData } from './loadData';
 
 const data = loadTestData();
 
@@ -18,9 +18,9 @@ describe('Catio (GDD §6.6)', () => {
   it('potrebuje úroveň 6 a kaviareň', () => {
     const s = new GameState(data, 3);
     s.money = 20_000;
-    s.devGive(0, 200);
+    s.devGive(0, levelRep(5));
     expect(s.buyCatio()).toBe(false); // úroveň 5 nestačí
-    s.devGive(0, 150);
+    s.devGive(0, levelRep(6) - levelRep(5));
     expect(s.catioMissing.cafe).toBe(true);
     expect(s.buyCatio()).toBe(false);
     s.devOpenCafe();
@@ -33,7 +33,7 @@ describe('Catio (GDD §6.6)', () => {
   it('stáliciam s výbehom klesá spokojnosť pomalšie', () => {
     const drop = (catio: boolean) => {
       const s = new GameState(data, 4);
-      s.devGive(10_000, 350);
+      s.devGive(10_000, levelRep(6));
       s.devSpawnReport();
       const cat = s.acceptReport(s.reports[0]!.id)!;
       s.devHeal(cat.id);
