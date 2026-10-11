@@ -232,5 +232,15 @@
   "TOAST_CAFE_OPEN": "The café is open! Resident cats moved in ☕",
   "TOAST_BOUGHT_TABLE": "New table in the café",
   "TOAST_GUEST": "A guest came to the café ☕",
-  "TOAST_GUEST_TIP": "A guest left a donation +{n} €"
+  "TOAST_GUEST_TIP": "A guest left a donation +{n} €",
+  "COND_FLEAS": "fleas",
+  "COND_LONG_CLAWS": "long claws",
+  "MG_BATH_TITLE": "Bath time",
+  "MG_BATH_HINT_FOAM": "Rub the cat with your finger until it's covered in foam.",
+  "MG_BATH_HINT_RINSE": "Now rinse the foam off – keep rubbing until it's gone. The fleas will flee!",
+  "MG_BATH_RINSE": "Rinse!",
+  "MG_CLAWS_TITLE": "Claw trim",
+  "MG_CLAWS_HINT": "Tap when the line is on the white tip of the claw. The pink part hurts!",
+  "MG_SNIP": "Snip!",
+  "MG_OUCH": "Ouch!"
 }

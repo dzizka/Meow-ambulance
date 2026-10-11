@@ -118,6 +118,8 @@ Hra je na tieto zvuky pripravená. Kým súbor chýba, zahrá sa náhradný zvuk
 | `brush` | česanie v minihre (opakuje sa každých 0,7 s pri držaní) | nič | `brush fur`, `brushing` |
 | `coins` | poplatok za adopciu, odmena za výzvu | priadnutie / nič | `coins`, `cash register` |
 | `camera` | príde pohľadnica od adoptívnej rodiny | Kenney „bong" | `camera shutter`, `polaroid` |
+| `splash` | čľapkanie pri kúpaní (každých ~0,5 s pri pretieraní) | nič | `water splash small`, `bath splash` |
+| `snip` | strihanie pazúrika | Kenney „pluck" | `scissors snip`, `nail clipper` |
 
 **Postup po nahratí:**
 1. Nahraj súbory na GitHub do `Meow-ambulance-offline/audio/sfx/extra/` (*Add file → Upload files*).

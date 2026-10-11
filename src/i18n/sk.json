@@ -232,5 +232,15 @@
   "TOAST_CAFE_OPEN": "Kaviareň je otvorená! Stálice sa presťahovali ☕",
   "TOAST_BOUGHT_TABLE": "Nový stôl v kaviarni",
   "TOAST_GUEST": "Do kaviarne prišiel hosť ☕",
-  "TOAST_GUEST_TIP": "Hosť nechal dar +{n} €"
+  "TOAST_GUEST_TIP": "Hosť nechal dar +{n} €",
+  "COND_FLEAS": "blchy",
+  "COND_LONG_CLAWS": "dlhé pazúriky",
+  "MG_BATH_TITLE": "Kúpanie",
+  "MG_BATH_HINT_FOAM": "Pretieraj prstom po mačke, kým nebude celá v pene.",
+  "MG_BATH_HINT_RINSE": "Teraz penu opláchni – pretieraj, kým nezmizne. Blšky utečú!",
+  "MG_BATH_RINSE": "Oplachujeme!",
+  "MG_CLAWS_TITLE": "Strihanie pazúrikov",
+  "MG_CLAWS_HINT": "Ťukni, keď je čiarka na bielej špičke pazúrika. Ružová časť bolí!",
+  "MG_SNIP": "Cvak!",
+  "MG_OUCH": "Au!"
 }
