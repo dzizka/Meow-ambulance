@@ -22,6 +22,7 @@ import {
 } from './layout';
 import { CAFE_AREA, CafeRoom } from './CafeRoom';
 import { Furnishings } from './Furnishings';
+import { StaffSprites } from './StaffSprites';
 import { QUARANTINE_AREA, QUARANTINE_CAGES, ShelterRoom } from './ShelterRoom';
 import { addProp, type WorldGeom } from './world';
 import type { CafeGuest } from '../data/types';
@@ -91,6 +92,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   speed = 1;
   private cafe: CafeRoom | null = null;
   private shelterRoom: ShelterRoom | null = null;
+  private staff: StaffSprites | null = null;
+  private sinceStaff = 0;
   private ui!: UI;
 
   constructor() {
@@ -111,6 +114,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.state.cafe.open) this.openCafeRoom();
     if (this.state.shelter.open) this.openShelterRoom();
     new Furnishings(this, this.state, this.geom);
+
+    this.staff = new StaffSprites(this, this.state, (id) => this.sprites.get(id));
 
     this.state.cats.forEach((cat, i) => {
       const area = this.areaFor(cat);
@@ -151,6 +156,11 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.sinceSave > AUTOSAVE_MS) {
       this.sinceSave = 0;
       this.save();
+    }
+    this.sinceStaff += delta;
+    if (this.sinceStaff > 1000) {
+      this.sinceStaff = 0;
+      this.staff?.refresh();
     }
     this.sinceSparkle += delta;
     if (this.sinceSparkle > 1400) {

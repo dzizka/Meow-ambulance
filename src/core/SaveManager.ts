@@ -60,6 +60,8 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v6 → v7: personál (GDD §6.4). */
+  6: (s) => ({ ...s, version: 7, staff: {} }),
   /** v5 → v6: Komunitný útulok, počítadlo očkovaní (GDD §6.2). */
   5: (s) => ({
     ...s,

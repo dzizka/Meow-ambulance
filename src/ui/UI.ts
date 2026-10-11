@@ -452,6 +452,20 @@ export class UI {
       this.game.playSound('upgrade', 0.6);
       this.updateHud();
     });
+    // Personál (GDD §6.4)
+    bus.on('staffHired', ({ id }) => {
+      const def = this.state.staffDef(id);
+      if (def) this.toast(t('TOAST_STAFF_HIRED', { name: t(def.name_key) }));
+      this.game.playSound('upgrade', 0.5);
+    });
+    bus.on('staffAction', ({ kind, cat, found }) => {
+      if (kind === 'examine' && cat && found && found.length) {
+        const names = found.map((id) =>
+          t(this.state.data.conditions.find((d) => d.id === id)?.name_key ?? id),
+        );
+        this.toast(t('TOAST_VET_FOUND', { cat: cat.name, list: names.join(', ') }));
+      }
+    });
     // Úrovne, vybavenie a dekorácie (GDD §6.1)
     bus.on('levelUp', ({ def }) => {
       const list = def.unlocks.map((u) => t(`UNLOCK_${u.toUpperCase()}`)).join(', ');
@@ -1505,6 +1519,7 @@ export class UI {
       ...expand,
       el('h3', {}, t('UI_SECTION_EQUIPMENT')),
       ...equipment,
+      ...this.staffSection(),
       el('h3', {}, t('UI_SECTION_DECOR')),
       el(
         'p',
@@ -1555,6 +1570,59 @@ export class UI {
       );
     }
     return out;
+  }
+
+  /** Personál: najať raz, potom zapínať a vypínať (GDD §6.4). */
+  private staffSection(): HTMLElement[] {
+    const s = this.state;
+    const rows = s.data.staff.map((def) => {
+      const hired = s.isHired(def.id);
+      let action: HTMLElement;
+      if (hired) {
+        const on = s.staff[def.id]?.active ?? false;
+        action = button(
+          on ? `✓ ${t('UI_STAFF_ON')}` : t('UI_STAFF_OFF'),
+          () => {
+            s.setStaffActive(def.id, !on);
+            this.renderModal();
+          },
+          { class: on ? 'btn primary' : 'btn', 'aria-pressed': on ? 'true' : 'false' },
+        );
+      } else if (!s.hasUnlock('staff')) {
+        action = el(
+          'span',
+          { class: 'chip lock' },
+          t('UI_LOCKED', { rep: s.unlockRep('staff') ?? '?' }),
+        );
+      } else if (def.requires === 'cafe' && !s.cafe.open) {
+        action = el('span', { class: 'chip lock' }, t('UI_STAFF_NEEDS_CAFE'));
+      } else {
+        action = button(
+          t('UI_STAFF_HIRE', { price: def.price }),
+          () => {
+            if (s.hireStaff(def.id)) this.renderModal();
+          },
+          { class: 'btn primary', disabled: s.money < def.price },
+        );
+      }
+      return el(
+        'div',
+        { class: 'shop-item' },
+        el('span', { class: 'shop-icon' }, personPortrait(def.sprite, 1)),
+        el(
+          'div',
+          { class: 'grow' },
+          el('strong', {}, `${def.icon} ${t(def.name_key)}`),
+          el('p', { class: 'hint' }, t(def.desc_key)),
+        ),
+        action,
+      );
+    });
+    return [
+      el('h3', {}, t('UI_SECTION_STAFF')),
+      el('p', { class: 'hint' }, t('UI_STAFF_HINT')),
+      ...rows,
+    ];
   }
 
   /** Komunitný útulok – Fáza 2 (GDD §6.2). */

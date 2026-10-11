@@ -9,6 +9,8 @@ import type {
   DecorDef,
   EquipmentDef,
   LevelDef,
+  StaffDef,
+  StaffId,
   Unlock,
   Counters,
   CatData,
@@ -24,7 +26,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -56,6 +58,8 @@ export interface SaveData {
   decor: string[];
   // od verzie 6
   shelter: { open: boolean };
+  // od verzie 7
+  staff: Partial<Record<StaffId, { active: boolean }>>;
 }
 
 export const emptyCafe = (): CafeState => ({ open: false, tables: 0, guests: [], timer: 0 });
@@ -118,6 +122,11 @@ export class GameState {
   decor: string[] = [];
   /** Komunitný útulok – Fáza 2 (GDD §6.2). */
   shelter = { open: false };
+  /** Najatý personál a či práve pracuje (GDD §6.4). */
+  staff: Partial<Record<StaffId, { active: boolean }>> = {};
+  /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
+  private staffTimers: Partial<Record<StaffId, number>> = {};
+  private brushedAt = new Map<string, number>();
   tutorialStep = 0;
   tutorialDone = false;
   private nextId = 1;
@@ -292,6 +301,7 @@ export class GameState {
     this.advanceReports(deltaMs);
     this.advanceAdopters(deltaMs);
     this.advanceGuests(deltaMs);
+    this.advanceStaff(deltaMs);
     this.deliverPostcards();
     this.checkReadiness();
   }
@@ -342,10 +352,13 @@ export class GameState {
     const a = this.data.balance.adopters;
     // Adoptéri chodia iba vtedy, keď je komu nájsť domov
     if (!this.cats.some((c) => this.isReady(c))) return;
-    const interval = a.interval_s * 1000;
+    const social = this.staffWorking('social') ? this.data.balance.staff.social : null;
+    const interval = a.interval_s * 1000 * (social?.adopter_interval_mult ?? 1);
     this.adopterTimer += deltaMs;
     if (this.adopterTimer < interval) return;
-    if (this.adopters.length >= a.max_waiting + (this.hasUnlock('adopters_plus') ? 1 : 0)) {
+    const maxWaiting =
+      a.max_waiting + (this.hasUnlock('adopters_plus') ? 1 : 0) + (social?.extra_waiting ?? 0);
+    if (this.adopters.length >= maxWaiting) {
       this.adopterTimer = interval;
       return;
     }
@@ -353,7 +366,15 @@ export class GameState {
     // Uprednostni typ, ktorý ešte nečaká
     const waiting = new Set(this.adopters.map((v) => v.defId));
     const pool = this.data.adopters.filter((d) => !waiting.has(d.id));
-    const def = this.rng.pick(pool.length ? pool : this.data.adopters);
+    const options = pool.length ? pool : this.data.adopters;
+    let def = this.rng.pick(options);
+    // Správca sietí často nájde záujemcu, ktorý sa k niektorej mačke hodí najlepšie
+    if (social && this.rng.chance(social.best_match_chance)) {
+      const ready = this.cats.filter((c) => this.isReady(c));
+      const best = (d: (typeof options)[number]) =>
+        Math.max(...ready.map((c) => computeMatch(c, d, this.data, true).score));
+      def = options.reduce((x, y) => (best(y) > best(x) ? y : x), def);
+    }
     const visit: AdopterVisit = {
       id: this.newId('a'),
       defId: def.id,
@@ -864,6 +885,102 @@ export class GameState {
     );
   }
 
+  // ---------- Personál (GDD §6.4) ----------
+
+  staffDef(id: StaffId): StaffDef | undefined {
+    return this.data.staff.find((s) => s.id === id);
+  }
+
+  isHired(id: StaffId): boolean {
+    return this.staff[id] !== undefined;
+  }
+
+  /** Najatý, zapnutý a má kde pracovať (barista potrebuje kaviareň). */
+  staffWorking(id: StaffId): boolean {
+    const def = this.staffDef(id);
+    if (!this.staff[id]?.active || !def) return false;
+    if (def.requires === 'cafe' && !this.cafe.open) return false;
+    if (def.requires === 'shelter' && !this.shelter.open) return false;
+    return true;
+  }
+
+  hireStaff(id: StaffId): boolean {
+    const def = this.staffDef(id);
+    if (!def || this.isHired(id) || !this.hasUnlock('staff') || this.money < def.price)
+      return false;
+    if (def.requires === 'cafe' && !this.cafe.open) return false;
+    this.addMoney(-def.price, true);
+    this.staff[id] = { active: true };
+    this.bus.emit('staffHired', { id });
+    return true;
+  }
+
+  setStaffActive(id: StaffId, active: boolean): void {
+    const s = this.staff[id];
+    if (s) s.active = active;
+  }
+
+  /** Personál robí rutinu; hráč môže všetko urobiť aj sám (a lepšie). */
+  private advanceStaff(deltaMs: number): void {
+    const tick = (id: StaffId, intervalS: number, run: () => void) => {
+      if (!this.staffWorking(id)) return;
+      const t = (this.staffTimers[id] ?? 0) + deltaMs;
+      if (t < intervalS * 1000) {
+        this.staffTimers[id] = t;
+        return;
+      }
+      this.staffTimers[id] = 0;
+      run();
+    };
+    const p = this.data.balance.staff;
+
+    // Ošetrovateľ: nakŕmi jednu hladnú mačku alebo učeše jednu špinavú
+    tick('caretaker', p.caretaker.interval_s, () => {
+      const c = p.caretaker;
+      const hungry = this.cats.find(
+        (cat) =>
+          cat.stats.satisfaction < c.feed_below_satisfaction && this.feedCooldownLeft(cat.id) === 0,
+      );
+      if (hungry && this.feed(hungry.id)) {
+        this.bus.emit('staffAction', { id: 'caretaker', kind: 'feed', cat: hungry });
+        return;
+      }
+      const dirty = this.cats.find(
+        (cat) =>
+          cat.stats.cleanliness < c.brush_below_cleanliness &&
+          this.now - (this.brushedAt.get(cat.id) ?? -Infinity) > c.brush_cooldown_s * 1000,
+      );
+      if (dirty) {
+        this.brushedAt.set(dirty.id, this.now);
+        Care.addStats(dirty, { cleanliness: c.brush_cleanliness });
+        this.changed(dirty);
+        this.bus.emit('staffAction', { id: 'caretaker', kind: 'brush', cat: dirty });
+      }
+    });
+
+    // Veterinár: prehliadne nové mačky – jeden nástroj naraz
+    tick('vet', p.vet.interval_s, () => {
+      for (const cat of this.cagedCats) {
+        const tool = this.tools.find((x) => !cat.examined.includes(x));
+        if (!tool) continue;
+        const found = this.examine(cat.id, tool);
+        this.bus.emit('staffAction', { id: 'vet', kind: 'examine', cat, found });
+        return;
+      }
+    });
+
+    // Barista: obslúži hosťa, ktorý už chvíľu čaká
+    if (this.staffWorking('barista')) {
+      const stay = this.data.balance.cafe.guest_stay_s * 1000;
+      const delay = p.barista.delay_s * 1000;
+      for (const g of this.cafe.guests) {
+        if (g.served || this.now - (g.leaveAt - stay) < delay) continue;
+        g.servedByStaff = true;
+        if (this.serveGuest(g.id)) this.bus.emit('staffAction', { id: 'barista', kind: 'serve' });
+      }
+    }
+  }
+
   // ---------- Mačacia kaviareň (GDD §5.5) ----------
 
   get tableCount(): number {
@@ -918,7 +1035,7 @@ export class GameState {
   }
 
   /** Dar hosťa pri odchode: základ + bonus za každú stálicu podľa spokojnosti. */
-  guestTip(served: boolean): number {
+  guestTip(served: boolean, byStaff = false): number {
     const c = this.data.balance.cafe;
     // Spoločenské a maznavé stálice hostí potešia viac (GDD §4.4)
     const charm = (cat: CatData) =>
@@ -928,7 +1045,12 @@ export class GameState {
       0,
     );
     const cozy = 1 + this.coziness('cafe') * this.data.balance.coziness.cafe_tip_per_point;
-    const tip = (c.tip_base + bonus) * (served ? c.served_multiplier : 1) * cozy;
+    const mult = served
+      ? byStaff
+        ? this.data.balance.staff.barista.tip_multiplier
+        : c.served_multiplier
+      : 1;
+    const tip = (c.tip_base + bonus) * mult * cozy;
     return Math.round(tip * 10) / 10;
   }
 
@@ -939,7 +1061,7 @@ export class GameState {
     for (const g of [...this.cafe.guests]) {
       if (this.now < g.leaveAt) continue;
       this.cafe.guests = this.cafe.guests.filter((x) => x !== g);
-      const amount = this.guestTip(g.served);
+      const amount = this.guestTip(g.served, g.servedByStaff);
       this.addMoney(amount, true);
       const cat = g.catId ? this.getCat(g.catId) : undefined;
       if (cat?.resident) {
@@ -1036,6 +1158,7 @@ export class GameState {
       equipment: { ...this.equipment },
       decor: [...this.decor],
       shelter: { ...this.shelter },
+      staff: structuredClone(this.staff),
     };
   }
 
@@ -1062,6 +1185,7 @@ export class GameState {
     s.equipment = { ...(save.equipment ?? {}) };
     s.decor = [...(save.decor ?? [])];
     s.shelter = { ...(save.shelter ?? { open: false }) };
+    s.staff = structuredClone(save.staff ?? {});
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();

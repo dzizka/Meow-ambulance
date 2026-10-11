@@ -1,0 +1,42 @@
+{
+  "_comment": "Personál (GDD §6.4). Najíma sa raz, dá sa kedykoľvek vypnúť. Hráč môže všetko robiť aj sám a dostane lepší výsledok. sprite = postavička G5, room = kde chodí.",
+  "staff": [
+    {
+      "id": "caretaker",
+      "name_key": "STAFF_CARETAKER",
+      "desc_key": "STAFF_CARETAKER_DESC",
+      "icon": "🧺",
+      "sprite": "022",
+      "price": 600,
+      "room": "garage"
+    },
+    {
+      "id": "vet",
+      "name_key": "STAFF_VET",
+      "desc_key": "STAFF_VET_DESC",
+      "icon": "🩺",
+      "sprite": "021",
+      "price": 800,
+      "room": "shelter"
+    },
+    {
+      "id": "barista",
+      "name_key": "STAFF_BARISTA",
+      "desc_key": "STAFF_BARISTA_DESC",
+      "icon": "☕",
+      "sprite": "023",
+      "price": 500,
+      "room": "cafe",
+      "requires": "cafe"
+    },
+    {
+      "id": "social",
+      "name_key": "STAFF_SOCIAL",
+      "desc_key": "STAFF_SOCIAL_DESC",
+      "icon": "📱",
+      "sprite": "018",
+      "price": 700,
+      "room": "garage"
+    }
+  ]
+}

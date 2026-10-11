@@ -152,6 +152,15 @@ export class DevMenu {
         act('Pohľadnice teraz', () => `Doručené: ${s.devDeliverPostcards()}`),
         act('Kaviareň zadarmo', () => s.devOpenCafe() && 'Kaviareň otvorená'),
         act('Útulok zadarmo', () => s.devOpenShelter() && 'Útulok otvorený'),
+        act('Najať personál', () => {
+          if (!s.hasUnlock('staff'))
+            s.devGive(0, Math.max(0, (s.unlockRep('staff') ?? 0) - s.reputation));
+          for (const d of s.data.staff) {
+            s.devGive(d.price);
+            s.hireStaff(d.id);
+          }
+          return 'Personál najatý';
+        }),
         act('Tutoriál odznova', () => {
           s.tutorialStep = 0;
           s.tutorialDone = false;

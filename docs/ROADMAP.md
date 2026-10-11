@@ -74,7 +74,7 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Rozšírenie na 15 rysov, 12 plemien, 13 farieb (album 84 políčok)
 
 ## M4 – Klinika (Fáza 3)
-- [ ] Personál a automatizácia
+- [x] Personál a automatizácia – ošetrovateľ, veterinárka, baristka, správca sietí (úroveň 5, GDD §6.4)
 - [ ] Laboratórium, röntgen, operačná sála, catio
 - [ ] Udalosť Záchrana z množiarne
 - [ ] Vzácne mačky, Srdiečka a kozmetika

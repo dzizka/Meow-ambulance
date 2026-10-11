@@ -65,6 +65,17 @@ export class BootScene extends Phaser.Scene {
         });
     });
 
+    // Postavičky personálu (GDD §6.4)
+    this.load.once(Phaser.Loader.Events.FILE_COMPLETE + '-json-staff', () => {
+      const staff = this.cache.json.get('staff') as { staff: GameData['staff'] };
+      for (const s of staff.staff)
+        if (!this.textures.exists(personKey(s.sprite)))
+          this.load.spritesheet(personKey(s.sprite), personSheetPath(s.sprite), {
+            frameWidth: 20,
+            frameHeight: 32,
+          });
+    });
+
     // Hárky mačiek sa načítajú až keď vieme, ktoré farby existujú (z breeds.json)
     this.load.once(Phaser.Loader.Events.FILE_COMPLETE + '-json-breeds', () => {
       const breeds = this.cache.json.get('breeds') as {
@@ -92,6 +103,7 @@ export class BootScene extends Phaser.Scene {
       balance: json.get('balance'),
       equipment: json.get('equipment').equipment,
       decor: json.get('decor').decor,
+      staff: json.get('staff').staff,
     };
     this.registry.set('gameData', data);
 

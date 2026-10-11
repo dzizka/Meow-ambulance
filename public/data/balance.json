@@ -104,6 +104,21 @@
       "rep": 100,
       "name_key": "LEVEL_4",
       "unlocks": ["rare_cats", "shelter_2"]
+    },
+    {
+      "rep": 200,
+      "name_key": "LEVEL_5",
+      "unlocks": ["staff", "clinic"]
+    },
+    {
+      "rep": 350,
+      "name_key": "LEVEL_6",
+      "unlocks": ["catio", "hotel"]
+    },
+    {
+      "rep": 500,
+      "name_key": "LEVEL_7",
+      "unlocks": ["floors", "ct", "pool", "education"]
     }
   ],
   "coziness": {
@@ -116,5 +131,26 @@
     "quarantine_cages": 4,
     "vaccine_fee_bonus": 0.25,
     "vaccine_rep_bonus": 3
+  },
+  "staff": {
+    "caretaker": {
+      "interval_s": 8,
+      "feed_below_satisfaction": 60,
+      "brush_below_cleanliness": 45,
+      "brush_cleanliness": 25,
+      "brush_cooldown_s": 90
+    },
+    "vet": {
+      "interval_s": 6
+    },
+    "barista": {
+      "delay_s": 8,
+      "tip_multiplier": 1.25
+    },
+    "social": {
+      "adopter_interval_mult": 0.6,
+      "extra_waiting": 1,
+      "best_match_chance": 0.6
+    }
   }
 }
