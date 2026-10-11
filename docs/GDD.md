@@ -147,7 +147,7 @@ Diagnózy sú pri príchode **skryté** (zobrazené ako „?"). Hráč ich odha�
 
 | Nástroj | Odhaľuje | Dostupné od |
 |---|---|---|
-| Ruka (prehliadka) | Viditeľné: kliešte, zranenie, špina | Fáza 1 |
+| Ruka (prehliadka) | Viditeľné: kliešte, zranenie, špina, blchy, dlhé pazúriky | Fáza 1 |
 | Teplomer | Horúčka / infekcia | Fáza 1 |
 | Stetoskop | Pľúca: nádcha (liečba: inhalácia) | Fáza 1 |
 | Otoskop | Ušné infekcie, roztoče | Fáza 2 |
@@ -165,9 +165,9 @@ Každá minihra: **5–20 sekúnd**, ovládanie myšou/dotykom, hodnotenie 1–3
 | **Čistenie ušiek** | Utieraj tampónom, kým nie je čisto (stieranie masky) | 🟢 MVP |
 | **Podávanie sirupu** | Načasuj stlačenie, keď mačka otvorí papuľku | 🟢 MVP |
 | **Inhalácia** | Drž prst pri nádychu (kruh rastie), pusti pri výdychu – 3 dychy | 🟢 MVP |
-| **Kúpanie** | Penenie, splachovanie, sušenie uterákom | 🟡 v1.0 |
+| **Kúpanie** (blchy) | Napeniť celú mačku, potom penu opláchnuť – blšky odskočia | 🟢 MVP |
 | **Očkovanie** | Nájdi správne miesto, odvráť pozornosť maškrtou | 🟡 v1.0 |
-| **Strihanie pazúrikov** | Strihaj len špičku (nie ružovú časť) | 🟡 v1.0 |
+| **Strihanie pazúrikov** | Čiarka sa posúva po pazúriku – ťukni na bielej špičke, nie na ružovej dreni | 🟢 MVP |
 | **Rehabilitácia v bazéne** | Veď mačku vo veste pomedzi bóje | 🔵 Neskôr |
 
 ### 4.3 Socializácia 🟢 MVP

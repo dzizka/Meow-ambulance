@@ -14,6 +14,8 @@ export const EXTRA_SFX_NAMES = [
   'brush',
   'coins',
   'camera',
+  'splash',
+  'snip',
 ] as const;
 export type ExtraSfx = (typeof EXTRA_SFX_NAMES)[number];
 

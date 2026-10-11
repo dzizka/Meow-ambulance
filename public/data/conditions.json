@@ -1,5 +1,5 @@
 {
-  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush, inhalation).",
+  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush, inhalation, bath, nail_trim).",
   "conditions": [
     {
       "id": "ticks",
@@ -49,6 +49,23 @@
       "minigame": "inhalation",
       "health_gain": 30,
       "weight": 20
+    },
+    {
+      "id": "fleas",
+      "name_key": "COND_FLEAS",
+      "reveal_tool": "hand",
+      "minigame": "bath",
+      "health_gain": 20,
+      "cleanliness_gain": 40,
+      "weight": 20
+    },
+    {
+      "id": "long_claws",
+      "name_key": "COND_LONG_CLAWS",
+      "reveal_tool": "hand",
+      "minigame": "nail_trim",
+      "health_gain": 15,
+      "weight": 15
     }
   ]
 }

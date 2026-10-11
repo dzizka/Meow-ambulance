@@ -66,7 +66,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [ ] Systém stavby miestností na mriežke
 - [x] **Mačacia kaviareň** pre stálice – druhá miestnosť, hostia s objednávkami, obsluha ťuknutím, dary, dokupovanie stolov (GDD §5.5; presunuté do Fázy 1)
 - [ ] Karanténa, ambulancia
-- [ ] Nové minihry: kúpanie, očkovanie, pazúriky
+- [x] Nové minihry: kúpanie (blchy), strihanie pazúrikov (dlhé pazúriky)
+- [ ] Minihra očkovanie
 - [ ] Prvé udalosti: Zima prichádza, Deň otvorených dverí
 - [ ] Rozšírenie na 15 rysov, 12 plemien
 

@@ -34,7 +34,16 @@ export interface GameBridge {
 }
 
 export type MinigameKind =
-  'tick_removal' | 'bandage' | 'ears' | 'syrup' | 'breath' | 'feather' | 'hold' | 'quiet';
+  | 'tick_removal'
+  | 'bandage'
+  | 'ears'
+  | 'syrup'
+  | 'breath'
+  | 'bath'
+  | 'claws'
+  | 'feather'
+  | 'hold'
+  | 'quiet';
 export interface MinigameRequest {
   kind: MinigameKind;
   cat: CatData;
@@ -49,6 +58,8 @@ const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> 
   syrup: { kind: 'syrup', titleKey: 'HOLD_SYRUP' },
   hold_brush: { kind: 'hold', titleKey: 'HOLD_BRUSH' },
   inhalation: { kind: 'breath', titleKey: 'MG_BREATH_TITLE' },
+  bath: { kind: 'bath', titleKey: 'MG_BATH_TITLE' },
+  nail_trim: { kind: 'claws', titleKey: 'MG_CLAWS_TITLE' },
 };
 const SOCIAL: {
   id: SocialActivity;

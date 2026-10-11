@@ -88,6 +88,12 @@ export class MinigameScene extends Phaser.Scene {
       case 'breath':
         this.breath();
         break;
+      case 'bath':
+        this.bath();
+        break;
+      case 'claws':
+        this.claws();
+        break;
       default:
         this.hold();
     }
@@ -300,6 +306,254 @@ export class MinigameScene extends Phaser.Scene {
       duration: 800,
       onComplete: () => txt.destroy(),
     });
+  }
+
+  /** Prstíky labky – relatívne k polomeru vankúšika R. */
+  private static readonly TOES = [
+    [-0.95, -0.85],
+    [-0.33, -1.25],
+    [0.33, -1.25],
+    [0.95, -0.85],
+  ] as const;
+
+  /** Veľká labka: vankúšik a štyri prstíky (obväz, pazúriky). */
+  private drawPaw(cx: number, cy: number, R: number): Phaser.GameObjects.Graphics {
+    const paw = this.add.graphics();
+    const fur = 0xd9b38c;
+    const pad = 0xe8a0a0;
+    paw.fillStyle(fur, 1).fillCircle(cx, cy + R * 0.25, R);
+    for (const [dx, dy] of MinigameScene.TOES) {
+      paw.fillStyle(fur, 1).fillCircle(cx + dx * R, cy + dy * R, R * 0.42);
+      paw.fillStyle(pad, 1).fillCircle(cx + dx * R, cy + dy * R + R * 0.05, R * 0.24);
+    }
+    paw.fillStyle(pad, 1).fillEllipse(cx, cy + R * 0.4, R * 1.1, R * 0.8);
+    return paw;
+  }
+
+  // ---------- Kúpanie (blchy) ----------
+
+  /**
+   * Dve fázy: najprv mačku napeniť (pretierať, kým nie je celá v pene),
+   * potom penu opláchnuť – blšky pri tom odskakujú preč.
+   */
+  private bath(): void {
+    this.hintText.setText(t('MG_BATH_HINT_FOAM'));
+    this.catSprite.anims.stop();
+    this.catSprite.setFrame(24);
+    const S = this.S;
+    const { cx, cy } = this;
+
+    // Vanička za mačkou a hladina vody pred ňou
+    this.catSprite.setDepth(1);
+    const tub = this.add.graphics().setDepth(0.5);
+    tub.fillStyle(0xd8e6f0, 1).fillRoundedRect(cx - S * 15, cy - S * 1, S * 30, S * 15, S * 3);
+    tub.fillStyle(0xb8d8ff, 1).fillRoundedRect(cx - S * 13, cy + S * 1, S * 26, S * 11, S * 2);
+    // hladina pred mačkou – zakryje jej labky, takže sedí vo vode
+    const water = this.add.graphics().setDepth(3);
+    water.fillStyle(0x8fc3f0, 0.75).fillRoundedRect(cx - S * 13, cy + S * 5, S * 26, S * 7, S * 2);
+    water.fillStyle(0xd8e6f0, 1).fillRoundedRect(cx - S * 15, cy + S * 11, S * 30, S * 3, S * 1.5);
+
+    // Miesta na mačke, ktoré treba napeniť (a na nich blšky)
+    const spots = Array.from({ length: 8 }, () => {
+      const pt = this.pointOnCat(5, 20); // iba nad hladinou
+      const foam = this.add.circle(pt.x, pt.y, S * 2.4, 0xffffff, 0).setDepth(5);
+      const flea = this.add.circle(pt.x, pt.y, S * 0.45, 0x2b2533, 1).setDepth(4);
+      return { foam, flea, amount: 0 };
+    });
+    let phase: 'foam' | 'rinse' = 'foam';
+    let elapsed = 0;
+    let lastX = 0;
+    let lastY = 0;
+    let splashCooldown = 0;
+
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      lastX = p.x;
+      lastY = p.y;
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown || this.finished) return;
+      const moved = Phaser.Math.Distance.Between(lastX, lastY, p.x, p.y);
+      lastX = p.x;
+      lastY = p.y;
+      for (const sp of spots) {
+        if (Phaser.Math.Distance.Between(sp.foam.x, sp.foam.y, p.x, p.y) > S * 3.5) continue;
+        if (phase === 'foam' && sp.amount < 1) {
+          sp.amount = Math.min(1, sp.amount + moved / (S * 10));
+          sp.foam.setFillStyle(0xffffff, sp.amount * 0.9).setScale(0.6 + sp.amount * 0.5);
+        } else if (phase === 'rinse' && sp.amount > 0) {
+          sp.amount = Math.max(0, sp.amount - moved / (S * 10));
+          sp.foam.setFillStyle(0xffffff, sp.amount * 0.9);
+          if (sp.amount === 0 && sp.flea.active) {
+            // blška odskočí preč
+            this.tweens.add({
+              targets: sp.flea,
+              x: sp.flea.x + Phaser.Math.Between(-S * 12, S * 12),
+              y: sp.flea.y - S * 10,
+              alpha: 0,
+              duration: 500,
+              ease: 'Quad.easeOut',
+              onComplete: () => sp.flea.destroy(),
+            });
+            this.sfx('pluck', 0.4);
+          }
+        }
+      }
+      if (splashCooldown <= 0 && moved > S * 0.6) {
+        splashCooldown = 450;
+        this.sfx('splash', 0.35);
+      }
+      if (phase === 'foam' && spots.every((sp) => sp.amount >= 1)) {
+        phase = 'rinse';
+        this.hintText.setText(t('MG_BATH_HINT_RINSE'));
+        this.flash(t('MG_BATH_RINSE'), cx, cy - S * 16, '#b8d8ff');
+        this.hearts(2);
+      } else if (phase === 'rinse' && spots.every((sp) => sp.amount <= 0)) {
+        this.catSprite.clearTint();
+        this.finish((elapsed < 10000 ? 3 : elapsed < 16000 ? 2 : 1) as Stars);
+      }
+    });
+    this.updater = (dt) => {
+      elapsed += dt;
+      splashCooldown -= dt;
+      // blšky sa pod penou trochu hýbu
+      for (const sp of spots) {
+        if (sp.flea.active && sp.amount < 1) sp.flea.x += Math.sin(elapsed / 90 + sp.foam.x) * 0.3;
+      }
+    };
+  }
+
+  // ---------- Strihanie pazúrikov ----------
+
+  /**
+   * Nožnička sa posúva po pazúriku hore-dole. Ťuknúť, keď je na bielej špičke;
+   * ružová časť pri prstíku bolí (chyba, mačka mňaukne). Štyri pazúriky.
+   */
+  private claws(): void {
+    this.hintText.setText(t('MG_CLAWS_HINT'));
+    this.catSprite.setVisible(false);
+    const S = this.S;
+    const R = S * 6;
+    const { cx } = this;
+    const cy = this.cy + S * 4;
+    this.drawPaw(cx, cy, R);
+
+    const quickPart = 0.55; // prvých 55 % pazúrika je ružových
+    const claws = MinigameScene.TOES.map(([dx, dy]) => {
+      const len = Math.hypot(dx, dy);
+      const ux = dx / len;
+      const uy = dy / len;
+      const bx = cx + dx * R + ux * R * 0.36;
+      const by = cy + dy * R + uy * R * 0.36;
+      return { ux, uy, bx, by, L: R * 1.1, cut: false };
+    });
+    const g = this.add.graphics().setDepth(2);
+    const marker = this.add.graphics().setDepth(3);
+    let current = 0;
+    let pos = 0; // 0 = pri prstíku, 1 = špička
+    let dir = 1;
+    let mistakes = 0;
+
+    const drawClaws = () => {
+      g.clear();
+      claws.forEach((c, i) => {
+        const end = c.cut ? quickPart + 0.08 : 1;
+        const w = S * 1.3;
+        const px = -c.uy;
+        const py = c.ux;
+        // pazúrik: biely zúžený trojuholník, vnútri pri koreni ružová dreň (tú nestrihať)
+        const at = (t: number) => ({ x: c.bx + c.ux * c.L * t, y: c.by + c.uy * c.L * t });
+        const a = at(0);
+        const e = at(end);
+        const q = at(quickPart);
+        g.fillStyle(0xfdf6ec, 1).fillTriangle(
+          a.x + px * w,
+          a.y + py * w,
+          a.x - px * w,
+          a.y - py * w,
+          e.x,
+          e.y,
+        );
+        g.lineStyle(Math.max(1, S * 0.25), 0xc9b8a8, 1).strokeTriangle(
+          a.x + px * w,
+          a.y + py * w,
+          a.x - px * w,
+          a.y - py * w,
+          e.x,
+          e.y,
+        );
+        g.fillStyle(0xf2a0b0, 1).fillTriangle(
+          a.x + px * w * 0.55,
+          a.y + py * w * 0.55,
+          a.x - px * w * 0.55,
+          a.y - py * w * 0.55,
+          q.x,
+          q.y,
+        );
+        if (i === current && !c.cut) {
+          g.lineStyle(Math.max(1, S * 0.3), 0xf2c14e, 0.8).strokeCircle(e.x, e.y, S * 1.6);
+        }
+      });
+    };
+    drawClaws();
+
+    this.input.on('pointerdown', () => {
+      if (this.finished) return;
+      const c = claws[current];
+      if (!c) return;
+      const x = c.bx + c.ux * c.L * pos;
+      const y = c.by + c.uy * c.L * pos;
+      if (pos > quickPart + 0.06) {
+        c.cut = true;
+        this.flash(t('MG_SNIP'), x, y - S * 3, '#9ad17b');
+        this.sfx('snip', 0.6);
+        this.sfx('pluck', 0.3);
+        // odstrihnutá špička odletí
+        const tip = this.add.circle(x, y, S * 0.6, 0xfdf6ec).setDepth(4);
+        this.tweens.add({
+          targets: tip,
+          y: y + S * 14,
+          x: x + c.ux * S * 6,
+          alpha: 0,
+          duration: 600,
+          onComplete: () => tip.destroy(),
+        });
+        current += 1;
+        pos = 0;
+        dir = 1;
+        this.hearts(1);
+        drawClaws();
+        if (current >= claws.length)
+          this.finish((mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1) as Stars);
+      } else {
+        mistakes += 1;
+        this.flash(t('MG_OUCH'), x, y - S * 3, '#e86a6a');
+        this.sfx('error', 0.4);
+        this.sfx('mew', 0.5);
+        this.cameras.main.shake(120, 0.004);
+      }
+    });
+
+    this.updater = (dt) => {
+      const c = claws[current];
+      marker.clear();
+      if (!c) return;
+      pos += dir * dt * 0.0011;
+      if (pos > 1) {
+        pos = 1;
+        dir = -1;
+      } else if (pos < 0) {
+        pos = 0;
+        dir = 1;
+      }
+      const x = c.bx + c.ux * c.L * pos;
+      const y = c.by + c.uy * c.L * pos;
+      const px = -c.uy * S * 2.2;
+      const py = c.ux * S * 2.2;
+      const good = pos > quickPart + 0.06;
+      marker
+        .lineStyle(Math.max(2, S * 0.5), good ? 0x9ad17b : 0xe86a6a, 1)
+        .lineBetween(x - px, y - py, x + px, y + py);
+    };
   }
 
   // ---------- Inhalácia (nádcha) ----------
@@ -537,21 +791,7 @@ export class MinigameScene extends Phaser.Scene {
     const inner = R * 0.8;
     const outer = R * 2.6;
 
-    // Labka: veľký vankúšik a štyri prstíky
-    const paw = this.add.graphics();
-    const fur = 0xd9b38c;
-    const pad = 0xe8a0a0;
-    paw.fillStyle(fur, 1).fillCircle(cx, cy + R * 0.25, R);
-    for (const [dx, dy] of [
-      [-0.95, -0.85],
-      [-0.33, -1.25],
-      [0.33, -1.25],
-      [0.95, -0.85],
-    ] as const) {
-      paw.fillStyle(fur, 1).fillCircle(cx + dx * R, cy + dy * R, R * 0.42);
-      paw.fillStyle(pad, 1).fillCircle(cx + dx * R, cy + dy * R + R * 0.05, R * 0.24);
-    }
-    paw.fillStyle(pad, 1).fillEllipse(cx, cy + R * 0.4, R * 1.1, R * 0.8);
+    this.drawPaw(cx, cy, R);
 
     const guide = this.add.graphics();
     guide.lineStyle(Math.max(2, S / 2), 0xf4e6d0, 0.18).strokeCircle(cx, cy, (inner + outer) / 2);
