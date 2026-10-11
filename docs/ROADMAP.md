@@ -82,7 +82,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 
 ## M5 – Národné centrum (Fáza 4) a vydanie v1.0
 - [x] Mačací hotel (GDD §6.7)
-- [ ] Viac poschodí, CT, bazén, edukačné centrum
+- [x] Viac poschodí, CT, rehabilitačný bazén – 2. poschodie kliniky (GDD §6.8)
+- [ ] Edukačné centrum
 - [ ] Balans celej hry, achievementy
 - [ ] Steam stránka / itch.io vydanie
 - [ ] Vydanie na Google Play a App Store

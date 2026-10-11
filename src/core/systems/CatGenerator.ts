@@ -22,6 +22,8 @@ export interface CatOptions {
   tools?: string[];
   /** Je operačná sála – inak mačka nedostane diagnózu, ktorá potrebuje operáciu. */
   surgery?: boolean;
+  /** Je bazén – inak mačka nedostane diagnózu liečenú plávaním. */
+  pool?: boolean;
   /** Prípad z inej útulne: prvá diagnóza je vždy diagnóza kliniky. */
   clinicCase?: boolean;
 }
@@ -55,7 +57,8 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
     (c) =>
       (!opts.tools || opts.tools.includes(c.reveal_tool)) &&
       (!c.ages || c.ages.includes(age)) &&
-      (c.minigame !== 'surgery' || opts.surgery),
+      (c.minigame !== 'surgery' || opts.surgery) &&
+      (c.minigame !== 'swim' || opts.pool),
   );
   const conditions: CatCondition[] = [];
   for (let i = 0; i < conditionCount && pool.length > 0; i++) {

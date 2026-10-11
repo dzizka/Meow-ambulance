@@ -1,13 +1,16 @@
 import Phaser from 'phaser';
 import type { GameState } from '../core/GameState';
 import type { ClinicRoomId } from '../data/types';
+
+/** Miestnosti na prízemí kliniky (CT a bazén sú na 2. poschodí – Clinic2Room). */
+export type Floor1Room = Extract<ClinicRoomId, 'lab' | 'xray' | 'or'>;
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { DPR } from './dpr';
 import { CLINIC_X, FLOOR_TOP, ROOM, WORLD_H, WORLD_W } from './layout';
 import { addProp, type WorldGeom } from './world';
 
 /** Hranice troch miestností kliniky (x v súradniciach budovy). */
-const SECTIONS: Record<ClinicRoomId, [number, number]> = {
+const SECTIONS: Record<Floor1Room, [number, number]> = {
   lab: [ROOM.x, 166],
   xray: [166, 316],
   or: [316, ROOM.x + ROOM.w],
@@ -23,7 +26,7 @@ export interface ClinicStation {
   depthBoost: number;
 }
 const FT0 = FLOOR_TOP;
-const STATIONS: Record<ClinicRoomId, ClinicStation> = {
+const STATIONS: Record<Floor1Room, ClinicStation> = {
   lab: { x: CLINIC_X + 72, y: FT0 + 50, lay: false, dir: 'down', depthBoost: 24 },
   xray: { x: CLINIC_X + 229, y: FT0 + 99, lay: true, dir: 'right', depthBoost: 20 },
   or: { x: CLINIC_X + 400, y: FT0 + 109, lay: true, dir: 'right', depthBoost: 25 },
@@ -34,7 +37,7 @@ const RECOVERY = [
   { x: CLINIC_X + 452, y: FT0 + 172 },
 ];
 /** Ťuknuteľné prístroje (svet). */
-const HOTSPOTS: Record<ClinicRoomId, [number, number, number, number]> = {
+const HOTSPOTS: Record<Floor1Room, [number, number, number, number]> = {
   lab: [CLINIC_X + 60, FT0 + 30, 64, 44],
   xray: [CLINIC_X + 190, FT0 + 28, 94, 92],
   or: [CLINIC_X + 370, FT0 + 20, 62, 114],
@@ -53,11 +56,11 @@ export class ClinicRoom {
     [CLINIC_X + 240, FLOOR_TOP + 110, 40],
     [CLINIC_X + 400, FLOOR_TOP + 100, 44],
   ];
-  private readonly shown = new Set<ClinicRoomId>();
-  private readonly tarps = new Map<ClinicRoomId, Phaser.GameObjects.Container>();
+  private readonly shown = new Set<Floor1Room>();
+  private readonly tarps = new Map<Floor1Room, Phaser.GameObjects.Container>();
   /** Blikajúce svetielka prístrojov (obnovujú sa časovačom). */
   private readonly leds: {
-    room: ClinicRoomId;
+    room: Floor1Room;
     g: Phaser.GameObjects.Rectangle;
     colors: number[];
   }[] = [];
@@ -72,20 +75,22 @@ export class ClinicRoom {
     private readonly state: GameState,
     private readonly geom: WorldGeom,
     /** Ťuknutie na prístroj (alebo na plachtu nekúpenej miestnosti). */
-    private readonly onTap: (room: ClinicRoomId) => void,
+    private readonly onTap: (room: Floor1Room) => void,
   ) {
     this.registerFrames();
     this.makeTextures();
     this.buildBackground();
-    for (const room of Object.keys(SECTIONS) as ClinicRoomId[]) this.showRoom(room, false);
-    state.bus.on('clinicRoomBought', ({ room }) => this.showRoom(room, true));
-    for (const room of Object.keys(HOTSPOTS) as ClinicRoomId[]) this.makeHotspot(room);
+    for (const room of Object.keys(SECTIONS) as Floor1Room[]) this.showRoom(room, false);
+    state.bus.on('clinicRoomBought', ({ room }) => {
+      if (room in SECTIONS) this.showRoom(room as Floor1Room, true);
+    });
+    for (const room of Object.keys(HOTSPOTS) as Floor1Room[]) this.makeHotspot(room);
     scene.time.addEvent({ delay: 450, loop: true, callback: () => this.blink() });
     scene.events.on(Phaser.Scenes.Events.UPDATE, (_t: number, dt: number) => this.animate(dt));
   }
 
   /** Kde leží/sedí pacient pri prístroji. */
-  station(room: ClinicRoomId): ClinicStation {
+  station(room: Floor1Room): ClinicStation {
     return STATIONS[room];
   }
 
@@ -104,7 +109,7 @@ export class ClinicRoom {
   }
 
   /** Efekt zákroku: záblesk röntgenu, bublinky v laboratóriu, jasnejšia lampa na sále. */
-  effect(room: ClinicRoomId): void {
+  effect(room: Floor1Room): void {
     const sc = this.scene;
     if (room === 'xray') {
       const [x0, x1] = SECTIONS.xray;
@@ -141,7 +146,7 @@ export class ClinicRoom {
   }
 
   /** Neviditeľná plocha nad prístrojom – ťuknutie otvorí výber pacienta. */
-  private makeHotspot(room: ClinicRoomId): void {
+  private makeHotspot(room: Floor1Room): void {
     const [x, y, w, h] = HOTSPOTS[room];
     const zone = this.scene.add.zone(x, y, w, h).setOrigin(0).setDepth(4400);
     zone.setInteractive({ useHandCursor: true });
@@ -181,7 +186,7 @@ export class ClinicRoom {
     }
   }
 
-  private led(room: ClinicRoomId, x: number, y: number, colors: number[]): void {
+  private led(room: Floor1Room, x: number, y: number, colors: number[]): void {
     const g = this.scene.add
       .rectangle(CLINIC_X + x, y, 2, 2, colors[0])
       .setOrigin(0)
@@ -190,7 +195,7 @@ export class ClinicRoom {
   }
 
   /** Vybavenie kúpenej miestnosti, alebo plachta, ak ešte nie je kúpená. */
-  private showRoom(room: ClinicRoomId, animate: boolean): void {
+  private showRoom(room: Floor1Room, animate: boolean): void {
     if (!this.state.hasClinicRoom(room)) {
       if (!this.tarps.has(room)) this.tarps.set(room, this.makeTarp(room));
       return;
@@ -374,7 +379,7 @@ export class ClinicRoom {
   }
 
   /** Plachta cez nekúpenú miestnosť – ťuknutím sa otvorí obchod. */
-  private makeTarp(room: ClinicRoomId): Phaser.GameObjects.Container {
+  private makeTarp(room: Floor1Room): Phaser.GameObjects.Container {
     const [x0, x1] = SECTIONS[room];
     const w = x1 - x0 - 6;
     const h = ROOM.wallH + ROOM.floorH;

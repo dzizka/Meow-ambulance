@@ -167,7 +167,76 @@ describe('Klinika (GDD §6.5)', () => {
     old.version = 7;
     st.set('k', JSON.stringify(old));
     const migrated = saves.load(data)!.state;
-    expect(migrated.clinic).toEqual({ open: false, rooms: [] });
+    expect(migrated.clinic).toEqual({ open: false, rooms: [], floors: 1 });
     expect(migrated.counters.neutered).toBe(0);
+  });
+});
+
+describe('Klinika – 2. poschodie (GDD §6.8)', () => {
+  it('poschodie od úrovne 7, CT a bazén až na poschodí', () => {
+    const s = ready();
+    s.buyClinic();
+    expect(s.buyFloor()).toBe(false); // úroveň 5 nestačí
+    expect(s.buyClinicRoom('ct')).toBe(false);
+    s.devGive(0, 300);
+    expect(s.buyFloor()).toBe(true);
+    expect(s.buyClinicRoom('ct')).toBe(true);
+    expect(s.tools).toContain('ct');
+    expect(s.buyClinicRoom('pool')).toBe(true);
+  });
+
+  it('ochorenie chrbtice iba s bazénom a lieči sa plávaním', () => {
+    const gen = (pool: boolean) => {
+      const rng = new Rng(8);
+      const ids = new Set<string>();
+      for (let i = 0; i < 400; i++)
+        for (const x of generateCat(data, rng, { id: 'c', tools: ['ct'], pool, age: 'adult' })
+          .conditions)
+          ids.add(x.id);
+      return ids;
+    };
+    expect(gen(false).has('spine')).toBe(false);
+    expect(gen(true).has('spine')).toBe(true);
+    expect(gen(false).has('heart')).toBe(true);
+    const s = ready();
+    s.devGive(0, 300);
+    s.devOpenClinic();
+    s.buyFloor();
+    s.buyClinicRoom('ct');
+    s.devSpawnReport();
+    const cat = s.acceptReport(s.reports[0]!.id)!;
+    cat.conditions = [{ id: 'spine', revealed: true, treated: false }];
+    expect(s.treat(cat.id, 'spine', 3)).toBe(false);
+    s.buyClinicRoom('pool');
+    expect(s.treat(cat.id, 'spine', 3)).toBe(true);
+  });
+
+  it('rehabilitácia po zlomenine: +zdravie, raz, vyšší príspevok', () => {
+    const s = ready();
+    s.devOpenFloor2();
+    s.devSpawnReport();
+    const cat = s.acceptReport(s.reports[0]!.id)!;
+    cat.conditions = [{ id: 'fracture', revealed: true, treated: true }];
+    cat.stats.health = 50;
+    expect(s.canRehab(cat)).toBe(true);
+    expect(s.rehab(cat.id)).toBe(true);
+    expect(cat.stats.health).toBe(50 + c.rehab_health);
+    expect(s.rehab(cat.id)).toBe(false);
+  });
+
+  it('save v11: poschodie sa uloží; staršie savy majú 1 poschodie', () => {
+    const st = storage();
+    const saves = new SaveManager(st, 'k', () => 1000);
+    const s = ready();
+    s.devOpenFloor2();
+    saves.save(s);
+    expect(saves.load(data)!.state.hasFloor2).toBe(true);
+    const old = JSON.parse(st.get('k')!) as Partial<SaveData>;
+    old.clinic = { open: true, rooms: ['lab'] } as SaveData['clinic'];
+    old.version = 10;
+    st.set('k', JSON.stringify(old));
+    const m = saves.load(data)!.state;
+    expect(m.clinic.floors).toBe(1);
+    expect(m.hasFloor2).toBe(false);
   });
 });

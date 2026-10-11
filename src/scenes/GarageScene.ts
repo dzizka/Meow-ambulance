@@ -24,7 +24,8 @@ import { CAFE_AREA, CafeRoom } from './CafeRoom';
 import { Furnishings } from './Furnishings';
 import { StaffSprites } from './StaffSprites';
 import { QUARANTINE_AREA, QUARANTINE_CAGES, ShelterRoom } from './ShelterRoom';
-import { ClinicRoom } from './ClinicRoom';
+import { ClinicRoom, type Floor1Room } from './ClinicRoom';
+import { Clinic2Room, type Floor2Room } from './Clinic2Room';
 import { CATIO_AREA, CatioRoom } from './CatioRoom';
 import { HOTEL_AREA, HotelRoom } from './HotelRoom';
 import { addProp, type WorldGeom } from './world';
@@ -99,6 +100,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private cafe: CafeRoom | null = null;
   private shelterRoom: ShelterRoom | null = null;
   private clinicRoom: ClinicRoom | null = null;
+  private clinic2Room: Clinic2Room | null = null;
   private catioRoom: CatioRoom | null = null;
   private hotelRoom: HotelRoom | null = null;
   /** Stálice, ktoré sú práve vonku vo výbehu. */
@@ -128,6 +130,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.state.cafe.open) this.openCafeRoom();
     if (this.state.shelter.open) this.openShelterRoom();
     if (this.state.clinic.open) this.openClinicRoom();
+    if (this.state.hasFloor2) this.openClinic2Room();
     if (this.state.catio.open) this.openCatioRoom();
     if (this.state.hotel.open) this.openHotelRoom();
     new Furnishings(this, this.state, this.geom);
@@ -233,7 +236,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       (room === 'shelter' && !this.shelterRoom) ||
       (room === 'clinic' && !this.clinicRoom) ||
       (room === 'catio' && !this.catioRoom) ||
-      (room === 'hotel' && !this.hotelRoom)
+      (room === 'hotel' && !this.hotelRoom) ||
+      (room === 'clinic2' && !this.clinic2Room)
     )
       return;
     const cam = this.cameras.main;
@@ -267,6 +271,15 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.shelterRoom) return;
     this.shelterRoom = new ShelterRoom(this, this.geom);
     for (const [x, y, r] of this.shelterRoom.lamps) this.addGlow(x, y, r);
+  }
+
+  /** Klinika – 2. poschodie s CT a bazénom (GDD §6.8). */
+  private openClinic2Room(): void {
+    if (this.clinic2Room) return;
+    this.clinic2Room = new Clinic2Room(this, this.state, this.geom, (room) =>
+      this.ui.openStation(room),
+    );
+    for (const [x, y, r] of this.clinic2Room.lamps) this.addGlow(x, y, r);
   }
 
   /** Mačací hotel (GDD §6.7). */
@@ -345,11 +358,17 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     const sprite = this.sprites.get(cat.id);
     const clinic = this.clinicRoom;
     if (!sprite || !clinic) return;
+    // CT a bazén sú na 2. poschodí
+    const upstairs = room === 'ct' || room === 'pool';
+    if (upstairs && !this.clinic2Room) return;
     this.visits.get(cat.id)?.remove();
     clinic.freeBed(cat.id);
-    const st = clinic.station(room);
+    const st = upstairs
+      ? this.clinic2Room!.station(room as Floor2Room)
+      : clinic.station(room as Floor1Room);
     sprite.pin(st.x, st.y, { lay: st.lay, dir: st.dir, depthBoost: st.depthBoost });
-    clinic.effect(room);
+    if (upstairs) this.clinic2Room!.effect(room as Floor2Room);
+    else clinic.effect(room as Floor1Room);
     this.staff?.attend('vet', st.x + 8, st.y + 34);
     const back = () => {
       this.visits.delete(cat.id);
@@ -543,6 +562,10 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
         this.showRoom('hotel');
       }
       if (kind === 'suite') this.hotelRoom?.refreshSuites(true);
+      if (kind === 'floor') {
+        this.openClinic2Room();
+        this.showRoom('clinic2');
+      }
       if (kind === 'catio') {
         this.openCatioRoom();
         this.showRoom('catio');
@@ -621,7 +644,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private createLighting(): void {
     this.nightOverlay = this.add
-      .rectangle(0, 0, WORLD_W * 6, WORLD_H, 0x000000, 0)
+      .rectangle(0, 0, WORLD_W * 7, WORLD_H, 0x000000, 0)
       .setOrigin(0)
       .setDepth(5000);
     // Mäkké svetlo lámp: radiálny prechod v textúre, sčítaný s obrazom

@@ -40,6 +40,8 @@ const MINIGAMES: [string, string, { xray?: 'fracture' | 'swallowed' | null; neut
     ['🩺 Operácia', 'surgery'],
     ['🩺 Kastrácia', 'surgery', { neuter: true }],
     ['🦴 Dlaha', 'splint'],
+    ['🌀 CT', 'ct'],
+    ['🏊 Plávanie', 'swim'],
   ];
 
 const PHASE_HOUR = { ráno: 7, deň: 12, večer: 19, noc: 23 } as const;
@@ -191,6 +193,10 @@ export class DevMenu {
           if (!s.hasUnlock('catio'))
             s.devGive(0, Math.max(0, (s.unlockRep('catio') ?? 0) - s.reputation));
           return s.devOpenCatio() && 'Catio otvorené';
+        }),
+        act('2. poschodie zadarmo', () => {
+          s.devGive(0, Math.max(0, (s.unlockRep('floors') ?? 0) - s.reputation));
+          return s.devOpenFloor2() && 'Poschodie s CT a bazénom';
         }),
         act('Klinika zadarmo', () => {
           if (!s.hasUnlock('clinic'))

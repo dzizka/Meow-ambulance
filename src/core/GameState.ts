@@ -27,7 +27,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -83,8 +83,11 @@ export const emptyHotel = (): HotelState => ({ open: false, suites: 0, guests: [
 export interface ClinicState {
   open: boolean;
   rooms: ClinicRoomId[];
+  /** Počet poschodí (1 alebo 2 – CT a bazén, GDD §6.8). */
+  floors: number;
 }
 export const CLINIC_ROOMS: ClinicRoomId[] = ['lab', 'xray', 'or'];
+export const FLOOR2_ROOMS: ClinicRoomId[] = ['ct', 'pool'];
 
 export const emptyCafe = (): CafeState => ({ open: false, tables: 0, guests: [], timer: 0 });
 const ORDERS: GuestOrder[] = ['coffee', 'coffee', 'tea', 'cake'];
@@ -149,7 +152,7 @@ export class GameState {
   /** Komunitný útulok – Fáza 2 (GDD §6.2). */
   shelter = { open: false };
   /** Klinika – Fáza 3 (GDD §6.5). */
-  clinic: ClinicState = { open: false, rooms: [] };
+  clinic: ClinicState = { open: false, rooms: [], floors: 1 };
   /** Catio – vonkajší výbeh pri kaviarni (GDD §6.6). */
   catio = { open: false };
   /** Mačací hotel (GDD §6.7). */
@@ -286,6 +289,7 @@ export class GameState {
       ...(this.shelter.open ? ['otoscope' as const] : []),
       ...(this.hasClinicRoom('lab') ? ['bloodtest' as const] : []),
       ...(this.hasClinicRoom('xray') ? ['xray' as const] : []),
+      ...(this.hasClinicRoom('ct') ? ['ct' as const] : []),
     ];
   }
 
@@ -475,6 +479,7 @@ export class GameState {
         rareBoost: this.hasUnlock('rare_cats'),
         tools: this.tools,
         surgery: this.hasClinicRoom('or'),
+        pool: this.hasClinicRoom('pool'),
         clinicCase: !!def.clinic_case && age !== 'kitten',
       });
     const cat = make(def.age, def.difficulty);
@@ -578,18 +583,59 @@ export class GameState {
     return this.data.balance.clinic.rooms[room];
   }
 
+  /** Odomknutie potrebné pre miestnosť (CT a bazén sú na 2. poschodí, úroveň 7). */
+  clinicRoomUnlock(room: ClinicRoomId): Unlock | null {
+    return room === 'ct' ? 'ct' : room === 'pool' ? 'pool' : null;
+  }
+
+  get hasFloor2(): boolean {
+    return this.clinic.open && this.clinic.floors >= 2;
+  }
+
+  /** 2. poschodie kliniky – úroveň 7 (GDD §6.8). */
+  buyFloor(): boolean {
+    const price = this.data.balance.clinic.floor_price;
+    if (!this.clinic.open || this.hasFloor2 || !this.hasUnlock('floors') || this.money < price)
+      return false;
+    this.addMoney(-price, true);
+    this.clinic.floors = 2;
+    this.bus.emit('upgradeBought', { kind: 'floor' });
+    return true;
+  }
+
   buyClinicRoom(room: ClinicRoomId): boolean {
     const price = this.clinicRoomPrice(room);
     if (!this.clinic.open || this.clinic.rooms.includes(room) || this.money < price) return false;
+    if (FLOOR2_ROOMS.includes(room) && !this.hasFloor2) return false;
+    const unlock = this.clinicRoomUnlock(room);
+    if (unlock && !this.hasUnlock(unlock)) return false;
     this.addMoney(-price, true);
     this.clinic.rooms.push(room);
     this.bus.emit('clinicRoomBought', { room });
     return true;
   }
 
-  /** Ošetrenie potrebuje operačnú sálu (prehltnutý predmet). */
-  needsOperatingRoom(conditionId: string): boolean {
-    return this.data.conditions.find((d) => d.id === conditionId)?.minigame === 'surgery';
+  /** Miestnosť, bez ktorej sa diagnóza nedá liečiť (operačná sála, bazén), alebo null. */
+  treatmentRoom(conditionId: string): ClinicRoomId | null {
+    const game = this.data.conditions.find((d) => d.id === conditionId)?.minigame;
+    return game === 'surgery' ? 'or' : game === 'swim' ? 'pool' : null;
+  }
+
+  /** Rehabilitácia v bazéne: po zlomenine, operácii alebo chrbtici, raz za pobyt. */
+  canRehab(cat: CatData): boolean {
+    if (!this.hasClinicRoom('pool') || cat.rehabbed || cat.resident || cat.hotel) return false;
+    const after = ['fracture', 'swallowed', 'spine'];
+    return Care.allTreated(cat) && cat.conditions.some((c) => after.includes(c.id));
+  }
+
+  rehab(catId: string): boolean {
+    const cat = this.getCat(catId);
+    if (!cat || !this.canRehab(cat)) return false;
+    cat.rehabbed = true;
+    Care.addStats(cat, { health: this.data.balance.clinic.rehab_health, satisfaction: 10 });
+    this.changed(cat);
+    this.bus.emit('clinicVisit', { cat, room: 'pool', recover: false });
+    return true;
   }
 
   /** Kastrácia sa dá: operačná sála, zdravá dospelá mačka, ešte nekastrovaná. */
@@ -780,18 +826,24 @@ export class GameState {
     if (!cat) return [];
     const found = Care.examine(cat, tool, this.data);
     this.changed(cat);
-    if (tool === 'bloodtest' || tool === 'xray')
-      this.bus.emit('clinicVisit', { cat, room: tool === 'xray' ? 'xray' : 'lab', recover: false });
+    if (tool === 'bloodtest' || tool === 'xray' || tool === 'ct')
+      this.bus.emit('clinicVisit', {
+        cat,
+        room: tool === 'bloodtest' ? 'lab' : tool,
+        recover: false,
+      });
     return found;
   }
 
   treat(catId: string, conditionId: string, stars: Care.Stars): boolean {
     const cat = this.getCat(catId);
-    if (!cat || (this.needsOperatingRoom(conditionId) && !this.hasClinicRoom('or'))) return false;
+    const needs = this.treatmentRoom(conditionId);
+    if (!cat || (needs && !this.hasClinicRoom(needs))) return false;
     if (!Care.treat(cat, conditionId, stars, this.data)) return false;
     const game = this.data.conditions.find((d) => d.id === conditionId)?.minigame;
     if (game === 'surgery' || game === 'splint')
       this.bus.emit('clinicVisit', { cat, room: 'or', recover: game === 'surgery' });
+    if (game === 'swim') this.bus.emit('clinicVisit', { cat, room: 'pool', recover: false });
     this.counters.treated += 1;
     if (conditionId === 'ticks') this.counters.ticks += 1;
     this.changed(cat);
@@ -871,7 +923,8 @@ export class GameState {
           (cat.vaccinated ? 1 + this.data.balance.shelter.vaccine_fee_bonus : 1) *
           // kastrácia a prípad z inej útulne (GDD §6.5)
           (cat.neutered ? 1 + this.data.balance.clinic.neuter_fee_bonus : 1) *
-          (cat.clinicCase ? 1 + this.data.balance.clinic.case_fee_bonus : 1)) /
+          (cat.clinicCase ? 1 + this.data.balance.clinic.case_fee_bonus : 1) *
+          (cat.rehabbed ? 1 + this.data.balance.clinic.rehab_fee_bonus : 1)) /
           5,
       ) * 5;
     const rep =
@@ -1465,7 +1518,10 @@ export class GameState {
     s.decor = [...(save.decor ?? [])];
     s.shelter = { ...(save.shelter ?? { open: false }) };
     s.staff = structuredClone(save.staff ?? {});
-    s.clinic = structuredClone(save.clinic ?? { open: false, rooms: [] });
+    s.clinic = {
+      ...structuredClone(save.clinic ?? { open: false, rooms: [], floors: 1 }),
+      floors: save.clinic?.floors ?? 1,
+    };
     s.catio = { ...(save.catio ?? { open: false }) };
     s.hotel = structuredClone(save.hotel ?? emptyHotel());
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
@@ -1571,6 +1627,21 @@ export class GameState {
     if (!this.shelter.open) this.openShelter();
     if (!this.clinic.open) this.openClinic();
     for (const room of CLINIC_ROOMS) {
+      if (this.clinic.rooms.includes(room)) continue;
+      this.clinic.rooms.push(room);
+      this.bus.emit('clinicRoomBought', { room });
+    }
+    return true;
+  }
+
+  /** 2. poschodie kliniky s CT a bazénom zadarmo (otvorí aj kliniku). */
+  devOpenFloor2(): boolean {
+    this.devOpenClinic();
+    if (!this.hasFloor2) {
+      this.clinic.floors = 2;
+      this.bus.emit('upgradeBought', { kind: 'floor' });
+    }
+    for (const room of FLOOR2_ROOMS) {
       if (this.clinic.rooms.includes(room)) continue;
       this.clinic.rooms.push(room);
       this.bus.emit('clinicRoomBought', { room });

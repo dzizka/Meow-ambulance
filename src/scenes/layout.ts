@@ -15,7 +15,9 @@ export const CLINIC_X = WORLD_W * 3;
 export const CATIO_X = WORLD_W * 4;
 /** Mačací hotel (GDD §6.7). */
 export const HOTEL_X = WORLD_W * 5;
-export type Room = 'garage' | 'cafe' | 'shelter' | 'clinic' | 'catio' | 'hotel';
+/** Klinika – 2. poschodie (GDD §6.8). */
+export const CLINIC2_X = WORLD_W * 6;
+export type Room = 'garage' | 'cafe' | 'shelter' | 'clinic' | 'catio' | 'hotel' | 'clinic2';
 const ROOM_X: Record<Room, number> = {
   garage: 0,
   cafe: CAFE_X,
@@ -23,21 +25,24 @@ const ROOM_X: Record<Room, number> = {
   clinic: CLINIC_X,
   catio: CATIO_X,
   hotel: HOTEL_X,
+  clinic2: CLINIC2_X,
 };
 export const roomX = (room: Room): number => ROOM_X[room];
 /** V ktorej miestnosti je bod sveta. */
 export const roomAt = (x: number): Room =>
-  x >= HOTEL_X
-    ? 'hotel'
-    : x >= CATIO_X
-      ? 'catio'
-      : x >= CLINIC_X
-        ? 'clinic'
-        : x >= SHELTER_X
-          ? 'shelter'
-          : x >= CAFE_X
-            ? 'cafe'
-            : 'garage';
+  x >= CLINIC2_X
+    ? 'clinic2'
+    : x >= HOTEL_X
+      ? 'hotel'
+      : x >= CATIO_X
+        ? 'catio'
+        : x >= CLINIC_X
+          ? 'clinic'
+          : x >= SHELTER_X
+            ? 'shelter'
+            : x >= CAFE_X
+              ? 'cafe'
+              : 'garage';
 
 export interface Layout {
   width: number;

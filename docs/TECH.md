@@ -81,7 +81,7 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - Web a Tauri: `localStorage` (kľúč `meow-ambulance:save:1`); Capacitor: plugin Preferences/Filesystem – za spoločným rozhraním `SaveStorage` (`src/core/SaveManager.ts`).
 - Ukladá sa každých 15 s, po dôležitých udalostiach a pri skrytí/zatvorení stránky. Pri načítaní sa dopočíta offline čas (`GameState.applyOffline`).
 - Adresa končiaca `#novahra` zmaže uloženú hru (na testovanie).
-- Pole `version` (aktuálne 10); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
+- Pole `version` (aktuálne 11); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
 - „Nová hra" v menu (☰ → Obchod) zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
 
 ## Testy a CI
@@ -103,7 +103,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Minihry a UI sa testujú ručne podľa checklistu v PR – **vždy aj na telefóne**.
 
 ## Miestnosti
-- Svet má šesť miestností vedľa seba, každá `WORLD_W × WORLD_H`: garáž (x 0), kaviareň (`CAFE_X`) a Komunitný útulok (`SHELTER_X`, `ShelterRoom.ts` – karanténa a ambulancia) klinika (`CLINIC_X`, `ClinicRoom.ts`) catio (`CATIO_X`, `CatioRoom.ts`) a mačací hotel (`HOTEL_X`, `HotelRoom.ts`). `roomAt(x)` povie, v ktorej miestnosti je bod. Kamera má hranice iba aktuálnej miestnosti (`GarageScene.showRoom`, `roomX` v `layout.ts`).
+- Svet má sedem miestností vedľa seba, každá `WORLD_W × WORLD_H`: garáž (x 0), kaviareň (`CAFE_X`) a Komunitný útulok (`SHELTER_X`, `ShelterRoom.ts` – karanténa a ambulancia) klinika (`CLINIC_X`, `ClinicRoom.ts`) catio (`CATIO_X`, `CatioRoom.ts`) mačací hotel (`HOTEL_X`, `HotelRoom.ts`) a 2. poschodie kliniky (`CLINIC2_X`, `Clinic2Room.ts`). `roomAt(x)` povie, v ktorej miestnosti je bod. Kamera má hranice iba aktuálnej miestnosti (`GarageScene.showRoom`, `roomX` v `layout.ts`).
 - Kaviareň kreslí `src/scenes/CafeRoom.ts` (pozadie, nábytok, hostia, bubliny objednávok); stav a pravidlá sú v `GameState` (sekcia Mačacia kaviareň), balans v `balance.json → cafe`.
 - Hostia sú postavičky G5 (`personAnims.ts`, hárky sa načítajú podľa `cafe.guest_sprites`). „Sedenie": stolička má väčšiu hĺbku ako hosť, takže mu zakryje nohy.
 - Save v3 pridal `cafe` a `counters.served` (migrácia `MIGRATIONS[2]`). Save v6 pridal `shelter`, `counters.vaccinated` a voliteľné `cat.ward` / `cat.vaccinated`.
@@ -120,6 +120,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Save v5 pridal `equipment` a `decor`.
 - Klinika: stav `GameState.clinic` (`open`, `rooms`: lab/xray/or; save v8, `MIGRATIONS[7]`), ceny a bonusy `balance.json → clinic`. Nástroje `bloodtest` a `xray` pribudnú do `GameState.tools` s miestnosťou; diagnózy v `conditions.json` majú `ages` a `clinic`, operácia (`minigame: surgery`) sa dá iba s operačnou sálou (`needsOperatingRoom`). Hlásenie `referral` (`requires: clinic`, `clinic_case`). Minihry `bloodtest`, `xray` (dostane `xray: fracture | swallowed | null`), `surgery` (`neuter: true` bez pinzety) a `splint` v `MinigameScene`. Prístroje sú ťuknuteľné (`HOTSPOTS` → `UI.openStation` – výber pacienta). Udalosť `clinicVisit` (vyšetrenie krvou/röntgenom, operácia, dlaha, kastrácia) presunie mačku k prístroju (`CatSprite.pin`), po operácii na pelech so zotavením a potom späť (`GarageScene.clinicVisit`, iba zobrazenie, neukladá sa). Ťuknutie do sveta kontroluje `downElement`/`upElement` – Phaser počúva pustenie aj nad HTML oknom. Nekúpené miestnosti zakrýva plachta (`ClinicRoom.makeTarp`), vybavenie nakreslené kódom je v `ClinicRoom.makeTextures`.
 - Catio: `GameState.catio` (save v9, `MIGRATIONS[8]`), účinok v `tick` (pomalší pokles spokojnosti stálic). Kto je vonku, rieši iba scéna (`GarageScene.outside`, `wanderOutside` každých 12 s; v noci všetci dnu) – neukladá sa.
+- 2. poschodie: `clinic.floors` (save v11, `MIGRATIONS[10]`), miestnosti `ct` a `pool` v `clinic.rooms` (`FLOOR2_ROOMS`, odomknutia `clinicRoomUnlock`). `treatmentRoom(id)` povie, či diagnóza potrebuje sálu alebo bazén; rehabilitácia `canRehab` / `rehab` (`cat.rehabbed`). Minihry `ct` a `swim`. Návštevy `clinicVisit` s miestnosťou `ct`/`pool` idú na `Clinic2Room`.
 - Hotel: `GameState.hotel` (`open`, `suites`, `guests` – mačky s `cat.hotel`, nie sú v `cats`; save v10, `MIGRATIONS[9]`). `getCat` hľadá aj hostí, takže starostlivosť funguje rovnako. Platba a ★ v `advanceHotel`, udalosti `hotelCheckIn` / `hotelCheckOut` (majiteľ príde k recepcii – `HotelRoom.ownerVisit`). Balans `balance.json → hotel`.
 - Vývojárske menu má sekciu Minihry – každá minihra na skúšku (na vybranej, prvej alebo vymyslenej mačke), výsledok sa nezapíše.
 - Personál: `public/data/staff.json` (rola, cena, sprite, miestnosť), balans `balance.json → staff`. Stav `GameState.staff` (save v7, `MIGRATIONS[6]`), práca v `advanceStaff` (volá `tick`), udalosti `staffHired` a `staffAction`. Zobrazenie `src/scenes/StaffSprites.ts` (baristku zastupuje statická baristka v kaviarni).
