@@ -13,6 +13,8 @@ import type {
   DiagnosticTool,
   SocialActivity,
 } from '../data/types';
+import { generateCat } from '../core/systems/CatGenerator';
+import { Rng } from '../core/Rng';
 import { t } from '../i18n/t';
 import { button, el } from './dom';
 import { DevMenu } from './DevMenu';
@@ -158,6 +160,7 @@ const ROOM_ICON: Record<Room, string> = {
   shelter: '🏠',
   clinic: '⚕️',
   catio: '🌳',
+  hotel: '🏨',
 };
 const ORDER_ICON = { coffee: '☕', tea: '🍵', cake: '🍰' } as const;
 const round1 = (n: number): string =>
@@ -224,6 +227,7 @@ export class UI {
       toast: (msg) => this.toast(msg),
       saveNow: () => bridge.saveNow(),
       resetGame: () => bridge.resetGame(),
+      playMinigame: (kind, extra) => void this.devMinigame(kind as MinigameKind, extra),
     });
     // Tajné: 5× rýchlo ťuknúť na hodiny otvorí vývojárske menu
     this.clockPill.addEventListener('pointerdown', () => this.dev.secretTap());
@@ -319,6 +323,7 @@ export class UI {
       ...(s.cafe.open ? ['cafe' as const] : []),
       ...(s.shelter.open ? ['shelter' as const] : []),
       ...(s.catio.open ? ['catio' as const] : []),
+      ...(s.hotel.open ? ['hotel' as const] : []),
       ...(s.clinic.open ? ['clinic' as const] : []),
     ];
   }
@@ -438,8 +443,9 @@ export class UI {
       if (!this.selectedId && this.game.room === 'cafe') this.renderSheet();
     }
     this.cafeWasOpen = open;
-    // Odpočet prestávok na karte
-    if (this.selectedId && !this.busy) this.renderSheet();
+    // Odpočet prestávok na karte aj prehľad miestnosti (hostia hotela, časy) – setSheet
+    // mení DOM, iba keď sa obsah naozaj zmenil
+    if (!this.busy) this.renderSheet();
   }
 
   // ---------- Udalosti hry ----------
@@ -496,10 +502,18 @@ export class UI {
         shelter: 'TOAST_SHELTER_OPEN',
         clinic: 'TOAST_CLINIC_OPEN',
         catio: 'TOAST_CATIO_OPEN',
+        hotel: 'TOAST_HOTEL_OPEN',
+        suite: 'TOAST_BOUGHT_SUITE',
       }[kind];
       this.toast(t(key));
       this.game.playSound('upgrade', 0.6);
       this.updateHud();
+    });
+    bus.on('hotelCheckIn', ({ cat }) => this.toast(t('TOAST_HOTEL_IN', { cat: cat.name })));
+    bus.on('hotelCheckOut', ({ cat, fee, rep }) => {
+      this.toast(t(rep > 0 ? 'TOAST_HOTEL_OUT_STAR' : 'TOAST_HOTEL_OUT', { cat: cat.name, fee }));
+      this.game.playSound(rep > 0 ? 'success' : 'notify', 0.5);
+      if (this.selectedId === cat.id) this.renderSheet();
     });
     bus.on('clinicRoomBought', ({ room }) => {
       this.toast(t('TOAST_CLINIC_ROOM', { room: t(`CLINIC_${room.toUpperCase()}`) }));
@@ -595,11 +609,13 @@ export class UI {
     const ready = s.isReady(cat);
     const breed = data.breeds.find((b) => b.id === cat.breedId);
     const coat = data.coats.find((c) => c.id === cat.coatId);
-    const status = cat.resident
-      ? el('span', { class: 'chip info' }, t('UI_STATUS_RESIDENT'))
-      : ready
-        ? el('span', { class: 'chip good' }, t('UI_STATUS_READY'))
-        : el('span', { class: 'chip warn' }, t('UI_STATUS_TREATMENT'));
+    const status = cat.hotel
+      ? el('span', { class: 'chip info' }, `🏨 ${t('UI_STATUS_HOTEL')}`)
+      : cat.resident
+        ? el('span', { class: 'chip info' }, t('UI_STATUS_RESIDENT'))
+        : ready
+          ? el('span', { class: 'chip good' }, t('UI_STATUS_READY'))
+          : el('span', { class: 'chip warn' }, t('UI_STATUS_TREATMENT'));
 
     const close = el(
       'button',
@@ -650,11 +666,16 @@ export class UI {
     // Záložky namiesto jedného dlhého zoznamu – karta sa vojde bez rolovania
     const needsHealth =
       !cat.resident &&
+      !cat.hotel &&
       (cat.conditions.some((c) => c.revealed && !c.treated) ||
         cat.examined.length < this.state.tools.length ||
         ready);
     const tabs: { id: CardTab; label: string; dot: boolean }[] = [
-      { id: 'health', label: `🩺 ${t('TAB_HEALTH')}`, dot: needsHealth },
+      {
+        id: 'health',
+        label: cat.hotel ? `🏨 ${t('TAB_STAY')}` : `🩺 ${t('TAB_HEALTH')}`,
+        dot: needsHealth,
+      },
       { id: 'care', label: `❤️ ${t('TAB_CARE')}`, dot: false },
       { id: 'about', label: `🐾 ${t('TAB_ABOUT')}`, dot: false },
     ];
@@ -700,7 +721,7 @@ export class UI {
   }
 
   private defaultTab(cat: CatData): CardTab {
-    if (cat.resident) return 'care';
+    if (cat.resident || cat.hotel) return 'care';
     return 'health';
   }
 
@@ -709,6 +730,7 @@ export class UI {
     const s = this.state;
     const data = s.data;
     if (cat.resident) return [el('p', { class: 'hint' }, t('UI_RESIDENT_HINT'))];
+    if (cat.hotel) return this.stayTab(cat);
 
     const out: HTMLElement[] = [];
     if (ready) {
@@ -934,6 +956,10 @@ export class UI {
       this.renderCatioPanel();
       return;
     }
+    if (this.game.room === 'hotel') {
+      this.renderHotelPanel();
+      return;
+    }
     const s = this.state;
     // V garáži sú pacienti z garáže; stálice iba dovtedy, kým nie je kaviareň
     const cats = [...s.wardCats('garage'), ...(s.cafe.open ? [] : s.residents)];
@@ -1055,6 +1081,25 @@ export class UI {
     );
   }
 
+  /** Panel hotela: hostia, kedy odchádzajú a ako sú spokojní (GDD §6.7). */
+  private renderHotelPanel(): void {
+    const s = this.state;
+    const guests = s.hotel.guests;
+    this.setSheet(
+      el('h2', {}, `🏨 ${t('UI_HOTEL')}`),
+      el('p', { class: 'hint' }, t('UI_HOTEL_LINE', { n: guests.length, max: s.suiteCount })),
+      guests.length
+        ? el('div', { class: 'cat-list' }, ...guests.map((cat) => this.catTile(cat)))
+        : el(
+            'p',
+            { class: 'muted' },
+            t(s.dayPhase === 'night' ? 'UI_HOTEL_NIGHT' : 'UI_HOTEL_EMPTY'),
+          ),
+      el('p', { class: 'hint' }, t('UI_HOTEL_HINT', { at: s.data.balance.hotel.happy_at })),
+      this.panelButtons(),
+    );
+  }
+
   /** Panel výbehu: kto je práve vonku (GDD §6.6). */
   private renderCatioPanel(): void {
     const s = this.state;
@@ -1140,16 +1185,59 @@ export class UI {
         el(
           'small',
           {},
-          cat.resident
-            ? t('UI_STATUS_RESIDENT')
-            : s.isReady(cat)
-              ? t('UI_STATUS_READY')
-              : t('UI_STATUS_TREATMENT'),
+          cat.hotel
+            ? t('UI_HOTEL_TILE', {
+                min: this.minutesLeft(cat),
+                happy: Math.round(s.hotelHappiness(cat)),
+              })
+            : cat.resident
+              ? t('UI_STATUS_RESIDENT')
+              : s.isReady(cat)
+                ? t('UI_STATUS_READY')
+                : t('UI_STATUS_TREATMENT'),
         ),
       ),
     );
     b.addEventListener('click', () => this.game.select(cat.id));
     return b;
+  }
+
+  /** Minúty do odchodu hosťa hotela (aspoň 1). */
+  private minutesLeft(cat: CatData): number {
+    return Math.max(1, Math.ceil(((cat.hotel?.checkoutAt ?? 0) - this.state.now) / 60_000));
+  }
+
+  /** Pobyt v hoteli: majiteľ, odchod, spokojnosť a koľko zaplatí (GDD §6.7). */
+  private stayTab(cat: CatData): HTMLElement[] {
+    const s = this.state;
+    const happy = Math.round(s.hotelHappiness(cat));
+    const h = s.data.balance.hotel;
+    return [
+      el(
+        'div',
+        { class: 'guest' },
+        personPortrait(cat.hotel?.owner ?? '005', 1.25),
+        el(
+          'span',
+          { class: 'grow' },
+          t('UI_HOTEL_STAY_LINE', { min: this.minutesLeft(cat), fee: s.hotelFee(cat) }),
+        ),
+      ),
+      el(
+        'div',
+        { class: 'stat' },
+        el('span', {}, t('UI_HOTEL_HAPPY')),
+        el('span', { class: 'val' }, `${happy} %`),
+        el(
+          'div',
+          { class: 'bar' },
+          el('i', {
+            style: `width:${happy}%;background:${happy >= h.happy_at ? 'var(--ui-good)' : 'var(--ui-warn)'}`,
+          }),
+        ),
+      ),
+      el('p', { class: 'hint' }, t('UI_HOTEL_HINT', { at: h.happy_at })),
+    ];
   }
 
   /** Čo mačka práve potrebuje – malé ikonky na dlaždici v prehľade. */
@@ -1237,6 +1325,20 @@ export class UI {
 
   private doKeep(cat: CatData): void {
     if (this.state.makeResident(cat.id)) this.game.playSound('mewPurr', 0.6);
+  }
+
+  /** Vývojárske menu: minihra na vybranej (alebo prvej, alebo vymyslenej) mačke, bez účinku. */
+  private async devMinigame(
+    kind: MinigameKind,
+    extra: { xray?: 'fracture' | 'swallowed' | null; neuter?: boolean } = {},
+  ): Promise<void> {
+    const s = this.state;
+    const cat =
+      (this.selectedId ? s.getCat(this.selectedId) : undefined) ??
+      s.cats[0] ??
+      generateCat(s.data, new Rng(7), { id: 'dev-cat' });
+    const stars = await this.runMinigame({ kind, cat, title: `🛠 ${kind}`, ...extra });
+    this.toast(stars === null ? '🛠 Zrušené' : `🛠 ${kind}: ${'★'.repeat(stars)}`);
   }
 
   private async runMinigame(req: MinigameRequest): Promise<Stars | null> {
@@ -1775,6 +1877,7 @@ export class UI {
       ),
       this.cafeUpgrade(),
       this.catioUpgrade(),
+      ...this.hotelUpgrade(),
       this.shelterUpgrade(),
       ...this.clinicUpgrade(),
     ];
@@ -2018,6 +2121,61 @@ export class UI {
             { class: 'btn primary', disabled: s.money < b.price },
           ),
     );
+  }
+
+  /** Mačací hotel a dokupovanie apartmánov (GDD §6.7). */
+  private hotelUpgrade(): HTMLElement[] {
+    const s = this.state;
+    const h = s.data.balance.hotel;
+    if (s.hotel.open) {
+      const price = s.nextSuitePrice;
+      return [
+        el(
+          'div',
+          { class: 'upgrade' },
+          el('strong', {}, `🏨 ${t('UI_SUITES', { n: s.suiteCount })}`),
+          price === null
+            ? el('span', { class: 'muted' }, t('UI_MAXED'))
+            : button(
+                t('UI_BUY_SUITE', { price }),
+                () => {
+                  if (s.buySuite()) this.renderModal();
+                },
+                { class: 'btn primary', disabled: s.money < price },
+              ),
+        ),
+      ];
+    }
+    const miss = s.hotelMissing;
+    return [
+      el(
+        'div',
+        { class: 'upgrade cafe' },
+        el(
+          'div',
+          {},
+          el('strong', {}, `🏨 ${t('UI_HOTEL')}`),
+          el('p', { class: 'hint' }, t('UI_HOTEL_DESC', { n: h.suites })),
+        ),
+        miss.rep > 0
+          ? el(
+              'div',
+              { class: 'locks' },
+              el(
+                'span',
+                { class: 'chip lock' },
+                t('UI_LOCKED', { rep: s.unlockRep('hotel') ?? '?' }),
+              ),
+            )
+          : button(
+              t('UI_BUY_CLINIC', { price: h.price }),
+              () => {
+                if (s.buyHotel()) this.closeModal();
+              },
+              { class: 'btn primary', disabled: s.money < h.price },
+            ),
+      ),
+    ];
   }
 
   /** Catio – vonkajší výbeh pri kaviarni (GDD §6.6). */

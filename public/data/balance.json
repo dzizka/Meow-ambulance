@@ -171,5 +171,19 @@
     "_comment": "Catio – vonkajší výbeh pri kaviarni (GDD §6.6): stálice chodia cez deň von, spokojnosť im klesá pomalšie.",
     "price": 2500,
     "satisfaction_decay_mult": 0.5
+  },
+  "hotel": {
+    "_comment": "Mačací hotel (GDD §6.7): majitelia zveria mačku na pár minút; platba = fee × (0,5 + priemerná spokojnosť/100), pri spokojnosti ≥ happy_at aj ★. decay_mult = hostia sa nudia rýchlejšie (chýba im domov).",
+    "price": 3000,
+    "suites": 2,
+    "suite_prices": [900, 1400, 2000],
+    "first_delay_s": 15,
+    "arrival_interval_s": 70,
+    "stay_s": [240, 420],
+    "fee": 140,
+    "decay_mult": 1.5,
+    "happy_at": 75,
+    "rep_happy": 1,
+    "receptionist_sprite": "024"
   }
 }

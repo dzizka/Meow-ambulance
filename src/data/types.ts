@@ -157,6 +157,20 @@ export interface BalanceData {
     case_fee_bonus: number;
     case_rep_bonus: number;
   };
+  /** Mačací hotel (GDD §6.7). */
+  hotel: {
+    price: number;
+    suites: number;
+    suite_prices: number[];
+    first_delay_s: number;
+    arrival_interval_s: number;
+    stay_s: [number, number];
+    fee: number;
+    decay_mult: number;
+    happy_at: number;
+    rep_happy: number;
+    receptionist_sprite: string;
+  };
   /** Catio – vonkajší výbeh (GDD §6.6). */
   catio: { price: number; satisfaction_decay_mult: number };
   /** Mačacia kaviareň (GDD §5.5). */
@@ -193,6 +207,7 @@ export interface Counters {
   served: number;
   vaccinated: number;
   neutered: number;
+  hotel: number;
 }
 
 export type ChallengeKind = keyof Counters | 'residents';
@@ -252,6 +267,17 @@ export interface CatStats {
   satisfaction: number;
 }
 
+/** Pobyt mačky v hoteli: majiteľ, kedy príde po ňu a priebežná spokojnosť. */
+export interface HotelStay {
+  /** Hárok postavičky majiteľa. */
+  owner: string;
+  arrivedAt: number;
+  checkoutAt: number;
+  /** Súčet (spokojnosť+čistota)/2 × minúty a počet minút – priemer na konci pobytu. */
+  happySum: number;
+  minutes: number;
+}
+
 export interface CatCondition {
   id: string;
   revealed: boolean;
@@ -282,6 +308,8 @@ export interface CatData {
   neutered?: boolean;
   /** Prišla ako prípad z inej útulne – bonus pri adopcii. */
   clinicCase?: boolean;
+  /** Hosť mačacieho hotela (GDD §6.7) – nie je naša, majiteľ si ju vyzdvihne. */
+  hotel?: HotelStay;
   /** Herný čas (ms simulácie) posledného kontaktu – kvôli prestávkam medzi aktivitami. */
   lastSocialAt: number;
   lastFedAt: number;

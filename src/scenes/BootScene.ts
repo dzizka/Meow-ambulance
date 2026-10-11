@@ -58,7 +58,11 @@ export class BootScene extends Phaser.Scene {
     // Postavičky hostí a baristky v kaviarni – zoznam je v balance.json (GDD §5.5)
     this.load.once(Phaser.Loader.Events.FILE_COMPLETE + '-json-balance', () => {
       const balance = this.cache.json.get('balance') as GameData['balance'];
-      for (const s of new Set([...balance.cafe.guest_sprites, balance.cafe.barista_sprite]))
+      for (const s of new Set([
+        ...balance.cafe.guest_sprites,
+        balance.cafe.barista_sprite,
+        balance.hotel.receptionist_sprite,
+      ]))
         this.load.spritesheet(personKey(s), personSheetPath(s), {
           frameWidth: 20,
           frameHeight: 32,

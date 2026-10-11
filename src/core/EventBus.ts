@@ -36,7 +36,12 @@ export interface GameEvents {
   welcomeBack: { summary: OfflineSummary };
   challengeCompleted: { challenge: ActiveChallenge };
   albumAdded: { key: string };
-  upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' | 'clinic' | 'catio' };
+  upgradeBought: {
+    kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' | 'clinic' | 'catio' | 'hotel' | 'suite';
+  };
+  /** Mačací hotel (GDD §6.7). */
+  hotelCheckIn: { cat: CatData };
+  hotelCheckOut: { cat: CatData; fee: number; happy: number; rep: number };
   clinicRoomBought: { room: import('../data/types').ClinicRoomId };
   /** Mačka je na klinike pri prístroji (vyšetrenie, operácia) – iba pre zobrazenie. */
   clinicVisit: { cat: CatData; room: import('../data/types').ClinicRoomId; recover: boolean };

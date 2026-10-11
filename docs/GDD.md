@@ -373,6 +373,13 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 - Stálice samy chodia cez deň von a späť do kaviarne (každých ~12 s sa niektoré rozhodnú); v noci sú všetky vnútri.
 - Účinok: stáliciam s výbehom klesá spokojnosť **o polovicu pomalšie** (`balance.json → catio`), takže prinášajú viac darov.
 
+
+### 6.7 Mačací hotel 🟢 (úroveň 6, 350 ★)
+- Šiesta miestnosť (🏨), kúpa v Obchode → Stavby za **3 000 €**; na začiatok 2 apartmány, dokúpiť ďalšie 3 (900 / 1 400 / 2 000 €).
+- Cez deň, keď je voľný apartmán, príde majiteľ s mačkou (~každých 70 s) a nechá ju u nás na 4–7 minút. Hosť nie je naša mačka – nedá sa adoptovať ani liečiť, iba sa oň staráme (kŕmenie, česanie, hra). Ošetrovateľ Peťo pomáha aj v hoteli.
+- Hosťom klesá spokojnosť 1,5× rýchlejšie (chýba im domov). Majiteľ zaplatí **140 € × (0,5 + priemerná spokojnosť/100)**; pri priemere aspoň 75 % pridá **+1 ★**.
+- Hostia si občas ľahnú do apartmánu, v noci tam spia. Prehľad hotela ukazuje, kedy kto odchádza a ako je spokojný; karta hosťa má záložku Pobyt.
+
 ---
 
 ## 7. Retenčné mechaniky

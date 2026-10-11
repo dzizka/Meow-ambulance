@@ -26,6 +26,7 @@ import { StaffSprites } from './StaffSprites';
 import { QUARANTINE_AREA, QUARANTINE_CAGES, ShelterRoom } from './ShelterRoom';
 import { ClinicRoom } from './ClinicRoom';
 import { CATIO_AREA, CatioRoom } from './CatioRoom';
+import { HOTEL_AREA, HotelRoom } from './HotelRoom';
 import { addProp, type WorldGeom } from './world';
 import type { CafeGuest } from '../data/types';
 import { DPR } from './dpr';
@@ -99,6 +100,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private shelterRoom: ShelterRoom | null = null;
   private clinicRoom: ClinicRoom | null = null;
   private catioRoom: CatioRoom | null = null;
+  private hotelRoom: HotelRoom | null = null;
   /** Stálice, ktoré sú práve vonku vo výbehu. */
   private readonly outside = new Set<string>();
   private sinceCatio = 0;
@@ -127,11 +129,12 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.state.shelter.open) this.openShelterRoom();
     if (this.state.clinic.open) this.openClinicRoom();
     if (this.state.catio.open) this.openCatioRoom();
+    if (this.state.hotel.open) this.openHotelRoom();
     new Furnishings(this, this.state, this.geom);
 
     this.staff = new StaffSprites(this, this.state, (id) => this.sprites.get(id));
 
-    this.state.cats.forEach((cat, i) => {
+    [...this.state.cats, ...this.state.hotel.guests].forEach((cat, i) => {
       const area = this.areaFor(cat);
       this.spawnCat(cat, area.x + 30 + (i % 8) * 40, area.centerY);
     });
@@ -180,12 +183,14 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.sinceCatio > 12_000) {
       this.sinceCatio = 0;
       this.wanderOutside();
+      this.hotelNaps();
     }
     this.sinceSparkle += delta;
     if (this.sinceSparkle > 1400) {
       this.sinceSparkle = 0;
       for (const sprite of this.sprites.values()) {
-        if (!sprite.cat.resident && this.state.isReady(sprite.cat)) this.sparkle(sprite);
+        if (!sprite.cat.resident && !sprite.cat.hotel && this.state.isReady(sprite.cat))
+          this.sparkle(sprite);
       }
     }
     this.updateLighting();
@@ -227,7 +232,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       (room === 'cafe' && !this.cafe) ||
       (room === 'shelter' && !this.shelterRoom) ||
       (room === 'clinic' && !this.clinicRoom) ||
-      (room === 'catio' && !this.catioRoom)
+      (room === 'catio' && !this.catioRoom) ||
+      (room === 'hotel' && !this.hotelRoom)
     )
       return;
     const cam = this.cameras.main;
@@ -251,6 +257,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private areaFor(cat: CatData): Phaser.Geom.Rectangle {
     if (!cat.resident)
       return cat.ward === 'quarantine' && this.shelterRoom ? QUARANTINE_AREA : PATIENT_AREA;
+    if (cat.hotel) return HOTEL_AREA;
     if (this.catioRoom && this.outside.has(cat.id)) return CATIO_AREA;
     return this.cafe ? CAFE_AREA : RESIDENT_AREA;
   }
@@ -260,6 +267,35 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.shelterRoom) return;
     this.shelterRoom = new ShelterRoom(this, this.geom);
     for (const [x, y, r] of this.shelterRoom.lamps) this.addGlow(x, y, r);
+  }
+
+  /** Mačací hotel (GDD §6.7). */
+  private openHotelRoom(): void {
+    if (this.hotelRoom) return;
+    this.hotelRoom = new HotelRoom(this, this.state, this.geom);
+    for (const [x, y, r] of this.hotelRoom.lamps) this.addGlow(x, y, r);
+  }
+
+  /** Hostia hotela si občas ľahnú do svojho apartmánu, v noci tam spia všetci. */
+  private hotelNaps(): void {
+    if (!this.hotelRoom) return;
+    const night = this.phase === 'night';
+    this.state.hotel.guests.forEach((cat, i) => {
+      const sprite = this.sprites.get(cat.id);
+      if (!sprite || sprite.leaving) return;
+      if (sprite.isPinned) {
+        if (!night && Math.random() < 0.5) {
+          const a = HOTEL_AREA;
+          sprite.teleport(Phaser.Math.Between(a.left + 10, a.right - 10), a.centerY, a);
+        }
+        return;
+      }
+      if (night || Math.random() < 0.2) {
+        const spot = this.hotelRoom?.suiteSpot(i);
+        if (spot)
+          sprite.pin(spot.x, spot.y, { lay: true, dir: 'down', depthBoost: 0, sleepy: night });
+      }
+    });
   }
 
   /** Catio – vonkajší výbeh pri kaviarni (GDD §6.6). */
@@ -468,6 +504,29 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     });
     bus.on('reportDeclined', save);
     bus.on('clinicRoomBought', save);
+    // Mačací hotel: majiteľ prinesie mačku a neskôr si ju vyzdvihne (GDD §6.7)
+    bus.on('hotelCheckIn', ({ cat }) => {
+      const owner = cat.hotel?.owner ?? '005';
+      if (!this.hotelRoom) return;
+      this.hotelRoom.ownerVisit(owner, (at) => {
+        if (this.state.getCat(cat.id)) this.spawnCat(cat, at.x + 10, at.y + 4);
+      });
+      save();
+    });
+    bus.on('hotelCheckOut', ({ cat }) => {
+      const sprite = this.sprites.get(cat.id);
+      if (sprite) {
+        if (this.selected === sprite) this.select(null);
+        this.sprites.delete(cat.id);
+      }
+      const owner = cat.hotel?.owner ?? '005';
+      if (this.hotelRoom && sprite)
+        this.hotelRoom.ownerVisit(owner, (at) =>
+          sprite.leave(at.x + 10, at.y + 4, () => undefined),
+        );
+      else sprite?.destroy();
+      save();
+    });
     bus.on('clinicVisit', ({ cat, room, recover }) => this.clinicVisit(cat, room, recover));
     bus.on('upgradeBought', ({ kind }) => {
       if (kind === 'cage') this.drawCages(true);
@@ -479,6 +538,11 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
         this.openClinicRoom();
         this.showRoom('clinic');
       }
+      if (kind === 'hotel') {
+        this.openHotelRoom();
+        this.showRoom('hotel');
+      }
+      if (kind === 'suite') this.hotelRoom?.refreshSuites(true);
       if (kind === 'catio') {
         this.openCatioRoom();
         this.showRoom('catio');
@@ -557,7 +621,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private createLighting(): void {
     this.nightOverlay = this.add
-      .rectangle(0, 0, WORLD_W * 5, WORLD_H, 0x000000, 0)
+      .rectangle(0, 0, WORLD_W * 6, WORLD_H, 0x000000, 0)
       .setOrigin(0)
       .setDepth(5000);
     // Mäkké svetlo lámp: radiálny prechod v textúre, sčítaný s obrazom
