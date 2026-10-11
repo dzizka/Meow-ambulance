@@ -18,6 +18,8 @@ export interface CatOptions {
   now?: number;
   /** Úroveň ★ 4: vzácne plemená (vzácnosť 3+) 2× častejšie. */
   rareBoost?: boolean;
+  /** Nástroje, ktoré hráč má – diagnózu, ktorú nemá čím odhaliť, mačka nedostane. */
+  tools?: string[];
 }
 
 /** Vygeneruje novú mačku pri príjme do útulku (GDD §3.2). */
@@ -45,7 +47,7 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
 
   const conditionCount =
     opts.conditionCount ?? rng.weighted([1, 2, 3], (n) => [50, 35, 15][n - 1] ?? 0);
-  const pool = [...data.conditions];
+  const pool = data.conditions.filter((c) => !opts.tools || opts.tools.includes(c.reveal_tool));
   const conditions: CatCondition[] = [];
   for (let i = 0; i < conditionCount && pool.length > 0; i++) {
     const c = rng.weighted(pool, (x) => x.weight);

@@ -43,6 +43,8 @@ export type MinigameKind =
   | 'breath'
   | 'bath'
   | 'claws'
+  | 'drops'
+  | 'vaccine'
   | 'feather'
   | 'hold'
   | 'quiet';
@@ -62,6 +64,7 @@ const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> 
   inhalation: { kind: 'breath', titleKey: 'MG_BREATH_TITLE' },
   bath: { kind: 'bath', titleKey: 'MG_BATH_TITLE' },
   nail_trim: { kind: 'claws', titleKey: 'MG_CLAWS_TITLE' },
+  ear_drops: { kind: 'drops', titleKey: 'MG_DROPS_TITLE' },
 };
 const SOCIAL: {
   id: SocialActivity;
@@ -133,6 +136,7 @@ function decorPreview(def: DecorDef): HTMLElement {
 }
 
 const paws = (n: number): string => '🐾'.repeat(n);
+const ROOM_ICON: Record<Room, string> = { garage: '🏥', cafe: '☕', shelter: '🏠' };
 const ORDER_ICON = { coffee: '☕', tea: '🍵', cake: '🍰' } as const;
 const round1 = (n: number): string =>
   (Math.round(n * 10) / 10).toLocaleString(undefined, { maximumFractionDigits: 1 });
@@ -155,6 +159,7 @@ export class UI {
   };
   /** Prepínač garáž / kaviareň v hornom paneli – viditeľný až po otvorení kaviarne. */
   private roomBtn = el('button', { class: 'icon-btn', type: 'button', hidden: true });
+  private roomMenu = el('div', { class: 'room-menu', role: 'menu' });
   private zuzka = el('div', { class: 'zuzka', hidden: true, role: 'status' });
   private zuzkaKey: string | null = null;
   private sheet = el('aside', { class: 'sheet empty', 'aria-live': 'polite' });
@@ -240,9 +245,14 @@ export class UI {
       b.addEventListener('click', onClick);
       return b;
     };
-    this.roomBtn.addEventListener('click', () =>
-      this.game.showRoom(this.game.room === 'cafe' ? 'garage' : 'cafe'),
-    );
+    this.roomBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const others = this.rooms.filter((r) => r !== this.game.room);
+      // dve miestnosti = prepínač, tri = malá ponuka
+      if (others.length === 1 && others[0]) this.game.showRoom(others[0]);
+      else this.toggleRoomMenu(others);
+    });
+    document.addEventListener('click', () => this.roomMenu.remove());
     this.hud.append(
       this.clockPill,
       this.moneyPill,
@@ -272,18 +282,53 @@ export class UI {
     this.updateZuzka();
   }
 
+  /** Miestnosti, ktoré má hráč postavené. */
+  private get rooms(): Room[] {
+    const s = this.state;
+    return [
+      'garage',
+      ...(s.cafe.open ? ['cafe' as const] : []),
+      ...(s.shelter.open ? ['shelter' as const] : []),
+    ];
+  }
+
   private updateRoomButton(): void {
     const s = this.state;
-    const inCafe = this.game.room === 'cafe';
-    this.roomBtn.hidden = !s.cafe.open;
-    const label = t(inCafe ? 'UI_GO_GARAGE' : 'UI_GO_CAFE');
-    if (this.roomBtn.title !== label) {
+    const room = this.game.room;
+    const others = this.rooms.filter((r) => r !== room);
+    this.roomBtn.hidden = others.length === 0;
+    // pri dvoch miestnostiach ikona tej druhej, pri troch ikona aktuálnej (otvorí ponuku)
+    const shown = others.length === 1 && others[0] ? others[0] : room;
+    const label =
+      others.length === 1 ? t(`UI_GO_${(others[0] ?? 'garage').toUpperCase()}`) : t('UI_ROOMS');
+    if (this.roomBtn.title !== label || this.roomBtn.dataset.icon !== shown) {
       this.roomBtn.title = label;
+      this.roomBtn.dataset.icon = shown;
       this.roomBtn.setAttribute('aria-label', label);
-      this.roomBtn.replaceChildren(inCafe ? '🏥' : '☕', this.badges.room);
+      this.roomBtn.replaceChildren(ROOM_ICON[shown], this.badges.room);
     }
-    // Hostia čakajúci na obsluhu, kým je hráč v garáži
-    this.setBadge(this.badges.room, inCafe ? 0 : s.waitingGuests.length);
+    // Hostia čakajúci na obsluhu, kým je hráč inde ako v kaviarni
+    this.setBadge(this.badges.room, room === 'cafe' ? 0 : s.waitingGuests.length);
+  }
+
+  private toggleRoomMenu(rooms: Room[]): void {
+    if (this.roomMenu.isConnected) {
+      this.roomMenu.remove();
+      return;
+    }
+    this.roomMenu.replaceChildren(
+      ...rooms.map((r) => {
+        const waiting = r === 'cafe' ? this.state.waitingGuests.length : 0;
+        return button(
+          `${ROOM_ICON[r]} ${t(`UI_ROOM_${r.toUpperCase()}`)}${waiting ? ` (${waiting})` : ''}`,
+          () => {
+            this.roomMenu.remove();
+            this.game.showRoom(r);
+          },
+        );
+      }),
+    );
+    this.root.append(this.roomMenu);
   }
 
   /** Volá scéna po prepnutí miestnosti. */
@@ -401,6 +446,7 @@ export class UI {
         slot: 'TOAST_BOUGHT_SLOT',
         cafe: 'TOAST_CAFE_OPEN',
         table: 'TOAST_BOUGHT_TABLE',
+        shelter: 'TOAST_SHELTER_OPEN',
       }[kind];
       this.toast(t(key));
       this.game.playSound('upgrade', 0.6);
@@ -536,7 +582,9 @@ export class UI {
     // Záložky namiesto jedného dlhého zoznamu – karta sa vojde bez rolovania
     const needsHealth =
       !cat.resident &&
-      (cat.conditions.some((c) => c.revealed && !c.treated) || cat.examined.length < 3 || ready);
+      (cat.conditions.some((c) => c.revealed && !c.treated) ||
+        cat.examined.length < this.state.tools.length ||
+        ready);
     const tabs: { id: CardTab; label: string; dot: boolean }[] = [
       { id: 'health', label: `🩺 ${t('TAB_HEALTH')}`, dot: needsHealth },
       { id: 'care', label: `❤️ ${t('TAB_CARE')}`, dot: false },
@@ -569,7 +617,18 @@ export class UI {
           ? this.careTab(cat)
           : this.aboutTab(cat);
 
-    this.sheet.replaceChildren(head, stats, tabBar, el('div', { class: 'tab-body' }, ...body));
+    this.setSheet(head, stats, tabBar, el('div', { class: 'tab-body' }, ...body));
+  }
+
+  /**
+   * Nahradí obsah karty, iba ak sa naozaj zmenil. Karta sa obnovuje každú pol sekundu –
+   * keby sa tlačidlá stále menili, ťuknutie v nesprávnej chvíli by sa stratilo.
+   */
+  private setSheet(...nodes: (Node | string)[]): void {
+    const tmp = document.createElement('div');
+    tmp.append(...nodes);
+    if (tmp.innerHTML === this.sheet.innerHTML) return;
+    this.sheet.replaceChildren(...tmp.childNodes);
   }
 
   private defaultTab(cat: CatData): CardTab {
@@ -608,6 +667,7 @@ export class UI {
         out.push(
           el('p', { class: 'hint' }, t('UI_KEEP_FULL', { max: data.balance.residents.slots })),
         );
+      out.push(...this.shelterActions(cat));
       return out;
     }
 
@@ -645,8 +705,11 @@ export class UI {
       ['hand', '✋', 'UI_TOOL_HAND'],
       ['thermometer', '🌡️', 'UI_TOOL_THERMOMETER'],
       ['stethoscope', '🩺', 'UI_TOOL_STETHOSCOPE'],
+      ['otoscope', '🔦', 'UI_TOOL_OTOSCOPE'],
     ];
-    const pending = tools.filter(([tool]) => !cat.examined.includes(tool));
+    const pending = tools.filter(
+      ([tool]) => s.tools.includes(tool) && !cat.examined.includes(tool),
+    );
     if (pending.length > 0) {
       out.push(
         el(
@@ -658,7 +721,44 @@ export class UI {
         ),
       );
     }
+    out.push(...this.shelterActions(cat));
     return out;
+  }
+
+  /** Útulok: očkovanie v ambulancii a presun medzi garážou a karanténou (GDD §6.2). */
+  private shelterActions(cat: CatData): HTMLElement[] {
+    const s = this.state;
+    if (!s.shelter.open || cat.resident) return [];
+    const buttons: HTMLElement[] = [];
+    if (cat.vaccinated)
+      buttons.push(el('span', { class: 'chip good' }, `💉 ${t('UI_VACCINATED')}`));
+    else if (cat.conditions.every((c) => c.treated))
+      buttons.push(
+        button(`💉 ${t('UI_VACCINATE')}`, () => void this.doVaccinate(cat), {
+          disabled: this.busy,
+        }),
+      );
+    const inGarage = (cat.ward ?? 'garage') === 'garage';
+    const to = inGarage ? 'quarantine' : 'garage';
+    buttons.push(
+      button(
+        inGarage ? `🏠 ${t('UI_TO_QUARANTINE')}` : `🏥 ${t('UI_TO_GARAGE')}`,
+        () => {
+          if (s.moveCat(cat.id)) this.renderSheet();
+        },
+        { disabled: this.busy || s.freeIn(to) <= 0 },
+      ),
+    );
+    return [el('div', { class: 'actions' }, ...buttons)];
+  }
+
+  private async doVaccinate(cat: CatData): Promise<void> {
+    const stars = await this.runMinigame({ kind: 'vaccine', cat, title: t('MG_VACCINE_TITLE') });
+    if (stars === null) return;
+    if (this.state.vaccinate(cat.id)) {
+      this.toast(t('TOAST_VACCINATED', { cat: cat.name }));
+      this.game.playSound('success', 0.5);
+    }
   }
 
   /** Starostlivosť: socializácia a kŕmenie. */
@@ -716,16 +816,47 @@ export class UI {
       this.renderCafePanel();
       return;
     }
+    if (this.game.room === 'shelter') {
+      this.renderShelterPanel();
+      return;
+    }
     const s = this.state;
     const tiles = s.cats.map((cat) => this.catTile(cat));
-    this.sheet.replaceChildren(
+    this.setSheet(
       el('p', { class: 'hint' }, t('UI_TAP_CAT')),
       el('div', { class: 'cat-list' }, ...tiles),
       el(
         'p',
         { class: 'hint' },
-        `${t('UI_FREE_CAGES', { free: s.freeCages, total: s.cageCount })} · ${t('UI_RESIDENTS', { n: s.residents.length, max: s.residentSlots })}`,
+        `${t('UI_FREE_CAGES', { free: s.freeCages, total: s.totalCages })} · ${t('UI_RESIDENTS', { n: s.residents.length, max: s.residentSlots })}`,
       ),
+      s.reports.length > 0
+        ? button(`📋 ${t('UI_REPORTS')} (${s.reports.length})`, () => this.openModal('reports'), {
+            class: 'btn primary',
+          })
+        : '',
+    );
+  }
+
+  /** Panel útulku: pacienti v karanténe a voľné miesta (GDD §6.2). */
+  private renderShelterPanel(): void {
+    const s = this.state;
+    const tiles = s.wardCats('quarantine').map((cat) => this.catTile(cat));
+    this.setSheet(
+      el('h2', {}, `🏠 ${t('UI_SHELTER')}`),
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_QUARANTINE_LINE', {
+          free: s.freeIn('quarantine'),
+          total: s.quarantineCages,
+          g: s.freeIn('garage'),
+          gt: s.cageCount,
+        }),
+      ),
+      tiles.length
+        ? el('div', { class: 'cat-list' }, ...tiles)
+        : el('p', { class: 'muted' }, t('UI_SHELTER_EMPTY')),
       s.reports.length > 0
         ? button(`📋 ${t('UI_REPORTS')} (${s.reports.length})`, () => this.openModal('reports'), {
             class: 'btn primary',
@@ -760,7 +891,7 @@ export class UI {
       ),
     );
     const residents = s.residents.map((cat) => this.catTile(cat));
-    this.sheet.replaceChildren(
+    this.setSheet(
       el('h2', {}, `☕ ${t('UI_CAFE')}`),
       el(
         'p',
@@ -937,7 +1068,7 @@ export class UI {
     const s = this.state;
     const out: HTMLElement[] = [
       el('h2', {}, t('UI_REPORTS')),
-      el('p', { class: 'hint' }, t('UI_FREE_CAGES', { free: s.freeCages, total: s.cageCount })),
+      el('p', { class: 'hint' }, t('UI_FREE_CAGES', { free: s.freeCages, total: s.totalCages })),
     ];
     if (s.reports.length === 0) out.push(el('p', { class: 'muted' }, t('UI_NO_REPORTS')));
     if (s.reports.length > 0 && s.freeCages <= 0)
@@ -955,6 +1086,7 @@ export class UI {
             { class: 'muted' },
             `${t('UI_DIFFICULTY')}: `,
             el('span', { class: 'paws' }, paws(def.difficulty)),
+            def.family ? ` · ${t('UI_FAMILY_NEEDS', { n: s.cagesNeeded(r.id) })}` : '',
           ),
           el(
             'div',
@@ -970,7 +1102,7 @@ export class UI {
                   this.game.select(cat.id);
                 }
               },
-              { class: 'btn primary', disabled: s.freeCages <= 0 },
+              { class: 'btn primary', disabled: s.freeCages < s.cagesNeeded(r.id) },
             ),
             button(t('UI_DECLINE'), () => {
               s.declineReport(r.id);
@@ -1307,6 +1439,7 @@ export class UI {
           : buy(t('UI_BUY_SLOT', { price: slotPrice }), slotPrice, () => s.buySlot()),
       ),
       this.cafeUpgrade(),
+      this.shelterUpgrade(),
     ];
 
     // Vybavenie
@@ -1422,6 +1555,56 @@ export class UI {
       );
     }
     return out;
+  }
+
+  /** Komunitný útulok – Fáza 2 (GDD §6.2). */
+  private shelterUpgrade(): HTMLElement {
+    const s = this.state;
+    const b = s.data.balance.shelter;
+    if (s.shelter.open)
+      return el(
+        'div',
+        { class: 'upgrade' },
+        el('strong', {}, `🏠 ${t('UI_SHELTER')}`),
+        el('span', { class: 'chip good' }, '✓'),
+      );
+    const miss = s.shelterMissing;
+    const locks: HTMLElement[] = [];
+    if (miss.rep > 0)
+      locks.push(
+        el(
+          'span',
+          { class: 'chip lock' },
+          t('UI_LOCKED', { rep: s.unlockRep('shelter_2') ?? '?' }),
+        ),
+      );
+    if (miss.rescued > 0)
+      locks.push(
+        el(
+          'span',
+          { class: 'chip lock' },
+          t('UI_NEED_RESCUED', { n: b.min_rescued, have: s.counters.rescued }),
+        ),
+      );
+    return el(
+      'div',
+      { class: 'upgrade cafe' },
+      el(
+        'div',
+        {},
+        el('strong', {}, `🏠 ${t('UI_SHELTER')}`),
+        el('p', { class: 'hint' }, t('UI_SHELTER_DESC', { cages: b.quarantine_cages })),
+      ),
+      locks.length
+        ? el('div', { class: 'locks' }, ...locks)
+        : button(
+            t('UI_BUY_SHELTER', { price: b.price }),
+            () => {
+              if (s.buyShelter()) this.closeModal();
+            },
+            { class: 'btn primary', disabled: s.money < b.price },
+          ),
+    );
   }
 
   /** Kúpa kaviarne, potom dokupovanie stolov (GDD §5.5). */

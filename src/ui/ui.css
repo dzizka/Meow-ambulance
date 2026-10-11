@@ -861,3 +861,28 @@ body.minigame .toast:not(:last-child) {
   color: var(--ui-dim);
   white-space: nowrap;
 }
+
+/* ---------- Ponuka miestností (garáž / kaviareň / útulok) ---------- */
+.room-menu {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + var(--hud-h) + 4px);
+  right: 10px;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-line);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  z-index: 20;
+}
+.room-menu .btn {
+  min-width: 150px;
+  text-align: left;
+}
+.locks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}

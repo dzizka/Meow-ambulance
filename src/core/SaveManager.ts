@@ -60,6 +60,13 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v5 → v6: Komunitný útulok, počítadlo očkovaní (GDD §6.2). */
+  5: (s) => ({
+    ...s,
+    version: 6,
+    shelter: { open: false },
+    counters: { ...emptyCounters(), ...s.counters },
+  }),
   /** v4 → v5: vybavenie a dekorácie (GDD §6.1). */
   4: (s) => ({ ...s, version: 5, equipment: {}, decor: [] }),
   /** v3 → v4: plemená s pevnou farbou (siamská = seal_point) – oprava farby mačiek a albumu. */

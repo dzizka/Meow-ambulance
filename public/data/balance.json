@@ -109,5 +109,12 @@
   "coziness": {
     "garage_trust_per_point": 0.01,
     "cafe_tip_per_point": 0.02
+  },
+  "shelter": {
+    "price": 1500,
+    "min_rescued": 10,
+    "quarantine_cages": 4,
+    "vaccine_fee_bonus": 0.25,
+    "vaccine_rep_bonus": 3
   }
 }

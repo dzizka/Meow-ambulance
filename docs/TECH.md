@@ -103,10 +103,12 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Minihry a UI sa testujú ručne podľa checklistu v PR – **vždy aj na telefóne**.
 
 ## Miestnosti
-- Svet má dve miestnosti vedľa seba, každá `WORLD_W × WORLD_H`: garáž (x 0) a kaviareň (`CAFE_X`). Kamera má hranice iba aktuálnej miestnosti (`GarageScene.showRoom`, `roomX` v `layout.ts`).
+- Svet má tri miestnosti vedľa seba, každá `WORLD_W × WORLD_H`: garáž (x 0), kaviareň (`CAFE_X`) a Komunitný útulok (`SHELTER_X`, `ShelterRoom.ts` – karanténa a ambulancia). `roomAt(x)` povie, v ktorej miestnosti je bod. Kamera má hranice iba aktuálnej miestnosti (`GarageScene.showRoom`, `roomX` v `layout.ts`).
 - Kaviareň kreslí `src/scenes/CafeRoom.ts` (pozadie, nábytok, hostia, bubliny objednávok); stav a pravidlá sú v `GameState` (sekcia Mačacia kaviareň), balans v `balance.json → cafe`.
 - Hostia sú postavičky G5 (`personAnims.ts`, hárky sa načítajú podľa `cafe.guest_sprites`). „Sedenie": stolička má väčšiu hĺbku ako hosť, takže mu zakryje nohy.
-- Save v3 pridal `cafe` a `counters.served` (migrácia `MIGRATIONS[2]`).
+- Save v3 pridal `cafe` a `counters.served` (migrácia `MIGRATIONS[2]`). Save v6 pridal `shelter`, `counters.vaccinated` a voliteľné `cat.ward` / `cat.vaccinated`.
+- Pacienti: `cat.ward` = garáž alebo karanténa (`freeIn`, `moveCat`, `totalCages`). Diagnózy, ktoré hráč nemá čím odhaliť, mačky nedostanú (`generateCat({ tools })`).
+- Karta mačky sa prekreslí iba pri zmene obsahu (`UI.setSheet`) – inak by obnovovanie každých 500 ms mohlo zjesť ťuknutie.
 
 ## Ekonomika (GDD §6.1)
 - Úrovne podľa ★: `balance.json → levels` (`GameState.level`, `hasUnlock`, udalosť `levelUp`). ★ sa nemíňajú.

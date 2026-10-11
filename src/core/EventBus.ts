@@ -35,7 +35,8 @@ export interface GameEvents {
   welcomeBack: { summary: OfflineSummary };
   challengeCompleted: { challenge: ActiveChallenge };
   albumAdded: { key: string };
-  upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' };
+  upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' };
+  catMoved: { cat: CatData };
   guestArrived: { guest: CafeGuest };
   guestServed: { guest: CafeGuest };
   guestLeft: { guest: CafeGuest; amount: number };

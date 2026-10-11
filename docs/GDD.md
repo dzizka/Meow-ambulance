@@ -316,13 +316,17 @@ Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v garáži alebo 
 
 #### 6.1.4 Rozšírenie útulku
 - **Fáza 1:** 3. a 4. klietka (120 / 180 €), kútik pre stálice +1 / +2 (150 / 220 €), kaviareň (350 €, od 25 ★), 3. a 4. stôl (180 / 260 €).
-- **Fáza 2 – Komunitný útulok** 🟡 (od 100 ★ a 10 záchran, cena ~1500 €): nová budova s karanténou, ambulanciou a viac klietkami – navrhne sa samostatne (§6.2).
+- **Fáza 2 – Komunitný útulok** 🟢 (od 100 ★ a 10 záchran, 1 500 €): tretia budova vedľa garáže a kaviarne – **garáž aj kaviareň zostávajú**, hráč nič nestratí. Prepínanie miestností cez ponuku v hornom paneli.
+  - **Karanténa:** +4 klietky (spolu až 8 pacientov). Keď je garáž plná, nová mačka ide do karantény; pacienta možno presúvať tlačidlom na karte.
+  - **Ambulancia:** nástroj **otoskop** → diagnóza **ušné roztoče** (minihra kvapky do uška); **očkovanie** zdravej mačky (minihra: upokojiť hladkaním, ťuknúť na krk) → pri adopcii +25 % príspevok a +3 ★. Dobrovoľné, bez trestu.
+  - **Mačacia rodinka:** nové hlásenie – mama a 2–3 mačiatka rovnakej farby naraz (potrebuje až 4 klietky).
+  - Nová výzva „Zaočkuj mačky". Balans: `balance.json → shelter`.
 
 ### 6.2 Fázy rastu útulku
 | Fáza | Názov | Podmienka odomknutia | Kapacita | Nové prvky |
 |---|---|---|---|---|
 | **1** 🟢 | Garážová záchranka | štart | 2 klietky → max 4, kútik pre 2 stálice | Stôl, misky, teplomer, ruka, stetoskop. Pomocníčka: dobrovoľníčka **Zuzka** (tutoriál). |
-| **2** 🟡 | Komunitný útulok | 10 záchran, ★ 100 | 8–12 | Prenajatý domček: karanténa, **mačacia kaviareň** pre stálice (násobí dary), ambulancia na očkovanie, otoskop |
+| **2** 🟢 | Komunitný útulok | 10 záchran, ★ 100, 1 500 € | 8–12 | Prenajatý domček: karanténa, **mačacia kaviareň** pre stálice (násobí dary), ambulancia na očkovanie, otoskop |
 | **3** 🟡 | Špecializovaná klinika | 40 záchran, ★ 500 | 20–30 | Personál (veterinár, ošetrovateľ, správca sociálnych sietí), laboratórium, röntgen, operačná sála, catio (vonkajší výbeh) |
 | **4** 🔵 | Národné centrum felíd | 120 záchran, ★ 2000 | 50+ | Viac poschodí, CT, rehabilitačný bazén, mačací hotel, edukačné centrum (školské výlety) |
 

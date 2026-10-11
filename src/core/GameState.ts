@@ -24,7 +24,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -54,6 +54,8 @@ export interface SaveData {
   // od verzie 5
   equipment: Record<string, number>;
   decor: string[];
+  // od verzie 6
+  shelter: { open: boolean };
 }
 
 export const emptyCafe = (): CafeState => ({ open: false, tables: 0, guests: [], timer: 0 });
@@ -70,6 +72,7 @@ export const emptyCounters = (): Counters => ({
   social: 0,
   fed: 0,
   served: 0,
+  vaccinated: 0,
 });
 
 /** Kroky tutoriálu so Zuzkou (kľúče textov) – postupujú podľa toho, čo hráč už urobil. */
@@ -113,6 +116,8 @@ export class GameState {
   equipment: Record<string, number> = {};
   /** Kúpené dekorácie (GDD §6.1.3). */
   decor: string[] = [];
+  /** Komunitný útulok – Fáza 2 (GDD §6.2). */
+  shelter = { open: false };
   tutorialStep = 0;
   tutorialDone = false;
   private nextId = 1;
@@ -208,8 +213,44 @@ export class GameState {
     return b.residents.slots + this.upgrades.slots + (this.cafe.open ? b.cafe.slots : 0);
   }
 
+  /** Klietky v karanténe Komunitného útulku. */
+  get quarantineCages(): number {
+    return this.shelter.open ? this.data.balance.shelter.quarantine_cages : 0;
+  }
+
+  get totalCages(): number {
+    return this.cageCount + this.quarantineCages;
+  }
+
+  /** Pacienti v garáži alebo v karanténe. */
+  wardCats(ward: 'garage' | 'quarantine'): CatData[] {
+    return this.cagedCats.filter((c) => (c.ward ?? 'garage') === ward);
+  }
+
+  freeIn(ward: 'garage' | 'quarantine'): number {
+    const cages = ward === 'garage' ? this.cageCount : this.quarantineCages;
+    return cages - this.wardCats(ward).length;
+  }
+
   get freeCages(): number {
-    return this.cageCount - this.cagedCats.length;
+    return this.totalCages - this.cagedCats.length;
+  }
+
+  /** Nástroje na prehliadku, ktoré hráč má (otoskop až v ambulancii útulku). */
+  get tools(): DiagnosticTool[] {
+    return [
+      'hand',
+      'thermometer',
+      'stethoscope',
+      ...(this.shelter.open ? ['otoscope' as const] : []),
+    ];
+  }
+
+  /** Koľko klietok hlásenie potrebuje (mačacia rodinka viac). */
+  cagesNeeded(reportId: string): number {
+    const report = this.reports.find((r) => r.id === reportId);
+    const def = report && this.data.reports.find((d) => d.id === report.defId);
+    return def?.family ? 1 + def.family[1] : 1;
   }
 
   get freeResidentSlots(): number {
@@ -289,7 +330,8 @@ export class GameState {
         return;
       }
       this.reportTimer -= interval;
-      const def = this.rng.weighted(this.data.reports, (d) => d.weight);
+      const pool = this.data.reports.filter((d) => d.requires !== 'shelter' || this.shelter.open);
+      const def = this.rng.weighted(pool, (d) => d.weight);
       const report: Report = { id: this.newId('r'), defId: def.id };
       this.reports.push(report);
       this.bus.emit('reportAdded', { report });
@@ -349,22 +391,96 @@ export class GameState {
   acceptReport(reportId: string): CatData | null {
     const report = this.reports.find((r) => r.id === reportId);
     const def = report && this.data.reports.find((d) => d.id === report.defId);
-    if (!report || !def || this.freeCages <= 0) return null;
+    if (!report || !def || this.freeCages < this.cagesNeeded(reportId)) return null;
     this.reports = this.reports.filter((r) => r !== report);
-    const cat = generateCat(this.data, this.rng, {
-      id: this.newId('cat'),
-      age: def.age,
-      conditionCount: def.difficulty,
-      reportId: def.id,
-      now: this.now,
-      rareBoost: this.hasUnlock('rare_cats'),
-    });
-    this.cats.push(cat);
-    this.counters.rescued += 1;
-    if (cat.age === 'kitten') this.counters.kittens += 1;
-    this.bus.emit('catAdmitted', { cat });
+    const make = (age: CatData['age'] | null, conditions: number) =>
+      generateCat(this.data, this.rng, {
+        id: this.newId('cat'),
+        age,
+        conditionCount: conditions,
+        reportId: def.id,
+        now: this.now,
+        rareBoost: this.hasUnlock('rare_cats'),
+        tools: this.tools,
+      });
+    const cat = make(def.age, def.difficulty);
+    const family = [cat];
+    // Mačacia rodinka: mačiatka po mame (rovnaké plemeno a farba)
+    if (def.family) {
+      const n = this.rng.int(def.family[0], def.family[1]);
+      for (let i = 0; i < n; i++) {
+        const kitten = make('kitten', 1);
+        kitten.breedId = cat.breedId;
+        kitten.coatId = cat.coatId;
+        kitten.sprite = cat.sprite;
+        family.push(kitten);
+      }
+    }
+    for (const c of family) {
+      // Meno sa v útulku nesmie opakovať (napr. mama a mačiatko)
+      const used = new Set(this.cats.map((x) => x.name));
+      if (used.has(c.name)) {
+        const names = [...(this.data.names.by_coat[c.coatId] ?? []), ...this.data.names.generic];
+        const free = names.filter((n) => !used.has(n));
+        if (free.length) c.name = this.rng.pick(free);
+      }
+      // do garáže, a keď je plná, do karantény
+      c.ward = this.freeIn('garage') > 0 ? 'garage' : 'quarantine';
+      this.cats.push(c);
+      this.counters.rescued += 1;
+      if (c.age === 'kitten') this.counters.kittens += 1;
+      this.bus.emit('catAdmitted', { cat: c });
+    }
     this.checkChallenges();
     return cat;
+  }
+
+  /** Presun pacienta medzi garážou a karanténou (ak je tam voľná klietka). */
+  moveCat(catId: string): boolean {
+    const cat = this.getCat(catId);
+    if (!cat || cat.resident || !this.shelter.open) return false;
+    const to = (cat.ward ?? 'garage') === 'garage' ? 'quarantine' : 'garage';
+    if (this.freeIn(to) <= 0) return false;
+    cat.ward = to;
+    this.bus.emit('catMoved', { cat });
+    return true;
+  }
+
+  // ---------- Komunitný útulok (GDD §6.2) ----------
+
+  /** Čo ešte chýba na kúpu útulku (prázdne = dá sa kúpiť, ak sú peniaze). */
+  get shelterMissing(): { rep: number; rescued: number } {
+    const b = this.data.balance.shelter;
+    return {
+      rep: this.hasUnlock('shelter_2') ? 0 : (this.unlockRep('shelter_2') ?? 0) - this.reputation,
+      rescued: Math.max(0, b.min_rescued - this.counters.rescued),
+    };
+  }
+
+  buyShelter(): boolean {
+    const b = this.data.balance.shelter;
+    const miss = this.shelterMissing;
+    if (this.shelter.open || miss.rep > 0 || miss.rescued > 0 || this.money < b.price) return false;
+    this.addMoney(-b.price, true);
+    this.openShelter();
+    return true;
+  }
+
+  private openShelter(): void {
+    this.shelter.open = true;
+    this.bus.emit('upgradeBought', { kind: 'shelter' });
+    this.fillChallenges();
+  }
+
+  /** Očkovanie v ambulancii – iba zdravá, ešte neočkovaná mačka. */
+  vaccinate(catId: string): boolean {
+    const cat = this.getCat(catId);
+    if (!cat || !this.shelter.open || cat.vaccinated || !Care.allTreated(cat)) return false;
+    cat.vaccinated = true;
+    this.counters.vaccinated += 1;
+    Care.addStats(cat, { health: 5 });
+    this.changed(cat);
+    return true;
   }
 
   /** Hlásenie prevezme iný útulok – bez trestu (GDD §3.1). */
@@ -460,15 +576,17 @@ export class GameState {
     const fee =
       Math.round(
         ((r.adoption_fee_min + ((r.adoption_fee_max - r.adoption_fee_min) * match.score) / 100) *
-          (1 + 0.15 * (rarity - 1))) /
+          (1 + 0.15 * (rarity - 1)) *
+          // zaočkovaná mačka = vyšší príspevok (GDD §6.2)
+          (cat.vaccinated ? 1 + this.data.balance.shelter.vaccine_fee_bonus : 1)) /
           5,
       ) * 5;
     const rep =
-      match.quality === 'perfect'
+      (match.quality === 'perfect'
         ? r.rep_perfect
         : match.quality === 'good'
           ? r.rep_good
-          : r.rep_poor;
+          : r.rep_poor) + (cat.vaccinated ? this.data.balance.shelter.vaccine_rep_bonus : 0);
     const postcard =
       match.quality === 'perfect' ||
       (match.quality === 'good' && this.rng.chance(r.postcard_chance_good));
@@ -533,7 +651,10 @@ export class GameState {
     while (this.challenges.length < want) {
       const active = new Set(this.challenges.map((c) => c.defId));
       const pool = this.data.challenges.filter(
-        (d) => !active.has(d.id) && (d.requires !== 'cafe' || this.cafe.open),
+        (d) =>
+          !active.has(d.id) &&
+          (d.requires !== 'cafe' || this.cafe.open) &&
+          (d.requires !== 'shelter' || this.shelter.open),
       );
       if (pool.length === 0) return;
       const def = this.rng.weighted(pool, (d) => d.weight);
@@ -914,6 +1035,7 @@ export class GameState {
       cafe: structuredClone(this.cafe),
       equipment: { ...this.equipment },
       decor: [...this.decor],
+      shelter: { ...this.shelter },
     };
   }
 
@@ -939,6 +1061,7 @@ export class GameState {
     s.cafe = save.cafe ?? emptyCafe();
     s.equipment = { ...(save.equipment ?? {}) };
     s.decor = [...(save.decor ?? [])];
+    s.shelter = { ...(save.shelter ?? { open: false }) };
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();
@@ -1031,6 +1154,12 @@ export class GameState {
   }
 
   /** Kaviareň zadarmo. */
+  devOpenShelter(): boolean {
+    if (this.shelter.open) return false;
+    this.openShelter();
+    return true;
+  }
+
   devOpenCafe(): boolean {
     if (this.cafe.open) return false;
     this.openCafe();

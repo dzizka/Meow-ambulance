@@ -3,7 +3,7 @@ import type { GameState } from '../core/GameState';
 import type { CafeGuest } from '../data/types';
 import { INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import type { CatSprite } from '../objects/CatSprite';
-import { CAFE_X, FLOOR_TOP, ROOM, WORLD_H, WORLD_W } from './layout';
+import { CAFE_X, FLOOR_TOP, ROOM, WORLD_H, WORLD_W, roomAt } from './layout';
 import { ensurePixelIcons } from './pixelIcons';
 import { addProp, type WorldGeom } from './world';
 import {
@@ -232,7 +232,7 @@ export class CafeRoom {
       }
       // Jeho obľúbená stálica sa príde pozrieť (ak je v kaviarni a nie je k nemu iná mačka)
       const cat = g.catId ? this.catSprite(g.catId) : undefined;
-      if (cat && cat.x >= CAFE_X && cat.cat.resident) {
+      if (cat && roomAt(cat.x) === 'cafe' && cat.cat.resident) {
         const spot = this.spotsFor(g).find((p) => cat.isFreeSpot(p.x, p.y));
         if (spot) cat.visitSpot(spot);
       }

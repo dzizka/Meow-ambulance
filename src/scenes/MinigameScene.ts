@@ -94,6 +94,12 @@ export class MinigameScene extends Phaser.Scene {
       case 'claws':
         this.claws();
         break;
+      case 'drops':
+        this.drops();
+        break;
+      case 'vaccine':
+        this.vaccine();
+        break;
       default:
         this.hold();
     }
@@ -907,6 +913,193 @@ export class MinigameScene extends Phaser.Scene {
       }
     });
     this.updater = (dt) => (elapsed += dt);
+  }
+
+  // ---------- Kvapky do uška (ušné roztoče) ----------
+
+  /**
+   * Kvapkadlo sa hojdá nad hlavou mačky. Ťuknúť, keď je nad označeným uškom –
+   * kvapka padne. Tri kvapky (ľavé, pravé, ľavé uško).
+   */
+  private drops(): void {
+    this.hintText.setText(t('MG_DROPS_HINT'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const ears = [
+      { x: cx - S * 4.5, y: cy - S * 8 },
+      { x: cx + S * 4, y: cy - S * 8 },
+    ];
+    const order = [0, 1, 0];
+    const topY = cy - S * 22;
+    const g = this.add.graphics().setDepth(5);
+    const marker = this.add.graphics().setDepth(4);
+    let pos = 0; // −1..1
+    let dir = 1;
+    let done = 0;
+    let misses = 0;
+    let falling = false;
+    const range = S * 14;
+
+    const drawMarker = () => {
+      marker.clear();
+      const ear = ears[order[done] ?? 0];
+      if (!ear) return;
+      marker.lineStyle(Math.max(2, S * 0.4), 0x9ad17b, 0.9).strokeCircle(ear.x, ear.y, S * 2.2);
+    };
+    drawMarker();
+
+    this.input.on('pointerdown', () => {
+      if (this.finished || falling) return;
+      const ear = ears[order[done] ?? 0];
+      if (!ear) return;
+      const x = cx + pos * range;
+      const hit = Math.abs(x - ear.x) < S * 2.6;
+      falling = true;
+      const drop = this.add.circle(x, topY + S * 4, S * 0.8, 0x8fc3f0).setDepth(6);
+      this.tweens.add({
+        targets: drop,
+        y: hit ? ear.y : cy + S * 10,
+        duration: 380,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          drop.destroy();
+          falling = false;
+          if (hit) {
+            done += 1;
+            this.flash(t('MG_GULP'), ear.x, ear.y - S * 4, '#9ad17b');
+            this.sfx('drop', 0.5);
+            this.hearts(1);
+            drawMarker();
+            if (done >= order.length)
+              this.finish((misses === 0 ? 3 : misses <= 2 ? 2 : 1) as Stars);
+          } else {
+            misses += 1;
+            this.flash(t('MG_MISS'), x, cy + S * 6, '#e86a6a');
+            this.sfx('error', 0.4);
+          }
+        },
+      });
+    });
+
+    this.updater = (dt) => {
+      pos += dir * dt * 0.0016;
+      if (pos > 1) {
+        pos = 1;
+        dir = -1;
+      } else if (pos < -1) {
+        pos = -1;
+        dir = 1;
+      }
+      const x = cx + pos * range;
+      g.clear();
+      // kvapkadlo: gumička a sklenená trubička
+      g.fillStyle(0xe0525a, 1).fillRoundedRect(
+        x - S * 1.2,
+        topY - S * 3,
+        S * 2.4,
+        S * 2.6,
+        S * 0.6,
+      );
+      g.fillStyle(0xd8e6f0, 1).fillRect(x - S * 0.7, topY - S * 0.6, S * 1.4, S * 4);
+      g.fillStyle(0x8fc3f0, 1).fillRect(x - S * 0.4, topY + S * 1.4, S * 0.8, S * 1.8);
+    };
+  }
+
+  // ---------- Očkovanie ----------
+
+  /**
+   * Najprv mačku upokojiť hladkaním po hlavičke (držať prst a jemne hýbať),
+   * potom ťuknúť na zelený bod na krku, kým svieti.
+   */
+  private vaccine(): void {
+    this.hintText.setText(t('MG_VACCINE_HINT'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const head = { x: cx, y: cy - S * 5, r: S * 7 };
+    const spot = { x: cx + S * 4, y: cy + S * 2, r: S * 2.2 };
+    const bar = this.add.graphics().setDepth(5);
+    const ring = this.add.graphics().setDepth(6);
+    const bw = S * 24;
+    const by = cy + S * 17;
+    let calm = 0; // 0..1
+    let spotTime = 0; // ms, kým svieti bod
+    let elapsed = 0;
+    let misses = 0;
+    let lastX = 0;
+    let lastY = 0;
+    let heartTimer = 0;
+
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      lastX = p.x;
+      lastY = p.y;
+      if (this.finished) return;
+      if (spotTime > 0) {
+        if (Phaser.Math.Distance.Between(p.x, p.y, spot.x, spot.y) < spot.r * 1.6) {
+          this.sfx('pluck', 0.5);
+          this.finish((misses === 0 && elapsed < 9000 ? 3 : misses <= 1 ? 2 : 1) as Stars);
+        } else {
+          misses += 1;
+          this.flash(t('MG_MISS'), p.x, p.y - S * 3, '#e86a6a');
+          this.sfx('error', 0.4);
+        }
+      }
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown || this.finished || spotTime > 0) return;
+      const moved = Phaser.Math.Distance.Between(lastX, lastY, p.x, p.y);
+      lastX = p.x;
+      lastY = p.y;
+      if (Phaser.Math.Distance.Between(p.x, p.y, head.x, head.y) < head.r) {
+        calm = Math.min(1, calm + moved / (S * 40));
+        if (calm >= 1) {
+          spotTime = 3500;
+          this.flash(t('MG_VACCINE_CALM'), cx, head.y - S * 9, '#9ad17b');
+          this.sfx('mewPurr', 0.4);
+        }
+      }
+    });
+
+    this.updater = (dt) => {
+      elapsed += dt;
+      heartTimer += dt;
+      if (spotTime > 0) {
+        spotTime -= dt;
+        if (spotTime <= 0) calm = 0.5; // zmeškané – mačka sa trochu zavrtela, treba ju znova pohladkať
+      }
+      // Držanie prsta na hlavičke upokojuje aj bez pohybu (pohyb to urýchli)
+      const ptr = this.input.activePointer;
+      if (
+        spotTime <= 0 &&
+        ptr.isDown &&
+        Phaser.Math.Distance.Between(ptr.x, ptr.y, head.x, head.y) < head.r
+      ) {
+        calm = Math.min(1, calm + dt / 2200);
+        if (calm >= 1) {
+          spotTime = 3500;
+          this.flash(t('MG_VACCINE_CALM'), cx, head.y - S * 9, '#9ad17b');
+          this.sfx('mewPurr', 0.4);
+        }
+      }
+      if (calm > 0 && spotTime <= 0 && heartTimer > 600 && this.input.activePointer.isDown) {
+        heartTimer = 0;
+        this.hearts(1);
+      }
+      bar.clear();
+      bar.fillStyle(0x3b2f45, 1).fillRoundedRect(cx - bw / 2, by, bw, S * 2, S);
+      bar
+        .fillStyle(0x9ad17b, 1)
+        .fillRoundedRect(cx - bw / 2, by, Math.max(S * 2, bw * calm), S * 2, S);
+      ring.clear();
+      if (spotTime <= 0) {
+        ring.lineStyle(Math.max(2, S * 0.3), 0xf4e6d0, 0.35).strokeCircle(head.x, head.y, head.r);
+      } else {
+        const pulse = 1 + Math.sin(elapsed / 120) * 0.15;
+        ring.fillStyle(0x9ad17b, 0.85).fillCircle(spot.x, spot.y, spot.r * pulse);
+        ring
+          .lineStyle(Math.max(2, S * 0.3), 0xffffff, 0.9)
+          .strokeCircle(spot.x, spot.y, spot.r * pulse);
+      }
+    };
   }
 
   // ---------- Sirup ----------
