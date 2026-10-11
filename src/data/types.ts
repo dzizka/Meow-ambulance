@@ -344,8 +344,6 @@ export interface CatData {
   clinicCase?: boolean;
   /** Vzácny znak (GDD §7.2). */
   special?: RareMark;
-  /** Ozdoba stálice (GDD §7.6) – id z cosmetics.json. */
-  accessory?: string;
   /** Hosť mačacieho hotela (GDD §6.7) – nie je naša, majiteľ si ju vyzdvihne. */
   hotel?: HotelStay;
   /** Herný čas (ms simulácie) posledného kontaktu – kvôli prestávkam medzi aktivitami. */
@@ -473,13 +471,6 @@ export type StaffId = 'caretaker' | 'vet' | 'barista' | 'social';
 export type RareMark = 'hetero' | 'poly' | 'tortie_male';
 
 /** Kozmetika za srdiečka (GDD §7.6). */
-export interface AccessoryDef {
-  id: string;
-  icon: string;
-  price: number;
-  color: string;
-  extra: 'none' | 'bell' | 'bow' | 'bandana';
-}
 export interface WallColorDef {
   id: string;
   icon: string;
@@ -494,7 +485,6 @@ export interface CosmeticsData {
     event_bonus: number;
     rare: number;
   };
-  accessories: AccessoryDef[];
   walls: WallColorDef[];
 }
 

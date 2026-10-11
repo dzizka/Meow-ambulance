@@ -175,38 +175,3 @@ export function ensurePixelIcons(scene: Phaser.Scene): void {
     g.destroy();
   }
 }
-
-/** Textúry ozdôb pre stálice (GDD §7.6): obojok vo farbe + zvonček, mašlička alebo šatka. */
-export function ensureAccessoryTextures(
-  scene: Phaser.Scene,
-  defs: { id: string; color: string; extra: string }[],
-): void {
-  for (const d of defs) {
-    const key = `acc-${d.id}`;
-    if (scene.textures.exists(key)) continue;
-    const tex = scene.textures.createCanvas(key, 11, 8);
-    if (!tex) continue;
-    const c = tex.getContext();
-    const px = (col: string, x: number, y: number, w: number, h: number) => {
-      c.fillStyle = col;
-      c.fillRect(x, y, w, h);
-    };
-    px('#3b2f45', 1, 1, 9, 3);
-    px(d.color, 2, 1, 7, 2);
-    if (d.extra === 'bell') {
-      px('#3b2f45', 4, 3, 3, 3);
-      px('#f2c14e', 5, 3, 1, 2);
-    } else if (d.extra === 'bow') {
-      px('#3b2f45', 0, 0, 4, 4);
-      px(d.color, 1, 0, 2, 1);
-      px(d.color, 0, 1, 1, 2);
-      px(d.color, 2, 2, 1, 1);
-      px('#ffffff', 1, 1, 1, 1);
-    } else if (d.extra === 'bandana') {
-      px('#3b2f45', 3, 3, 5, 4);
-      px(d.color, 4, 3, 3, 3);
-      px(d.color, 5, 6, 1, 1);
-    }
-    tex.refresh();
-  }
-}
