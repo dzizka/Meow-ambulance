@@ -27,7 +27,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -63,6 +63,8 @@ export interface SaveData {
   staff: Partial<Record<StaffId, { active: boolean }>>;
   // od verzie 8
   clinic: ClinicState;
+  // od verzie 9
+  catio: { open: boolean };
 }
 
 /** Klinika – Fáza 3 (GDD §6.5): budova a kúpené miestnosti. */
@@ -135,6 +137,8 @@ export class GameState {
   shelter = { open: false };
   /** Klinika – Fáza 3 (GDD §6.5). */
   clinic: ClinicState = { open: false, rooms: [] };
+  /** Catio – vonkajší výbeh pri kaviarni (GDD §6.6). */
+  catio = { open: false };
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
   /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
@@ -311,7 +315,13 @@ export class GameState {
       satisfactionDecay: this.equipmentEffect('scratcher'),
       healthRecovery: this.equipmentEffect('medicine'),
     };
-    for (const cat of this.cats) Care.passTime(cat, minutes, this.data, mods);
+    // Stálice s výbehom sa nudia pomalšie (GDD §6.6)
+    const outside = {
+      ...mods,
+      satisfactionDecay: mods.satisfactionDecay * this.data.balance.catio.satisfaction_decay_mult,
+    };
+    for (const cat of this.cats)
+      Care.passTime(cat, minutes, this.data, this.catio.open && cat.resident ? outside : mods);
     this.addMoney(this.donationsPerMinute * minutes, false);
     this.advanceReports(deltaMs);
     this.advanceAdopters(deltaMs);
@@ -576,6 +586,30 @@ export class GameState {
     this.changed(cat);
     this.bus.emit('clinicVisit', { cat, room: 'or', recover: true });
     return true;
+  }
+
+  // ---------- Catio (GDD §6.6) ----------
+
+  /** Čo ešte chýba na stavbu výbehu: ★ (úroveň 6) a kaviareň. */
+  get catioMissing(): { rep: number; cafe: boolean } {
+    return {
+      rep: this.hasUnlock('catio') ? 0 : (this.unlockRep('catio') ?? 0) - this.reputation,
+      cafe: !this.cafe.open,
+    };
+  }
+
+  buyCatio(): boolean {
+    const miss = this.catioMissing;
+    const price = this.data.balance.catio.price;
+    if (this.catio.open || miss.rep > 0 || miss.cafe || this.money < price) return false;
+    this.addMoney(-price, true);
+    this.openCatio();
+    return true;
+  }
+
+  private openCatio(): void {
+    this.catio.open = true;
+    this.bus.emit('upgradeBought', { kind: 'catio' });
   }
 
   /** Očkovanie v ambulancii – iba zdravá, ešte neočkovaná mačka. */
@@ -1257,6 +1291,7 @@ export class GameState {
       shelter: { ...this.shelter },
       staff: structuredClone(this.staff),
       clinic: structuredClone(this.clinic),
+      catio: { ...this.catio },
     };
   }
 
@@ -1285,6 +1320,7 @@ export class GameState {
     s.shelter = { ...(save.shelter ?? { open: false }) };
     s.staff = structuredClone(save.staff ?? {});
     s.clinic = structuredClone(save.clinic ?? { open: false, rooms: [] });
+    s.catio = { ...(save.catio ?? { open: false }) };
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();
@@ -1392,6 +1428,14 @@ export class GameState {
       this.clinic.rooms.push(room);
       this.bus.emit('clinicRoomBought', { room });
     }
+    return true;
+  }
+
+  /** Catio zadarmo (otvorí aj kaviareň). */
+  devOpenCatio(): boolean {
+    if (!this.cafe.open) this.openCafe();
+    if (this.catio.open) return false;
+    this.openCatio();
     return true;
   }
 

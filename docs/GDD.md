@@ -367,6 +367,12 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 - **Klinika žije:** ťuknutím na mikroskop, röntgen alebo operačný stôl sa vyberie pacient. Pri zákroku mačka leží na stole (záblesk röntgenu, bublinky v laboratóriu, jasnejšia lampa), po operácii si poleží na pelechu so zotavením; veterinárka chodí k stolu, prístroje blikajú.
 - Veterinárka (personál) robí aj krvný test a röntgen automaticky a presťahuje sa na kliniku. Operácie, dlahu a liečbu robí vždy hráč.
 
+
+### 6.6 Catio – vonkajší výbeh 🟢 (úroveň 6, 350 ★)
+- Kúpa v Obchode za **2 500 €**, treba kaviareň. Piata miestnosť (ikona 🌳): tráva, plot so živým plotom, stromček, prelézačka, búdka, napájadlo, záhradné lampy, motýle a vtáčiky na plote.
+- Stálice samy chodia cez deň von a späť do kaviarne (každých ~12 s sa niektoré rozhodnú); v noci sú všetky vnútri.
+- Účinok: stáliciam s výbehom klesá spokojnosť **o polovicu pomalšie** (`balance.json → catio`), takže prinášajú viac darov.
+
 ---
 
 ## 7. Retenčné mechaniky

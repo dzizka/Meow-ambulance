@@ -157,6 +157,8 @@ export interface BalanceData {
     case_fee_bonus: number;
     case_rep_bonus: number;
   };
+  /** Catio – vonkajší výbeh (GDD §6.6). */
+  catio: { price: number; satisfaction_decay_mult: number };
   /** Mačacia kaviareň (GDD §5.5). */
   cafe: {
     price: number;

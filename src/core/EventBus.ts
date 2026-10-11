@@ -36,7 +36,7 @@ export interface GameEvents {
   welcomeBack: { summary: OfflineSummary };
   challengeCompleted: { challenge: ActiveChallenge };
   albumAdded: { key: string };
-  upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' | 'clinic' };
+  upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' | 'clinic' | 'catio' };
   clinicRoomBought: { room: import('../data/types').ClinicRoomId };
   /** Mačka je na klinike pri prístroji (vyšetrenie, operácia) – iba pre zobrazenie. */
   clinicVisit: { cat: CatData; room: import('../data/types').ClinicRoomId; recover: boolean };

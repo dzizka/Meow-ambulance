@@ -11,12 +11,28 @@ export const CAFE_X = WORLD_W;
 export const SHELTER_X = WORLD_W * 2;
 /** Klinika je štvrtá budova (GDD §6.5). */
 export const CLINIC_X = WORLD_W * 3;
-export type Room = 'garage' | 'cafe' | 'shelter' | 'clinic';
-export const roomX = (room: Room): number =>
-  room === 'cafe' ? CAFE_X : room === 'shelter' ? SHELTER_X : room === 'clinic' ? CLINIC_X : 0;
+/** Catio – vonkajší výbeh (GDD §6.6). */
+export const CATIO_X = WORLD_W * 4;
+export type Room = 'garage' | 'cafe' | 'shelter' | 'clinic' | 'catio';
+const ROOM_X: Record<Room, number> = {
+  garage: 0,
+  cafe: CAFE_X,
+  shelter: SHELTER_X,
+  clinic: CLINIC_X,
+  catio: CATIO_X,
+};
+export const roomX = (room: Room): number => ROOM_X[room];
 /** V ktorej miestnosti je bod sveta. */
 export const roomAt = (x: number): Room =>
-  x >= CLINIC_X ? 'clinic' : x >= SHELTER_X ? 'shelter' : x >= CAFE_X ? 'cafe' : 'garage';
+  x >= CATIO_X
+    ? 'catio'
+    : x >= CLINIC_X
+      ? 'clinic'
+      : x >= SHELTER_X
+        ? 'shelter'
+        : x >= CAFE_X
+          ? 'cafe'
+          : 'garage';
 
 export interface Layout {
   width: number;
