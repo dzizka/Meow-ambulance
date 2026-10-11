@@ -161,6 +161,19 @@ export interface BalanceData {
     case_fee_bonus: number;
     case_rep_bonus: number;
   };
+  /** Edukačné centrum (GDD §6.9). */
+  education: {
+    price: number;
+    first_delay_s: number;
+    interval_s: number;
+    wait_s: number;
+    kids: [number, number];
+    donation_per_kid: number;
+    rep_by_stars: number[];
+    kid_sprites: string[];
+    teacher_sprite: string;
+    quiz_questions: number;
+  };
   /** Mačací hotel (GDD §6.7). */
   hotel: {
     price: number;
@@ -212,6 +225,7 @@ export interface Counters {
   vaccinated: number;
   neutered: number;
   hotel: number;
+  lectures: number;
 }
 
 export type ChallengeKind = keyof Counters | 'residents';

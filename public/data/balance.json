@@ -190,5 +190,18 @@
     "happy_at": 75,
     "rep_happy": 1,
     "receptionist_sprite": "024"
+  },
+  "education": {
+    "_comment": "Edukačné centrum (GDD §6.9): školské výlety cez deň; prednáška = kvíz, odmena ★ podľa hviezdičiek, dar za každé dieťa, skorší záujemca o adopciu. Ak prednášku nespravíš do wait_s, deti odídu s polovičným darom.",
+    "price": 3500,
+    "first_delay_s": 30,
+    "interval_s": 200,
+    "wait_s": 150,
+    "kids": [3, 5],
+    "donation_per_kid": 15,
+    "rep_by_stars": [0, 1, 1, 2],
+    "kid_sprites": ["005", "006", "007", "027", "029", "032", "033", "010"],
+    "teacher_sprite": "003",
+    "quiz_questions": 10
   }
 }

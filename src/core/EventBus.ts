@@ -1,3 +1,4 @@
+import type { SchoolTrip } from './GameState';
 import type {
   ActiveChallenge,
   AdopterVisit,
@@ -47,8 +48,12 @@ export interface GameEvents {
       | 'catio'
       | 'hotel'
       | 'suite'
-      | 'floor';
+      | 'floor'
+      | 'education';
   };
+  /** Edukačné centrum (GDD §6.9). */
+  tripArrived: { trip: SchoolTrip };
+  tripLeft: { trip: SchoolTrip; stars: number; money: number; rep: number };
   /** Mačací hotel (GDD §6.7). */
   hotelCheckIn: { cat: CatData };
   hotelCheckOut: { cat: CatData; fee: number; happy: number; rep: number };

@@ -42,6 +42,7 @@ const MINIGAMES: [string, string, { xray?: 'fracture' | 'swallowed' | null; neut
     ['🦴 Dlaha', 'splint'],
     ['🌀 CT', 'ct'],
     ['🏊 Plávanie', 'swim'],
+    ['🎓 Kvíz (prednáška)', 'quiz'],
   ];
 
 const PHASE_HOUR = { ráno: 7, deň: 12, večer: 19, noc: 23 } as const;
@@ -183,6 +184,11 @@ export class DevMenu {
         act('Pohľadnice teraz', () => `Doručené: ${s.devDeliverPostcards()}`),
         act('Kaviareň zadarmo', () => s.devOpenCafe() && 'Kaviareň otvorená'),
         act('Útulok zadarmo', () => s.devOpenShelter() && 'Útulok otvorený'),
+        act('Školský výlet', () => {
+          if (!s.hasUnlock('education'))
+            s.devGive(0, Math.max(0, (s.unlockRep('education') ?? 0) - s.reputation));
+          return s.devSchoolTrip() ? 'Výlet prišiel' : 'Výlet už čaká';
+        }),
         act('Hotel + hosť', () => {
           if (!s.hasUnlock('hotel'))
             s.devGive(0, Math.max(0, (s.unlockRep('hotel') ?? 0) - s.reputation));
