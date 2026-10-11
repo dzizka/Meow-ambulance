@@ -1,7 +1,16 @@
 import Phaser from 'phaser';
 import { EXTRA_SFX } from '../sfx';
 import { personKey } from './personAnims';
-import { AUDIO, DATA_FILES, IMAGES, ZUZKA_SHEET, catSheetPath, personSheetPath } from '../assets';
+import {
+  AUDIO,
+  DATA_FILES,
+  FONT_FAMILY,
+  IMAGES,
+  ZUZKA_SHEET,
+  catSheetPath,
+  personSheetPath,
+} from '../assets';
+import { DPR } from './dpr';
 import type { GameData } from '../data/types';
 import { t } from '../i18n/t';
 import { GameState } from '../core/GameState';
@@ -14,20 +23,26 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    // Plátno má rozlíšenie displeja – rozmery v CSS pixeloch × DPR, aby nápis nebol drobný
     const { width, height } = this.scale;
+    const u = DPR;
+    const barW = Math.min(260, (width / u) * 0.6) * u;
     const label = this.add
-      .text(width / 2, height / 2 - 14, t('UI_LOADING'), {
-        fontFamily: 'monospace',
-        fontSize: '14px',
+      .text(width / 2, height / 2 - 26 * u, `🐾 ${t('UI_LOADING')}`, {
+        fontFamily: FONT_FAMILY,
+        fontSize: `${Math.round(22 * u)}px`,
+        fontStyle: 'bold',
         color: '#f4e6d0',
       })
       .setOrigin(0.5);
     const bar = this.add
-      .rectangle(width / 2 - 80, height / 2 + 6, 0, 6, 0xe8a87c)
+      .rectangle(width / 2 - barW / 2, height / 2 + 10 * u, 0, 10 * u, 0xe8a87c)
       .setOrigin(0, 0.5);
-    this.add.rectangle(width / 2, height / 2 + 6, 164, 10).setStrokeStyle(1, 0xf4e6d0);
+    this.add
+      .rectangle(width / 2, height / 2 + 10 * u, barW + 6 * u, 16 * u)
+      .setStrokeStyle(2 * u, 0xf4e6d0);
     this.load.on('progress', (p: number) => {
-      bar.width = 160 * p;
+      bar.width = barW * p;
     });
     this.load.once('complete', () => label.destroy());
 
