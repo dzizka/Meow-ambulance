@@ -16,19 +16,19 @@ import {
 /** Kde sa v kaviarni prechádzajú stálice. */
 export const CAFE_AREA = new Phaser.Geom.Rectangle(CAFE_X + 40, FLOOR_TOP + 42, 380, 136);
 
-/** Stoly (stred, spodná hrana) a na ktorej strane sedí hosť. Prvé dva od otvorenia. */
+/** Stoly (stred, spodná hrana). Hosť sedí za stolom čelom k hráčovi. Prvé dva od otvorenia. */
 const TABLES = [
-  { x: 200, y: FLOOR_TOP + 100, side: -1 },
-  { x: 320, y: FLOOR_TOP + 100, side: -1 },
-  { x: 200, y: FLOOR_TOP + 160, side: 1 },
-  { x: 320, y: FLOOR_TOP + 160, side: 1 },
+  { x: 200, y: FLOOR_TOP + 100 },
+  { x: 320, y: FLOOR_TOP + 100 },
+  { x: 200, y: FLOOR_TOP + 160 },
+  { x: 320, y: FLOOR_TOP + 160 },
 ] as const;
 /** Hostia prichádzajú a odchádzajú dverami vpravo dole a chodia uličkou pri spodnej stene. */
 const DOOR = { x: ROOM.x + ROOM.w - 4, y: FLOOR_TOP + 182 };
 const WALK_SPEED = 32; // px za sekundu
-/** Sediaci hosť: o koľko je vyššie (na sedadle) a koľko riadkov nôh sa skryje. */
-const SIT_RAISE = 9;
-const SIT_CROP = 8;
+/** Hosť sedí 12 px nad spodnou hranou stola – stôl mu zakryje nohy; k stolu prichádza zboku. */
+const SEAT_UP = 12;
+const SIDE_LANE = 18;
 
 interface GuestView {
   sprite: Phaser.GameObjects.Sprite;
@@ -176,15 +176,13 @@ export class CafeRoom {
     for (; this.tablesDrawn < want; this.tablesDrawn++) {
       const t = TABLES[this.tablesDrawn];
       if (!t) continue;
-      // Poradie odzadu: stolička → sediaci hosť → stôl (hosť má kolená pod stolom)
-      const table = this.prop('table_small', t.x, t.y, 10).setDepth(t.y + 6);
-      const seat = this.seat(this.tablesDrawn);
+      // Poradie odzadu: stolička → hosť → stôl (stôl mu zakryje nohy, operadlo je za ním)
+      const table = this.prop('table_small', t.x, t.y, 10).setDepth(t.y);
       const chair = this.scene.add
-        .image(seat.x, seat.y + 3, 'interior', 'chair_side')
+        .image(CAFE_X + t.x, t.y - 10, 'interior', 'chair_front')
         .setOrigin(0.5, 1)
-        .setDepth(seat.y + 2)
-        .setFlipX(t.side < 0);
-      this.addObstacle(seat.x, seat.y + 3, 14, 8);
+        .setDepth(t.y - 3);
+      this.addObstacle(CAFE_X + t.x, t.y - 10, 18, 8);
       if (animate) {
         for (const img of [table, chair]) {
           img.setScale(0.2);
@@ -194,14 +192,14 @@ export class CafeRoom {
     }
   }
 
-  /** Miesto hosťa pri stole (svetové súradnice nôh). */
-  private seat(table: number): { x: number; y: number; dir: PersonDir } {
+  /** Miesto hosťa za stolom (svetové súradnice nôh) a ulička vedľa stola, ktorou prichádza. */
+  private seat(table: number): { x: number; y: number; laneX: number } {
     const t = TABLES[table] ?? TABLES[0];
-    return {
-      x: CAFE_X + t.x + t.side * 19,
-      y: t.y + 1,
-      dir: t.side < 0 ? 'right' : 'left',
-    };
+    return { x: CAFE_X + t.x, y: t.y - SEAT_UP, laneX: CAFE_X + t.x + SIDE_LANE };
+  }
+
+  private tableOf(g: CafeGuest): { x: number; y: number } {
+    return TABLES[g.table] ?? TABLES[0];
   }
 
   // ---------- Hostia ----------
@@ -213,12 +211,12 @@ export class CafeRoom {
     const seat = this.seat(g.table);
     const start = walkIn ? { x: CAFE_X + DOOR.x, y: DOOR.y } : seat;
     const sprite = scene.add
-      .sprite(start.x, start.y, personKey(g.sprite), personIdleFrame(seat.dir))
+      .sprite(start.x, start.y, personKey(g.sprite), personIdleFrame('down'))
       .setOrigin(0.5, 1)
       .setDepth(start.y);
     const shadow = scene.add.ellipse(start.x, start.y, 14, 5, 0x000000, 0.25).setDepth(start.y - 1);
     const bubble = scene.add
-      .image(seat.x, seat.y - 34 - SIT_RAISE, `order_${g.order}`)
+      .image(seat.x, seat.y - 34, `order_${g.order}`)
       .setOrigin(0.5, 1)
       .setDepth(4500)
       .setVisible(false);
@@ -234,12 +232,9 @@ export class CafeRoom {
     const sitDown = () => {
       view.seated = true;
       sprite.anims.stop();
-      sprite.setFrame(personIdleFrame(seat.dir));
-      // Sadne si na stoličku: vyššie, bez nôh, nad stoličkou a pod stolom
-      sprite
-        .setPosition(seat.x, seat.y - SIT_RAISE)
-        .setCrop(0, 0, sprite.width, sprite.height - SIT_CROP)
-        .setDepth(seat.y + 4);
+      // Sedí za stolom čelom k hráčovi: nad stoličkou, pod stolom
+      sprite.setFrame(personIdleFrame('down'));
+      sprite.setPosition(seat.x, seat.y).setDepth(this.tableOf(g).y - 2);
       shadow.setVisible(false);
       if (g.served) this.putItem(g, view);
       else {
@@ -248,9 +243,20 @@ export class CafeRoom {
       }
       // Stálica sa príde pozrieť na hosťa
       const cat = g.catId ? this.catSprite(g.catId) : undefined;
-      cat?.visit(seat.x + (seat.dir === 'right' ? 16 : -16), seat.y + 10);
+      cat?.visit(seat.laneX + 4, this.tableOf(g).y + 6);
     };
-    if (walkIn) this.walk(view, g.sprite, [{ x: seat.x, y: DOOR.y }, seat], sitDown);
+    // Uličkou k stolu, zboku za stôl a na stoličku
+    if (walkIn)
+      this.walk(
+        view,
+        g.sprite,
+        [
+          { x: seat.laneX, y: DOOR.y },
+          { x: seat.laneX, y: seat.y },
+          { x: seat.x, y: seat.y },
+        ],
+        sitDown,
+      );
     else sitDown();
   }
 
@@ -273,9 +279,9 @@ export class CafeRoom {
     if (view.item) return;
     const t = TABLES[g.table] ?? TABLES[0];
     view.item = this.scene.add
-      .image(CAFE_X + t.x + t.side * 6, t.y - 14, `item_${g.order}`)
+      .image(CAFE_X + t.x, t.y - 13, `item_${g.order}`)
       .setOrigin(0.5, 1)
-      .setDepth(t.y + 7);
+      .setDepth(t.y + 1);
   }
 
   private removeGuest(g: CafeGuest): void {
@@ -286,15 +292,15 @@ export class CafeRoom {
     view.item?.destroy();
     this.hearts(view.sprite.x, view.sprite.y - 30);
     const seat = this.seat(g.table);
-    // Vstane zo stoličky
+    // Vstane, vyjde zboku spoza stola a uličkou k dverám
     view.seated = false;
-    view.sprite.setPosition(seat.x, seat.y).setCrop().setDepth(seat.y);
     view.shadow.setPosition(seat.x, seat.y).setVisible(true);
     this.walk(
       view,
       g.sprite,
       [
-        { x: seat.x, y: DOOR.y },
+        { x: seat.laneX, y: seat.y },
+        { x: seat.laneX, y: DOOR.y },
         { x: CAFE_X + DOOR.x, y: DOOR.y },
       ],
       () => {
