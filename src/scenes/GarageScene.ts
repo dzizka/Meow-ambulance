@@ -7,7 +7,7 @@ import * as Care from '../core/systems/Care';
 import type { Stars } from '../core/systems/Care';
 import type { CatData } from '../data/types';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
-import { CatSprite } from '../objects/CatSprite';
+import { CatSprite, type CatWorld } from '../objects/CatSprite';
 import { UI, type GameBridge, type MinigameRequest } from '../ui/UI';
 import type { MinigameInit } from './MinigameScene';
 import {
@@ -22,6 +22,7 @@ import {
 } from './layout';
 import { CAFE_AREA, CafeRoom } from './CafeRoom';
 import { Furnishings } from './Furnishings';
+import { addProp, type WorldGeom } from './world';
 import type { CafeGuest } from '../data/types';
 import { DPR } from './dpr';
 
@@ -70,7 +71,16 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private sinceSave = 0;
   private cagesDrawn = 0;
   /** Pôdorysy nábytku – mačky ich obchádzajú. */
-  private readonly obstacles: Phaser.Geom.Rectangle[] = [];
+  readonly geom: WorldGeom = { obstacles: [], hideZones: [] };
+  /** Čo vidia mačky: nábytok, ostatné mačky a hostia v kaviarni. */
+  private readonly catWorld: CatWorld = {
+    obstacles: this.geom.obstacles,
+    hideZones: this.geom.hideZones,
+    cats: () => this.sprites.values(),
+    guestSpot: (c) =>
+      this.cafe && c.cat.resident && c.x >= CAFE_X ? this.cafe.guestSpotFor(c) : null,
+    onVisit: (c) => this.cafe?.heartsAt(c.x, c.y - 22),
+  };
   /** Po „Nová hra" sa už nesmie uložiť (inak by sa stará hra zapísala späť). */
   private noSave = false;
   private sinceSparkle = 0;
@@ -97,7 +107,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.createLighting();
     this.makeSparkTexture();
     if (this.state.cafe.open) this.openCafeRoom();
-    new Furnishings(this, this.state, this.obstacles);
+    new Furnishings(this, this.state, this.geom);
 
     this.state.cats.forEach((cat, i) => {
       const area = this.areaFor(cat);
@@ -209,7 +219,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.cafe = new CafeRoom(
       this,
       this.state,
-      this.obstacles,
+      this.geom,
       (id) => this.sprites.get(id),
       (guest) => this.serveGuest(guest),
     );
@@ -343,7 +353,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private spawnCat(cat: CatData, x: number, y: number): void {
     const area = this.areaFor(cat);
-    const sprite = new CatSprite(this, x, y, cat, area, this.obstacles);
+    const sprite = new CatSprite(this, x, y, cat, area, this.catWorld);
     sprite.on('pointerdown', () => {
       const reaction = sprite.react();
       if (reaction === 'fled') this.playSound('hiss', 0.5, 'mew');
@@ -580,21 +590,9 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     footprint = 0,
   ): Phaser.GameObjects.Image {
     const img = this.add.image(x, bottomY, sheet, name).setOrigin(0.5, 1).setDepth(bottomY);
-    // Pôdorys pri zemi (výška `footprint`) – tadiaľ mačky nechodia
-    if (footprint > 0) this.addObstacle(x, bottomY, img.width, footprint);
+    // Pôdorys pri zemi a miesto za predmetom, kde by mačku nebolo vidieť
+    addProp(this.geom, x, bottomY, img.width, img.height, footprint);
     return img;
-  }
-
-  private addObstacle(x: number, bottomY: number, width: number, depth: number): void {
-    const pad = 3;
-    this.obstacles.push(
-      new Phaser.Geom.Rectangle(
-        x - width / 2 - pad,
-        bottomY - depth - pad,
-        width + pad * 2,
-        depth + pad * 2,
-      ),
-    );
   }
 
   private placeFurniture(): void {
@@ -658,7 +656,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     const y = FLOOR_TOP + 168;
     this.zuzka = this.add.sprite(176, y, 'zuzka', 1).setOrigin(0.5, 1).setDepth(y);
     this.add.ellipse(176, y, 14, 5, 0x000000, 0.22).setDepth(y - 1);
-    this.addObstacle(176, y + 2, 16, 10);
+    addProp(this.geom, 176, y + 2, 16, 32, 10);
     // Občas sa pozrie iným smerom: idle snímky dole/vľavo/vpravo/hore = 1, 4, 7, 10
     this.time.addEvent({
       delay: 3500,
