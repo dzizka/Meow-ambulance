@@ -364,6 +364,7 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 - Nové diagnózy dostanú mačky iba vtedy, keď ich hráč má čím odhaliť; prehltnutý predmet iba s operačnou sálou.
 - **Prípad z inej útulne** 💗 – nové hlásenie (s laboratóriom alebo röntgenom), mačka má aspoň jednu diagnózu kliniky; pri adopcii +2 ★ a príspevok +25 %.
 - **Kastrácia:** pri adopcii +1 ★, príspevok +15 % a zhoda s adoptérom +6.
+- **Klinika žije:** ťuknutím na mikroskop, röntgen alebo operačný stôl sa vyberie pacient. Pri zákroku mačka leží na stole (záblesk röntgenu, bublinky v laboratóriu, jasnejšia lampa), po operácii si poleží na pelechu so zotavením; veterinárka chodí k stolu, prístroje blikajú.
 - Veterinárka (personál) robí aj krvný test a röntgen automaticky a presťahuje sa na kliniku. Operácie, dlahu a liečbu robí vždy hráč.
 
 ---

@@ -5,7 +5,7 @@ import { SaveManager, browserStorage } from '../core/SaveManager';
 import type { OfflineSummary } from '../core/EventBus';
 import * as Care from '../core/systems/Care';
 import type { Stars } from '../core/systems/Care';
-import type { CatData } from '../data/types';
+import type { CatData, ClinicRoomId } from '../data/types';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { CatSprite, type CatWorld } from '../objects/CatSprite';
 import { UI, type GameBridge, type MinigameRequest } from '../ui/UI';
@@ -41,6 +41,9 @@ const PATIENT_AREA = new Phaser.Geom.Rectangle(70, FLOOR_TOP + 58, 210, 112);
 const RESIDENT_AREA = new Phaser.Geom.Rectangle(300, FLOOR_TOP + 60, 140, 112);
 const EXIT = { x: ROOM.x + 6, y: FLOOR_TOP + 176 };
 const AUTOSAVE_MS = 15_000;
+/** Ako dlho je mačka pri prístroji na klinike a ako dlho sa zotavuje po operácii. */
+const CLINIC_VISIT_MS = 7000;
+const CLINIC_RECOVERY_MS = 45_000;
 
 /** Farba „svetla" podľa dennej doby (GDD §2.2 – hodiny sú iba atmosféra). */
 const PHASE_TINT = {
@@ -94,6 +97,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private cafe: CafeRoom | null = null;
   private shelterRoom: ShelterRoom | null = null;
   private clinicRoom: ClinicRoom | null = null;
+  /** Mačky práve na klinike (pri prístroji alebo na zotavení) – kedy sa vrátia. */
+  private readonly visits = new Map<string, Phaser.Time.TimerEvent>();
   private staff: StaffSprites | null = null;
   private sinceStaff = 0;
   private ui!: UI;
@@ -247,8 +252,49 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   /** Klinika – štvrtá budova (GDD §6.5). */
   private openClinicRoom(): void {
     if (this.clinicRoom) return;
-    this.clinicRoom = new ClinicRoom(this, this.state, this.geom, () => this.ui.openShop());
+    this.clinicRoom = new ClinicRoom(this, this.state, this.geom, (room) =>
+      this.ui.openStation(room),
+    );
     for (const [x, y, r] of this.clinicRoom.lamps) this.addGlow(x, y, r);
+  }
+
+  /**
+   * Mačka príde na kliniku k prístroju (GDD §6.5): chvíľu tam leží/sedí, po operácii
+   * si poleží na pelechu so zotavením a potom sa vráti na svoje miesto.
+   */
+  private clinicVisit(cat: CatData, room: ClinicRoomId, recover: boolean): void {
+    const sprite = this.sprites.get(cat.id);
+    const clinic = this.clinicRoom;
+    if (!sprite || !clinic) return;
+    this.visits.get(cat.id)?.remove();
+    clinic.freeBed(cat.id);
+    const st = clinic.station(room);
+    sprite.pin(st.x, st.y, { lay: st.lay, dir: st.dir, depthBoost: st.depthBoost });
+    clinic.effect(room);
+    this.staff?.attend('vet', st.x + 8, st.y + 34);
+    const back = () => {
+      this.visits.delete(cat.id);
+      clinic.freeBed(cat.id);
+      if (!sprite.active || !this.sprites.has(cat.id)) return;
+      const a = this.areaFor(sprite.cat);
+      sprite.teleport(
+        Phaser.Math.Between(a.left + 10, a.right - 10),
+        Phaser.Math.Between(a.top + 5, a.bottom - 5),
+        a,
+      );
+    };
+    this.visits.set(
+      cat.id,
+      this.time.delayedCall(CLINIC_VISIT_MS, () => {
+        if (!recover || !sprite.active) {
+          back();
+          return;
+        }
+        const bed = clinic.takeBed(cat.id);
+        sprite.pin(bed.x, bed.y, { lay: true, dir: 'left', depthBoost: 1, sleepy: true });
+        this.visits.set(cat.id, this.time.delayedCall(CLINIC_RECOVERY_MS, back));
+      }),
+    );
   }
 
   /** Pacient sa presunie do garáže alebo do karantény (podľa `cat.ward`). */
@@ -375,6 +421,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     });
     bus.on('reportDeclined', save);
     bus.on('clinicRoomBought', save);
+    bus.on('clinicVisit', ({ cat, room, recover }) => this.clinicVisit(cat, room, recover));
     bus.on('upgradeBought', ({ kind }) => {
       if (kind === 'cage') this.drawCages(true);
       if (kind === 'shelter') {

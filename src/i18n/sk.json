@@ -411,7 +411,7 @@
   "TOAST_NEUTERED": "{cat} je kastrovaná ✂️",
   "UI_CLINIC_CASE": "Prípad z inej útulne – po adopcii viac ★ a vyšší príspevok.",
   "UI_CLINIC_EMPTY": "Momentálne tu nikto nečaká. Mačky, ktorým klinika pomôže, sa ukážu tu.",
-  "UI_CLINIC_TAP": "Ťukni na mačku – prehliadka, liečba alebo kastrácia",
+  "UI_CLINIC_TAP": "Ťukni na prístroj – mikroskop, röntgen alebo operačný stôl – a vyber pacienta.",
   "UI_CLINIC_BUY_ROOMS": "Dokúpiť miestnosti",
   "MG_INSULIN_TITLE": "Inzulín",
   "MG_SPLINT_TITLE": "Dlaha",
@@ -429,5 +429,6 @@
   "MG_SURG_EXTRACT": "Pomaly vytiahni predmet pinzetou von z rany.",
   "MG_SURG_STITCH": "Zašij ranu – ťukaj na bodky zľava doprava.",
   "MG_SPLINT_HINT": "Krúž prstom okolo labky a omotaj ju. Pomaly – nie príliš tesne!",
-  "MG_TOO_TIGHT": "Príliš tesne!"
+  "MG_TOO_TIGHT": "Príliš tesne!",
+  "UI_STATION_EMPTY": "Momentálne tu nikto nič nepotrebuje."
 }

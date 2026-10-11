@@ -120,6 +120,14 @@ export class StaffSprites {
     });
   }
 
+  /** Člen tímu príde k pacientovi (napr. veterinárka k stolu na klinike). */
+  attend(id: StaffId, x: number, y: number): void {
+    const m = this.members.get(id);
+    if (!m) return;
+    m.nextMoveAt = this.scene.time.now + 9000; // chvíľu ostane pri pacientovi
+    this.walkTo(id, x, y);
+  }
+
   /** Prejde k bodu, ak je v rovnakej miestnosti (inak ostane, kde je). */
   private walkTo(id: StaffId, x: number, y: number): void {
     const m = this.members.get(id);
