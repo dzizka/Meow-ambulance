@@ -81,7 +81,7 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - Web a Tauri: `localStorage` (kľúč `meow-ambulance:save:1`); Capacitor: plugin Preferences/Filesystem – za spoločným rozhraním `SaveStorage` (`src/core/SaveManager.ts`).
 - Ukladá sa každých 15 s, po dôležitých udalostiach a pri skrytí/zatvorení stránky. Pri načítaní sa dopočíta offline čas (`GameState.applyOffline`).
 - Adresa končiaca `#novahra` zmaže uloženú hru (na testovanie).
-- Pole `version` (aktuálne 13); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
+- Pole `version` (aktuálne 14); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
 - „Nová hra" v menu (☰ → Obchod) zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
 
 ## Testy a CI
@@ -125,6 +125,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Catio: `GameState.catio` (save v9, `MIGRATIONS[8]`), účinok v `tick` (pomalší pokles spokojnosti stálic). Kto je vonku, rieši iba scéna (`GarageScene.outside`, `wanderOutside` každých 12 s; v noci všetci dnu) – neukladá sa.
 - 2. poschodie: `clinic.floors` (save v11, `MIGRATIONS[10]`), miestnosti `ct` a `pool` v `clinic.rooms` (`FLOOR2_ROOMS`, odomknutia `clinicRoomUnlock`). `treatmentRoom(id)` povie, či diagnóza potrebuje sálu alebo bazén; rehabilitácia `canRehab` / `rehab` (`cat.rehabbed`). Minihry `ct` a `swim`. Návštevy `clinicVisit` s miestnosťou `ct`/`pool` idú na `Clinic2Room`.
 - Edukačné centrum: `GameState.education` (`trip`, save v12, `MIGRATIONS[11]`), `advanceEducation` / `giveLecture(stars)`, udalosti `tripArrived` / `tripLeft`. Kvíz = minihra `quiz`, otázky v i18n `QUIZ_n_Q`, `QUIZ_n_A1` je vždy správna (`QUIZ_COUNT` v `MinigameScene`).
+- Udalosti: `public/data/events.json`, `GameState.events` (`offer`, `active`, `timer`, `done`; save v14, `MIGRATIONS[13]`), `acceptEvent` / `declineEvent`, `advanceEvents`, účinky cez `eventActive(id)` (hlásenia, záujemcovia, hostia, dočasné klietky). Diagnózy s `event` padnú iba počas udalosti; hlásenie `mill` má `requires: event`. Vizuál v `GarageScene.setEventFx` (sneh, girlandy).
 - Úspechy: `public/data/achievements.json` (`kind` = počítadlo alebo špeciálny druh), `GameState.achievementProgress` / `checkAchievements` (v `tick` aj pri výzvach), `achievements` v save v13 (`MIGRATIONS[12]`), udalosť `achievementUnlocked`. Texty `ACH_<ID>` a `ACHD_<KIND>` (pre cieľ 1 voliteľne `ACHD_<KIND>_1`).
 - Hotel: `GameState.hotel` (`open`, `suites`, `guests` – mačky s `cat.hotel`, nie sú v `cats`; save v10, `MIGRATIONS[9]`). `getCat` hľadá aj hostí, takže starostlivosť funguje rovnako. Platba a ★ v `advanceHotel`, udalosti `hotelCheckIn` / `hotelCheckOut` (majiteľ príde k recepcii – `HotelRoom.ownerVisit`). Balans `balance.json → hotel`.
 - Vývojárske menu má sekciu Minihry – každá minihra na skúšku (na vybranej, prvej alebo vymyslenej mačke), výsledok sa nezapíše.

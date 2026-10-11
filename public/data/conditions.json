@@ -1,5 +1,5 @@
 {
-  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush, inhalation, bath, nail_trim, ear_drops, vaccine, splint, surgery). ages = iba tento vek; clinic = diagnóza kliniky. surgery potrebuje operačnú sálu, swim bazén.",
+  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush, inhalation, bath, nail_trim, ear_drops, vaccine, splint, surgery). ages = iba tento vek; clinic = diagnóza kliniky. surgery potrebuje operačnú sálu, swim bazén. event = diagnóza iba počas udalosti (napr. winter).",
   "conditions": [
     {
       "id": "ticks",
@@ -140,6 +140,15 @@
       "health_gain": 40,
       "weight": 9,
       "clinic": true
+    },
+    {
+      "id": "hypothermia",
+      "name_key": "COND_HYPOTHERMIA",
+      "reveal_tool": "thermometer",
+      "minigame": "warm",
+      "health_gain": 25,
+      "weight": 45,
+      "event": "winter"
     }
   ]
 }

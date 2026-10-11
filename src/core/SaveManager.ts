@@ -60,6 +60,12 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v13 → v14: udalosti (GDD §7.3) – prvá ponuka o 15 minút. */
+  13: (s) => ({
+    ...s,
+    version: 14,
+    events: { offer: null, active: null, timer: 300_000, done: {} },
+  }),
   /** v12 → v13: úspechy (GDD §7.5). */
   12: (s) => ({ ...s, version: 13, achievements: {} }),
   /** v11 → v12: edukačné centrum (GDD §6.9). */

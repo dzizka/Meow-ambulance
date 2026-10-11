@@ -23,6 +23,7 @@ export function loadTestData(): GameData {
     staff: read<{ staff: GameData['staff'] }>('staff.json').staff,
     achievements: read<{ achievements: GameData['achievements'] }>('achievements.json')
       .achievements,
+    events: read<GameData['events']>('events.json'),
   };
 }
 

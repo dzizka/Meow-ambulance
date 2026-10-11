@@ -26,6 +26,8 @@ export interface CatOptions {
   pool?: boolean;
   /** Prípad z inej útulne: prvá diagnóza je vždy diagnóza kliniky. */
   clinicCase?: boolean;
+  /** Práve prebiehajúca udalosť – iba vtedy padnú jej diagnózy. */
+  event?: string;
 }
 
 /** Vygeneruje novú mačku pri príjme do útulku (GDD §3.2). */
@@ -58,7 +60,8 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
       (!opts.tools || opts.tools.includes(c.reveal_tool)) &&
       (!c.ages || c.ages.includes(age)) &&
       (c.minigame !== 'surgery' || opts.surgery) &&
-      (c.minigame !== 'swim' || opts.pool),
+      (c.minigame !== 'swim' || opts.pool) &&
+      (!c.event || c.event === opts.event),
   );
   const conditions: CatCondition[] = [];
   for (let i = 0; i < conditionCount && pool.length > 0; i++) {

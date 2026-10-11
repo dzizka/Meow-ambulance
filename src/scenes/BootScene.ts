@@ -109,6 +109,7 @@ export class BootScene extends Phaser.Scene {
       decor: json.get('decor').decor,
       staff: json.get('staff').staff,
       achievements: json.get('achievements').achievements,
+      events: json.get('events'),
     };
     this.registry.set('gameData', data);
 

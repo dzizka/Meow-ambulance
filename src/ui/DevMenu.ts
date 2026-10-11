@@ -188,6 +188,20 @@ export class DevMenu {
         act('Pohľadnice teraz', () => `Doručené: ${s.devDeliverPostcards()}`),
         act('Kaviareň zadarmo', () => s.devOpenCafe() && 'Kaviareň otvorená'),
         act('Útulok zadarmo', () => s.devOpenShelter() && 'Útulok otvorený'),
+        act('Udalosť: Zima', () => {
+          s.devGive(0, Math.max(0, 25 - s.reputation));
+          return s.devOfferEvent('winter') && 'Ponuka: Zima';
+        }),
+        act('Udalosť: Deň otvorených dverí', () => {
+          s.devOpenCafe();
+          s.devGive(0, Math.max(0, 25 - s.reputation));
+          return s.devOfferEvent('openday') && 'Ponuka: Deň otvorených dverí';
+        }),
+        act('Udalosť: Množiareň', () => {
+          s.devOpenShelter();
+          return s.devOfferEvent('mill') && 'Ponuka: Množiareň';
+        }),
+        act('Ukončiť udalosť', () => s.devEndEvent() && 'Udalosť skončila'),
         act('Školský výlet', () => {
           if (!s.hasUnlock('education'))
             s.devGive(0, Math.max(0, (s.unlockRep('education') ?? 0) - s.reputation));

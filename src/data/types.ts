@@ -27,6 +27,8 @@ export interface ConditionDef {
   ages?: AgeGroup[];
   /** Diagnóza kliniky – „Prípad z inej útulne" má aspoň jednu. */
   clinic?: boolean;
+  /** Iba počas udalosti (napr. podchladenie v zime). */
+  event?: string;
 }
 
 export interface BreedDef {
@@ -67,7 +69,7 @@ export interface ReportDef {
   /** Mačacia rodinka: mama + [min, max] mačiatok naraz (GDD §6.2). */
   family?: [number, number];
   /** Hlásenie chodí iba s Komunitným útulkom / s klinikou. */
-  requires?: 'shelter' | 'clinic';
+  requires?: 'shelter' | 'clinic' | 'event';
   /** Prípad z inej útulne: aspoň jedna diagnóza kliniky, bonus pri adopcii. */
   clinic_case?: boolean;
 }
@@ -277,6 +279,7 @@ export interface GameData {
   decor: DecorDef[];
   staff: StaffDef[];
   achievements: AchievementDef[];
+  events: EventsData;
 }
 
 export interface CatStats {
@@ -459,6 +462,26 @@ export interface AchievementDef {
   kind: keyof Counters | 'residents' | 'album' | 'album_all' | 'level' | 'staff_all' | 'buildings';
   target: number;
   money: number;
+}
+
+/** Udalosť (GDD §7.3). */
+export interface EventDef {
+  id: 'winter' | 'openday' | 'mill';
+  icon: string;
+  min_level: number;
+  requires?: 'cafe' | 'shelter';
+  duration_s: number;
+  goal: { kind: keyof Counters; target: number };
+  money: number;
+  rep: number;
+  bonus_money: number;
+  bonus_rep: number;
+}
+export interface EventsData {
+  interval_s: number;
+  first_delay_s: number;
+  decline_delay_s: number;
+  events: EventDef[];
 }
 
 export interface StaffDef {

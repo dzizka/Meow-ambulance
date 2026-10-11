@@ -108,6 +108,9 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   /** Stálice, ktoré sú práve vonku vo výbehu. */
   private readonly outside = new Set<string>();
   private sinceCatio = 0;
+  /** Efekty udalosti: sneh (zima) alebo girlandy (deň otvorených dverí). */
+  private snow: { g: Phaser.GameObjects.Rectangle; x: number; y: number; v: number }[] = [];
+  private bunting: Phaser.GameObjects.Graphics | null = null;
   /** Mačky práve na klinike (pri prístroji alebo na zotavení) – kedy sa vrátia. */
   private readonly visits = new Map<string, Phaser.Time.TimerEvent>();
   private staff: StaffSprites | null = null;
@@ -148,6 +151,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       this.spawnCat(cat, area.x + 20 + ((i * 47) % span), area.centerY);
     });
     this.listen();
+    this.setEventFx(this.state.events.active?.id ?? null);
 
     this.enableDragPan();
     this.input.on(
@@ -203,6 +207,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       }
     }
     this.updateLighting();
+    this.updateSnow(delta);
   }
 
   // ---------- GameBridge pre HTML rozhranie ----------
@@ -316,6 +321,50 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
         );
       });
     });
+  }
+
+  /** Vizuál udalosti (GDD §7.3): sneh v zime, girlandy na dni otvorených dverí. */
+  private setEventFx(id: string | null): void {
+    for (const f of this.snow) f.g.destroy();
+    this.snow = [];
+    this.bunting?.destroy();
+    this.bunting = null;
+    if (id === 'winter') {
+      for (let i = 0; i < 70; i++) {
+        const g = this.add.rectangle(0, 0, 2, 2, 0xffffff, 0.9).setDepth(5100);
+        this.snow.push({ g, x: Math.random(), y: Math.random(), v: 0.04 + Math.random() * 0.05 });
+      }
+    }
+    if (id === 'openday') {
+      const g = this.add.graphics().setDepth(-975);
+      const colors = [0xe05a5a, 0xf2c14e, 0x7ec8ee, 0x9ad17b, 0xe88aa8];
+      for (let room = 0; room < 8; room++) {
+        const x0 = room * WORLD_W + ROOM.x + 4;
+        const x1 = room * WORLD_W + ROOM.x + ROOM.w - 4;
+        g.lineStyle(1, 0x5a3a26, 1).lineBetween(x0, ROOM.y + 6, x1, ROOM.y + 6);
+        let k = 0;
+        for (let x = x0 + 4; x < x1 - 8; x += 14) {
+          g.fillStyle(colors[k++ % colors.length] ?? 0xffffff, 1);
+          g.fillTriangle(x, ROOM.y + 6, x + 9, ROOM.y + 6, x + 4.5, ROOM.y + 15);
+        }
+      }
+      this.bunting = g;
+    }
+  }
+
+  /** Vločky padajú v tom, čo práve vidí kamera. */
+  private updateSnow(delta: number): void {
+    if (!this.snow.length) return;
+    const v = this.cameras.main.worldView;
+    const t = this.time.now / 1000;
+    for (const f of this.snow) {
+      f.y += (f.v * delta) / 1000;
+      if (f.y > 1) {
+        f.y = 0;
+        f.x = Math.random();
+      }
+      f.g.setPosition(v.x + f.x * v.width + Math.sin(t + f.x * 10) * 4, v.y + f.y * v.height);
+    }
   }
 
   /** Mačací hotel (GDD §6.7). */
@@ -561,6 +610,11 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     bus.on('clinicRoomBought', save);
     // Mačací hotel: majiteľ prinesie mačku a neskôr si ju vyzdvihne (GDD §6.7)
     // Edukačné centrum: výlet príde, po prednáške sa deti hrajú so stálicami (GDD §6.9)
+    bus.on('eventStarted', ({ def }) => this.setEventFx(def.id));
+    bus.on('eventEnded', () => {
+      this.setEventFx(null);
+      save();
+    });
     bus.on('tripArrived', ({ trip }) => {
       this.educationRoom?.arrive(trip);
       save();
