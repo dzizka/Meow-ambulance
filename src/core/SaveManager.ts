@@ -60,6 +60,13 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v9 → v10: mačací hotel (GDD §6.7). */
+  9: (s) => ({
+    ...s,
+    version: 10,
+    hotel: { open: false, suites: 0, guests: [], timer: 0 },
+    counters: { ...emptyCounters(), ...s.counters },
+  }),
   /** v8 → v9: catio – vonkajší výbeh (GDD §6.6). */
   8: (s) => ({ ...s, version: 9, catio: { open: false } }),
   /** v7 → v8: klinika, počítadlo kastrácií (GDD §6.5). */

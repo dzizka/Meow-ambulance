@@ -27,7 +27,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -65,7 +65,19 @@ export interface SaveData {
   clinic: ClinicState;
   // od verzie 9
   catio: { open: boolean };
+  // od verzie 10
+  hotel: HotelState;
 }
+
+/** Mačací hotel (GDD §6.7): kúpené apartmány a hostia. */
+export interface HotelState {
+  open: boolean;
+  /** Dokúpené apartmány navyše. */
+  suites: number;
+  guests: CatData[];
+  timer: number;
+}
+export const emptyHotel = (): HotelState => ({ open: false, suites: 0, guests: [], timer: 0 });
 
 /** Klinika – Fáza 3 (GDD §6.5): budova a kúpené miestnosti. */
 export interface ClinicState {
@@ -90,6 +102,7 @@ export const emptyCounters = (): Counters => ({
   served: 0,
   vaccinated: 0,
   neutered: 0,
+  hotel: 0,
 });
 
 /** Kroky tutoriálu so Zuzkou (kľúče textov) – postupujú podľa toho, čo hráč už urobil. */
@@ -139,6 +152,8 @@ export class GameState {
   clinic: ClinicState = { open: false, rooms: [] };
   /** Catio – vonkajší výbeh pri kaviarni (GDD §6.6). */
   catio = { open: false };
+  /** Mačací hotel (GDD §6.7). */
+  hotel: HotelState = emptyHotel();
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
   /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
@@ -285,8 +300,9 @@ export class GameState {
     return this.residentSlots - this.residents.length;
   }
 
+  /** Naša mačka alebo hosť hotela. */
   getCat(id: string): CatData | undefined {
-    return this.cats.find((c) => c.id === id);
+    return this.cats.find((c) => c.id === id) ?? this.hotel.guests.find((c) => c.id === id);
   }
 
   isReady(cat: CatData): boolean {
@@ -322,6 +338,7 @@ export class GameState {
     };
     for (const cat of this.cats)
       Care.passTime(cat, minutes, this.data, this.catio.open && cat.resident ? outside : mods);
+    this.advanceHotel(deltaMs, true);
     this.addMoney(this.donationsPerMinute * minutes, false);
     this.advanceReports(deltaMs);
     this.advanceAdopters(deltaMs);
@@ -350,6 +367,10 @@ export class GameState {
     summary.reports = this.reports.length - before;
 
     this.now += elapsedMs;
+    // hostia hotela, ktorých si majitelia medzitým vyzdvihli, zaplatia
+    const before2 = this.money;
+    this.advanceHotel(0, false);
+    summary.donations += Math.floor(this.money - before2);
     const delivered = this.deliverPostcards();
     summary.postcards = delivered;
     return summary;
@@ -586,6 +607,129 @@ export class GameState {
     this.changed(cat);
     this.bus.emit('clinicVisit', { cat, room: 'or', recover: true });
     return true;
+  }
+
+  // ---------- Mačací hotel (GDD §6.7) ----------
+
+  get suiteCount(): number {
+    return this.hotel.open ? this.data.balance.hotel.suites + this.hotel.suites : 0;
+  }
+
+  get nextSuitePrice(): number | null {
+    if (!this.hotel.open) return null;
+    return this.data.balance.hotel.suite_prices[this.hotel.suites] ?? null;
+  }
+
+  get hotelMissing(): { rep: number } {
+    return { rep: this.hasUnlock('hotel') ? 0 : (this.unlockRep('hotel') ?? 0) - this.reputation };
+  }
+
+  buyHotel(): boolean {
+    const price = this.data.balance.hotel.price;
+    if (this.hotel.open || this.hotelMissing.rep > 0 || this.money < price) return false;
+    this.addMoney(-price, true);
+    this.openHotel();
+    return true;
+  }
+
+  private openHotel(): void {
+    const h = this.data.balance.hotel;
+    this.hotel.open = true;
+    this.hotel.timer = (h.arrival_interval_s - h.first_delay_s) * 1000;
+    this.bus.emit('upgradeBought', { kind: 'hotel' });
+  }
+
+  buySuite(): boolean {
+    const price = this.nextSuitePrice;
+    if (price === null || this.money < price) return false;
+    this.addMoney(-price, true);
+    this.hotel.suites += 1;
+    this.bus.emit('upgradeBought', { kind: 'suite' });
+    return true;
+  }
+
+  /** Priemerná spokojnosť hosťa za doterajší pobyt (0–100). */
+  hotelHappiness(cat: CatData): number {
+    const stay = cat.hotel;
+    const now = (cat.stats.satisfaction + cat.stats.cleanliness) / 2;
+    if (!stay || stay.minutes <= 0) return now;
+    return stay.happySum / stay.minutes;
+  }
+
+  /** Koľko by majiteľ zaplatil, keby prišiel teraz. */
+  hotelFee(cat: CatData): number {
+    const h = this.data.balance.hotel;
+    return Math.round((h.fee * (0.5 + this.hotelHappiness(cat) / 100)) / 5) * 5;
+  }
+
+  /** Hostia: starnutie potrieb, odchody (platba) a príchody cez deň. */
+  private advanceHotel(deltaMs: number, arrivals: boolean): void {
+    if (!this.hotel.open) return;
+    const h = this.data.balance.hotel;
+    const minutes = deltaMs / MINUTE;
+    for (const cat of this.hotel.guests) {
+      if (minutes > 0) {
+        Care.passTime(cat, minutes, this.data, {
+          satisfactionDecay: h.decay_mult,
+          healthRecovery: 1,
+        });
+        if (cat.hotel) {
+          cat.hotel.happySum += ((cat.stats.satisfaction + cat.stats.cleanliness) / 2) * minutes;
+          cat.hotel.minutes += minutes;
+        }
+      }
+    }
+    for (const cat of [...this.hotel.guests]) {
+      if (!cat.hotel || this.now < cat.hotel.checkoutAt) continue;
+      const happy = Math.round(this.hotelHappiness(cat));
+      const fee = this.hotelFee(cat);
+      const rep = happy >= h.happy_at ? h.rep_happy : 0;
+      this.hotel.guests = this.hotel.guests.filter((x) => x !== cat);
+      this.counters.hotel += 1;
+      this.addMoney(fee, true);
+      this.gainRep(rep);
+      this.bus.emit('hotelCheckOut', { cat, fee, happy, rep });
+      this.checkChallenges();
+    }
+    if (!arrivals || this.dayPhase === 'night') return;
+    if (this.hotel.guests.length >= this.suiteCount) return;
+    this.hotel.timer += deltaMs;
+    if (this.hotel.timer < h.arrival_interval_s * 1000) return;
+    this.hotel.timer = 0;
+    this.checkInGuest();
+  }
+
+  private checkInGuest(): CatData {
+    const h = this.data.balance.hotel;
+    const cat = generateCat(this.data, this.rng, {
+      id: this.newId('hotel'),
+      conditionCount: 0,
+      now: this.now,
+    });
+    // majiteľ o nej všetko povie – rysy sú známe
+    for (const t of cat.traits) t.revealed = true;
+    cat.examined = [...this.tools];
+    cat.stats = {
+      health: 100,
+      cleanliness: this.rng.int(50, 80),
+      trust: this.rng.int(35, 70),
+      satisfaction: this.rng.int(50, 80),
+    };
+    const used = new Set([...this.cats, ...this.hotel.guests].map((c) => c.name));
+    if (used.has(cat.name)) {
+      const free = this.data.names.generic.filter((n) => !used.has(n));
+      if (free.length) cat.name = this.rng.pick(free);
+    }
+    cat.hotel = {
+      owner: this.rng.pick(this.data.balance.cafe.guest_sprites),
+      arrivedAt: this.now,
+      checkoutAt: this.now + this.rng.int(h.stay_s[0], h.stay_s[1]) * 1000,
+      happySum: 0,
+      minutes: 0,
+    };
+    this.hotel.guests.push(cat);
+    this.bus.emit('hotelCheckIn', { cat });
+    return cat;
   }
 
   // ---------- Catio (GDD §6.6) ----------
@@ -1068,7 +1212,8 @@ export class GameState {
     // Ošetrovateľ: nakŕmi jednu hladnú mačku alebo učeše jednu špinavú
     tick('caretaker', p.caretaker.interval_s, () => {
       const c = p.caretaker;
-      const hungry = this.cats.find(
+      const all = [...this.cats, ...this.hotel.guests];
+      const hungry = all.find(
         (cat) =>
           cat.stats.satisfaction < c.feed_below_satisfaction && this.feedCooldownLeft(cat.id) === 0,
       );
@@ -1076,7 +1221,7 @@ export class GameState {
         this.bus.emit('staffAction', { id: 'caretaker', kind: 'feed', cat: hungry });
         return;
       }
-      const dirty = this.cats.find(
+      const dirty = all.find(
         (cat) =>
           cat.stats.cleanliness < c.brush_below_cleanliness &&
           this.now - (this.brushedAt.get(cat.id) ?? -Infinity) > c.brush_cooldown_s * 1000,
@@ -1292,6 +1437,7 @@ export class GameState {
       staff: structuredClone(this.staff),
       clinic: structuredClone(this.clinic),
       catio: { ...this.catio },
+      hotel: structuredClone(this.hotel),
     };
   }
 
@@ -1321,6 +1467,7 @@ export class GameState {
     s.staff = structuredClone(save.staff ?? {});
     s.clinic = structuredClone(save.clinic ?? { open: false, rooms: [] });
     s.catio = { ...(save.catio ?? { open: false }) };
+    s.hotel = structuredClone(save.hotel ?? emptyHotel());
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();
@@ -1429,6 +1576,20 @@ export class GameState {
       this.bus.emit('clinicRoomBought', { room });
     }
     return true;
+  }
+
+  /** Hotel zadarmo a hneď jeden hosť. */
+  devOpenHotel(): boolean {
+    if (!this.hotel.open) this.openHotel();
+    if (this.hotel.guests.length >= this.suiteCount) return false;
+    this.checkInGuest();
+    return true;
+  }
+
+  /** Všetci hostia hotela odídu hneď (zaplatia podľa spokojnosti). */
+  devHotelCheckout(): void {
+    for (const c of this.hotel.guests) if (c.hotel) c.hotel.checkoutAt = this.now;
+    this.advanceHotel(0, false);
   }
 
   /** Catio zadarmo (otvorí aj kaviareň). */

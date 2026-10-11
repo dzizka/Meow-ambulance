@@ -123,7 +123,7 @@ export function isReady(cat: CatData, data: GameData): boolean {
 export type CatBadge = 'treat' | 'exam' | 'ready' | null;
 
 export function badgeFor(cat: CatData, data: GameData): CatBadge {
-  if (cat.resident) return null;
+  if (cat.resident || cat.hotel) return null;
   if (cat.conditions.some((c) => c.revealed && !c.treated)) return 'treat';
   if (cat.examined.length === 0) return 'exam';
   if (isReady(cat, data)) return 'ready';

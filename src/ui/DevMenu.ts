@@ -11,7 +11,36 @@ export interface DevHooks {
   toast(msg: string): void;
   saveNow(): void;
   resetGame(): void;
+  /** Spustí minihru na skúšku (výsledok sa nikam nezapíše). */
+  playMinigame(
+    kind: string,
+    extra?: { xray?: 'fracture' | 'swallowed' | null; neuter?: boolean },
+  ): void;
 }
+
+/** Všetky minihry na skúšku: [popis, druh, doplnky]. */
+const MINIGAMES: [string, string, { xray?: 'fracture' | 'swallowed' | null; neuter?: boolean }?][] =
+  [
+    ['🕷️ Kliešte', 'tick_removal'],
+    ['🩹 Obväz', 'bandage'],
+    ['👂 Ušká', 'ears'],
+    ['🥄 Sirup', 'syrup'],
+    ['💨 Inhalácia', 'breath'],
+    ['🛁 Kúpanie', 'bath'],
+    ['✂️ Pazúriky', 'claws'],
+    ['💧 Kvapky', 'drops'],
+    ['💉 Očkovanie', 'vaccine'],
+    ['🪶 Pierko', 'feather'],
+    ['🤲 Držanie', 'hold'],
+    ['🤫 Posedieť', 'quiet'],
+    ['🩸 Krvný test', 'bloodtest'],
+    ['🩻 Röntgen – zlomenina', 'xray', { xray: 'fracture' }],
+    ['🩻 Röntgen – predmet', 'xray', { xray: 'swallowed' }],
+    ['🩻 Röntgen – nič', 'xray', { xray: null }],
+    ['🩺 Operácia', 'surgery'],
+    ['🩺 Kastrácia', 'surgery', { neuter: true }],
+    ['🦴 Dlaha', 'splint'],
+  ];
 
 const PHASE_HOUR = { ráno: 7, deň: 12, večer: 19, noc: 23 } as const;
 
@@ -152,6 +181,12 @@ export class DevMenu {
         act('Pohľadnice teraz', () => `Doručené: ${s.devDeliverPostcards()}`),
         act('Kaviareň zadarmo', () => s.devOpenCafe() && 'Kaviareň otvorená'),
         act('Útulok zadarmo', () => s.devOpenShelter() && 'Útulok otvorený'),
+        act('Hotel + hosť', () => {
+          if (!s.hasUnlock('hotel'))
+            s.devGive(0, Math.max(0, (s.unlockRep('hotel') ?? 0) - s.reputation));
+          return s.devOpenHotel() ? 'Hosť prišiel' : 'Hotel je plný';
+        }),
+        act('Hotel: odchod hostí', () => s.devHotelCheckout()),
         act('Catio zadarmo', () => {
           if (!s.hasUnlock('catio'))
             s.devGive(0, Math.max(0, (s.unlockRep('catio') ?? 0) - s.reputation));
@@ -176,6 +211,15 @@ export class DevMenu {
           s.tutorialStep = 0;
           s.tutorialDone = false;
         }),
+      ),
+      section(
+        '🎮 Minihry (na skúšku, nič sa nezapíše)',
+        ...MINIGAMES.map(([label, kind, extra]) =>
+          button(label, () => {
+            this.close();
+            h.playMinigame(kind, extra);
+          }),
+        ),
       ),
       section(
         '💾 Uloženie',
