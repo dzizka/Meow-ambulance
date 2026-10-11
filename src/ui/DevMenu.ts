@@ -152,6 +152,12 @@ export class DevMenu {
         act('Pohľadnice teraz', () => `Doručené: ${s.devDeliverPostcards()}`),
         act('Kaviareň zadarmo', () => s.devOpenCafe() && 'Kaviareň otvorená'),
         act('Útulok zadarmo', () => s.devOpenShelter() && 'Útulok otvorený'),
+        act('Klinika zadarmo', () => {
+          if (!s.hasUnlock('clinic'))
+            s.devGive(0, Math.max(0, (s.unlockRep('clinic') ?? 0) - s.reputation));
+          s.devOpenClinic();
+          return 'Klinika so všetkými miestnosťami';
+        }),
         act('Najať personál', () => {
           if (!s.hasUnlock('staff'))
             s.devGive(0, Math.max(0, (s.unlockRep('staff') ?? 0) - s.reputation));

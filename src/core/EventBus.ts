@@ -36,7 +36,8 @@ export interface GameEvents {
   welcomeBack: { summary: OfflineSummary };
   challengeCompleted: { challenge: ActiveChallenge };
   albumAdded: { key: string };
-  upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' };
+  upgradeBought: { kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' | 'clinic' };
+  clinicRoomBought: { room: import('../data/types').ClinicRoomId };
   catMoved: { cat: CatData };
   staffHired: { id: StaffId };
   /** Personál niečo urobil (pre postavičky a oznámenia). */

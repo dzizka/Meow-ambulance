@@ -3,6 +3,7 @@ import type { GameState } from '../core/GameState';
 import type { StaffId } from '../data/types';
 import type { CatSprite } from '../objects/CatSprite';
 import { FLOOR_TOP, SHELTER_X, roomAt } from './layout';
+import { CLINIC_WALK } from './ClinicRoom';
 import { ensurePixelIcons } from './pixelIcons';
 import {
   ensurePersonAnims,
@@ -57,6 +58,7 @@ export class StaffSprites {
       case 'caretaker':
         return new Phaser.Geom.Rectangle(90, FLOOR_TOP + 70, 330, 100);
       case 'vet':
+        if (this.state.hasClinicRoom('lab') || this.state.hasClinicRoom('xray')) return CLINIC_WALK;
         return this.state.shelter.open
           ? new Phaser.Geom.Rectangle(SHELTER_X + 262, FLOOR_TOP + 140, 170, 40)
           : new Phaser.Geom.Rectangle(40, FLOOR_TOP + 115, 60, 40);
@@ -88,6 +90,11 @@ export class StaffSprites {
     for (const [id, m] of this.members) {
       if (m.busy || now < m.nextMoveAt) continue;
       const a = this.areaFor(id);
+      // pracovisko sa presunulo do inej budovy (napr. otvorená klinika) – prejde tam
+      if (a && roomAt(a.centerX) !== roomAt(m.sprite.x)) {
+        m.sprite.setPosition(a.centerX, a.centerY).setDepth(a.centerY);
+        m.shadow.setPosition(a.centerX, a.centerY).setDepth(a.centerY - 1);
+      }
       m.nextMoveAt = now + Phaser.Math.Between(5000, 9000);
       if (a)
         this.walkTo(id, Phaser.Math.Between(a.left, a.right), Phaser.Math.Between(a.top, a.bottom));

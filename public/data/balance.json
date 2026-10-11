@@ -152,5 +152,19 @@
       "extra_waiting": 1,
       "best_match_chance": 0.6
     }
+  },
+  "clinic": {
+    "_comment": "Klinika (GDD §6.5): budova, potom miestnosti. Bonusy pri adopcii kastrovanej mačky a prípadu z inej útulne.",
+    "price": 1500,
+    "rooms": {
+      "lab": 2000,
+      "xray": 2500,
+      "or": 3500
+    },
+    "neuter_fee_bonus": 0.15,
+    "neuter_rep_bonus": 1,
+    "neuter_match_bonus": 6,
+    "case_fee_bonus": 0.25,
+    "case_rep_bonus": 2
   }
 }

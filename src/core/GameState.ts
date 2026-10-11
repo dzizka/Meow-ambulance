@@ -14,6 +14,7 @@ import type {
   Unlock,
   Counters,
   CatData,
+  ClinicRoomId,
   DiagnosticTool,
   GameData,
   GuestOrder,
@@ -26,7 +27,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -60,7 +61,16 @@ export interface SaveData {
   shelter: { open: boolean };
   // od verzie 7
   staff: Partial<Record<StaffId, { active: boolean }>>;
+  // od verzie 8
+  clinic: ClinicState;
 }
+
+/** Klinika – Fáza 3 (GDD §6.5): budova a kúpené miestnosti. */
+export interface ClinicState {
+  open: boolean;
+  rooms: ClinicRoomId[];
+}
+export const CLINIC_ROOMS: ClinicRoomId[] = ['lab', 'xray', 'or'];
 
 export const emptyCafe = (): CafeState => ({ open: false, tables: 0, guests: [], timer: 0 });
 const ORDERS: GuestOrder[] = ['coffee', 'coffee', 'tea', 'cake'];
@@ -77,6 +87,7 @@ export const emptyCounters = (): Counters => ({
   fed: 0,
   served: 0,
   vaccinated: 0,
+  neutered: 0,
 });
 
 /** Kroky tutoriálu so Zuzkou (kľúče textov) – postupujú podľa toho, čo hráč už urobil. */
@@ -122,6 +133,8 @@ export class GameState {
   decor: string[] = [];
   /** Komunitný útulok – Fáza 2 (GDD §6.2). */
   shelter = { open: false };
+  /** Klinika – Fáza 3 (GDD §6.5). */
+  clinic: ClinicState = { open: false, rooms: [] };
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
   /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
@@ -252,6 +265,8 @@ export class GameState {
       'thermometer',
       'stethoscope',
       ...(this.shelter.open ? ['otoscope' as const] : []),
+      ...(this.hasClinicRoom('lab') ? ['bloodtest' as const] : []),
+      ...(this.hasClinicRoom('xray') ? ['xray' as const] : []),
     ];
   }
 
@@ -340,7 +355,12 @@ export class GameState {
         return;
       }
       this.reportTimer -= interval;
-      const pool = this.data.reports.filter((d) => d.requires !== 'shelter' || this.shelter.open);
+      const pool = this.data.reports.filter(
+        (d) =>
+          (d.requires !== 'shelter' || this.shelter.open) &&
+          // prípady z inej útulne, až keď je čím ich odhaliť
+          (d.requires !== 'clinic' || this.hasClinicRoom('lab') || this.hasClinicRoom('xray')),
+      );
       const def = this.rng.weighted(pool, (d) => d.weight);
       const report: Report = { id: this.newId('r'), defId: def.id };
       this.reports.push(report);
@@ -423,6 +443,8 @@ export class GameState {
         now: this.now,
         rareBoost: this.hasUnlock('rare_cats'),
         tools: this.tools,
+        surgery: this.hasClinicRoom('or'),
+        clinicCase: !!def.clinic_case && age !== 'kitten',
       });
     const cat = make(def.age, def.difficulty);
     const family = [cat];
@@ -493,6 +515,68 @@ export class GameState {
     this.fillChallenges();
   }
 
+  // ---------- Klinika (GDD §6.5) ----------
+
+  hasClinicRoom(room: ClinicRoomId): boolean {
+    return this.clinic.open && this.clinic.rooms.includes(room);
+  }
+
+  /** Čo ešte chýba na kúpu kliniky: ★ (úroveň 5) a Komunitný útulok. */
+  get clinicMissing(): { rep: number; shelter: boolean } {
+    return {
+      rep: this.hasUnlock('clinic') ? 0 : (this.unlockRep('clinic') ?? 0) - this.reputation,
+      shelter: !this.shelter.open,
+    };
+  }
+
+  buyClinic(): boolean {
+    const miss = this.clinicMissing;
+    const price = this.data.balance.clinic.price;
+    if (this.clinic.open || miss.rep > 0 || miss.shelter || this.money < price) return false;
+    this.addMoney(-price, true);
+    this.openClinic();
+    return true;
+  }
+
+  private openClinic(): void {
+    this.clinic.open = true;
+    this.bus.emit('upgradeBought', { kind: 'clinic' });
+  }
+
+  clinicRoomPrice(room: ClinicRoomId): number {
+    return this.data.balance.clinic.rooms[room];
+  }
+
+  buyClinicRoom(room: ClinicRoomId): boolean {
+    const price = this.clinicRoomPrice(room);
+    if (!this.clinic.open || this.clinic.rooms.includes(room) || this.money < price) return false;
+    this.addMoney(-price, true);
+    this.clinic.rooms.push(room);
+    this.bus.emit('clinicRoomBought', { room });
+    return true;
+  }
+
+  /** Ošetrenie potrebuje operačnú sálu (prehltnutý predmet). */
+  needsOperatingRoom(conditionId: string): boolean {
+    return this.data.conditions.find((d) => d.id === conditionId)?.minigame === 'surgery';
+  }
+
+  /** Kastrácia sa dá: operačná sála, zdravá dospelá mačka, ešte nekastrovaná. */
+  canNeuter(cat: CatData): boolean {
+    return (
+      this.hasClinicRoom('or') && cat.age !== 'kitten' && !cat.neutered && Care.allTreated(cat)
+    );
+  }
+
+  neuter(catId: string): boolean {
+    const cat = this.getCat(catId);
+    if (!cat || !this.canNeuter(cat)) return false;
+    cat.neutered = true;
+    this.counters.neutered += 1;
+    this.changed(cat);
+    return true;
+  }
+
   /** Očkovanie v ambulancii – iba zdravá, ešte neočkovaná mačka. */
   vaccinate(catId: string): boolean {
     const cat = this.getCat(catId);
@@ -522,7 +606,8 @@ export class GameState {
 
   treat(catId: string, conditionId: string, stars: Care.Stars): boolean {
     const cat = this.getCat(catId);
-    if (!cat || !Care.treat(cat, conditionId, stars, this.data)) return false;
+    if (!cat || (this.needsOperatingRoom(conditionId) && !this.hasClinicRoom('or'))) return false;
+    if (!Care.treat(cat, conditionId, stars, this.data)) return false;
     this.counters.treated += 1;
     if (conditionId === 'ticks') this.counters.ticks += 1;
     this.changed(cat);
@@ -599,7 +684,10 @@ export class GameState {
         ((r.adoption_fee_min + ((r.adoption_fee_max - r.adoption_fee_min) * match.score) / 100) *
           (1 + 0.15 * (rarity - 1)) *
           // zaočkovaná mačka = vyšší príspevok (GDD §6.2)
-          (cat.vaccinated ? 1 + this.data.balance.shelter.vaccine_fee_bonus : 1)) /
+          (cat.vaccinated ? 1 + this.data.balance.shelter.vaccine_fee_bonus : 1) *
+          // kastrácia a prípad z inej útulne (GDD §6.5)
+          (cat.neutered ? 1 + this.data.balance.clinic.neuter_fee_bonus : 1) *
+          (cat.clinicCase ? 1 + this.data.balance.clinic.case_fee_bonus : 1)) /
           5,
       ) * 5;
     const rep =
@@ -607,7 +695,10 @@ export class GameState {
         ? r.rep_perfect
         : match.quality === 'good'
           ? r.rep_good
-          : r.rep_poor) + (cat.vaccinated ? this.data.balance.shelter.vaccine_rep_bonus : 0);
+          : r.rep_poor) +
+      (cat.vaccinated ? this.data.balance.shelter.vaccine_rep_bonus : 0) +
+      (cat.neutered ? this.data.balance.clinic.neuter_rep_bonus : 0) +
+      (cat.clinicCase ? this.data.balance.clinic.case_rep_bonus : 0);
     const postcard =
       match.quality === 'perfect' ||
       (match.quality === 'good' && this.rng.chance(r.postcard_chance_good));
@@ -1159,6 +1250,7 @@ export class GameState {
       decor: [...this.decor],
       shelter: { ...this.shelter },
       staff: structuredClone(this.staff),
+      clinic: structuredClone(this.clinic),
     };
   }
 
@@ -1186,6 +1278,7 @@ export class GameState {
     s.decor = [...(save.decor ?? [])];
     s.shelter = { ...(save.shelter ?? { open: false }) };
     s.staff = structuredClone(save.staff ?? {});
+    s.clinic = structuredClone(save.clinic ?? { open: false, rooms: [] });
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();
@@ -1240,7 +1333,7 @@ export class GameState {
       c.treated = true;
     }
     for (const t of cat.traits) t.revealed = true;
-    cat.examined = ['hand', 'thermometer', 'stethoscope'];
+    cat.examined = [...this.tools];
     cat.stats = { health: 100, cleanliness: 100, trust: 100, satisfaction: 100 };
     this.changed(cat);
     return true;
@@ -1281,6 +1374,18 @@ export class GameState {
   devOpenShelter(): boolean {
     if (this.shelter.open) return false;
     this.openShelter();
+    return true;
+  }
+
+  /** Klinika so všetkými miestnosťami zadarmo (otvorí aj útulok). */
+  devOpenClinic(): boolean {
+    if (!this.shelter.open) this.openShelter();
+    if (!this.clinic.open) this.openClinic();
+    for (const room of CLINIC_ROOMS) {
+      if (this.clinic.rooms.includes(room)) continue;
+      this.clinic.rooms.push(room);
+      this.bus.emit('clinicRoomBought', { room });
+    }
     return true;
   }
 

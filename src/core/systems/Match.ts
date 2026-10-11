@@ -46,6 +46,8 @@ export function computeMatch(
   }
   if (adopter.age_pref === cat.age) score += m.age_match;
   else if (adopter.age_pref === 'any') score += m.age_any;
+  // Kastrovaná mačka – adoptéri sú pokojnejší (GDD §6.5)
+  if (cat.neutered) score += data.balance.clinic?.neuter_match_bonus ?? 0;
 
   score = Math.max(0, Math.min(100, Math.round(score)));
   const quality: MatchQuality = score >= m.perfect ? 'perfect' : score >= m.good ? 'good' : 'poor';

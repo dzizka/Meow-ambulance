@@ -24,6 +24,7 @@ import { CAFE_AREA, CafeRoom } from './CafeRoom';
 import { Furnishings } from './Furnishings';
 import { StaffSprites } from './StaffSprites';
 import { QUARANTINE_AREA, QUARANTINE_CAGES, ShelterRoom } from './ShelterRoom';
+import { ClinicRoom } from './ClinicRoom';
 import { addProp, type WorldGeom } from './world';
 import type { CafeGuest } from '../data/types';
 import { DPR } from './dpr';
@@ -92,6 +93,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   speed = 1;
   private cafe: CafeRoom | null = null;
   private shelterRoom: ShelterRoom | null = null;
+  private clinicRoom: ClinicRoom | null = null;
   private staff: StaffSprites | null = null;
   private sinceStaff = 0;
   private ui!: UI;
@@ -113,6 +115,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.makeSparkTexture();
     if (this.state.cafe.open) this.openCafeRoom();
     if (this.state.shelter.open) this.openShelterRoom();
+    if (this.state.clinic.open) this.openClinicRoom();
     new Furnishings(this, this.state, this.geom);
 
     this.staff = new StaffSprites(this, this.state, (id) => this.sprites.get(id));
@@ -206,7 +209,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (
       room === this.room ||
       (room === 'cafe' && !this.cafe) ||
-      (room === 'shelter' && !this.shelterRoom)
+      (room === 'shelter' && !this.shelterRoom) ||
+      (room === 'clinic' && !this.clinicRoom)
     )
       return;
     const cam = this.cameras.main;
@@ -238,6 +242,13 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.shelterRoom) return;
     this.shelterRoom = new ShelterRoom(this, this.geom);
     for (const [x, y, r] of this.shelterRoom.lamps) this.addGlow(x, y, r);
+  }
+
+  /** Klinika – štvrtá budova (GDD §6.5). */
+  private openClinicRoom(): void {
+    if (this.clinicRoom) return;
+    this.clinicRoom = new ClinicRoom(this, this.state, this.geom, () => this.ui.openShop());
+    for (const [x, y, r] of this.clinicRoom.lamps) this.addGlow(x, y, r);
   }
 
   /** Pacient sa presunie do garáže alebo do karantény (podľa `cat.ward`). */
@@ -363,11 +374,16 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       save();
     });
     bus.on('reportDeclined', save);
+    bus.on('clinicRoomBought', save);
     bus.on('upgradeBought', ({ kind }) => {
       if (kind === 'cage') this.drawCages(true);
       if (kind === 'shelter') {
         this.openShelterRoom();
         this.showRoom('shelter');
+      }
+      if (kind === 'clinic') {
+        this.openClinicRoom();
+        this.showRoom('clinic');
       }
       if (kind === 'cafe') {
         this.openCafeRoom();
@@ -442,7 +458,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private createLighting(): void {
     this.nightOverlay = this.add
-      .rectangle(0, 0, WORLD_W * 3, WORLD_H, 0x000000, 0)
+      .rectangle(0, 0, WORLD_W * 4, WORLD_H, 0x000000, 0)
       .setOrigin(0)
       .setDepth(5000);
     // Mäkké svetlo lámp: radiálny prechod v textúre, sčítaný s obrazom

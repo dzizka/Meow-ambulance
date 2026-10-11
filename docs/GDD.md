@@ -327,7 +327,7 @@ Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v garáži alebo 
 |---|---|---|---|---|
 | **1** 🟢 | Garážová záchranka | štart | 2 klietky → max 4, kútik pre 2 stálice | Stôl, misky, teplomer, ruka, stetoskop. Pomocníčka: dobrovoľníčka **Zuzka** (tutoriál). |
 | **2** 🟢 | Komunitný útulok | 10 záchran, ★ 100, 1 500 € | 8–12 | Prenajatý domček: karanténa, **mačacia kaviareň** pre stálice (násobí dary), ambulancia na očkovanie, otoskop |
-| **3** 🟡 | Špecializovaná klinika | 40 záchran, ★ 500 | 20–30 | Personál (veterinár, ošetrovateľ, správca sociálnych sietí), laboratórium, röntgen, operačná sála, catio (vonkajší výbeh) |
+| **3** 🟢 | Špecializovaná klinika | ★ 200 (úroveň 5), Komunitný útulok, 1 500 € | – (liečba, nie klietky) | Personál (veterinár, ošetrovateľ, správca sociálnych sietí), laboratórium, röntgen, operačná sála, catio (vonkajší výbeh) |
 | **4** 🔵 | Národné centrum felíd | 120 záchran, ★ 2000 | 50+ | Viac poschodí, CT, rehabilitačný bazén, mačací hotel, edukačné centrum (školské výlety) |
 
 > **MVP obsahuje iba Fázu 1** a „okno" do Fázy 2 (zamknutá budova, ktorú hráč vidí na mape – motivácia).
@@ -350,6 +350,21 @@ Personál sa najíma **raz** v Obchode (bez mzdy) a dá sa kedykoľvek poslať n
 Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde pracuje, a pri práci ukáže ikonku nad mačkou.
 
 > Kľúčové pravidlo: **automatizácia nikdy nezoberie hráčovi zábavné časti**. Personál robí rutinu, hráč môže vždy zasiahnuť sám (a dostať lepší výsledok).
+
+
+### 6.5 Klinika 🟢 (úroveň 5, 200 ★)
+Štvrtá budova vedľa útulku (treba Komunitný útulok). Najprv sa postaví budova (**1 500 €**), potom sa v Obchode dokupujú miestnosti. Nekúpené sú zakryté plachtou (ťuknutím sa otvorí obchod).
+
+| Miestnosť | Cena | Čo prináša | Diagnózy |
+|---|---|---|---|
+| 🔬 Laboratórium | 2 000 € | nástroj **Krvný test** (minihra: ťuknúť na 3 zvláštne bunky v mikroskope) | cukrovka (inzulín – injekcia), choroba obličiek (iba staršie mačky, sirup), zápal močových ciest (sirup) |
+| 🩻 Röntgen | 2 500 € | nástroj **Röntgen** (minihra: podržať rám nad vrtiacou sa mačkou, potom ťuknúť na problém na snímke) | zlomená labka (minihra **Dlaha** – krúživé omotávanie, príliš rýchlo = príliš tesne), prehltnutý predmet |
+| 🩺 Operačná sála | 3 500 € | minihra **Operácia** (uspať – ručička v zelenom, vybrať predmet pinzetou pomaly, zašiť ťukaním na bodky) | prehltnutý predmet; **kastrácia** dospelej zdravej mačky (voliteľne) |
+
+- Nové diagnózy dostanú mačky iba vtedy, keď ich hráč má čím odhaliť; prehltnutý predmet iba s operačnou sálou.
+- **Prípad z inej útulne** 💗 – nové hlásenie (s laboratóriom alebo röntgenom), mačka má aspoň jednu diagnózu kliniky; pri adopcii +2 ★ a príspevok +25 %.
+- **Kastrácia:** pri adopcii +1 ★, príspevok +15 % a zhoda s adoptérom +6.
+- Veterinárka (personál) robí aj krvný test a röntgen automaticky a presťahuje sa na kliniku. Operácie, dlahu a liečbu robí vždy hráč.
 
 ---
 
