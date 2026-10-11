@@ -82,7 +82,8 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - Ukladá sa každých 15 s, po dôležitých udalostiach a pri skrytí/zatvorení stránky. Pri načítaní sa dopočíta offline čas (`GameState.applyOffline`).
 - Adresa končiaca `#novahra` zmaže uloženú hru (na testovanie).
 - Pole `version` (aktuálne 15); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
-- „Nová hra" v menu (☰ → Obchod) zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
+- „Nová hra" v hlavnom menu zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
+- Hlavné menu a pauza (`UI.showTitle`, modal `pause`) volajú `GameBridge.setPaused` – `GarageScene.update` vtedy nevolá `state.tick` (animácie bežia ďalej). `hadSave` (BootScene → registry) rozhodne medzi Hrať a Pokračovať.
 
 ## Testy a CI
 - Simulácia balansu (bot hrá 8 h, 3 semienka): `SIM=1 npx vitest run tests/balance.sim.test.ts --silent=false` – výsledky v GDD §12a. Testy berú ★ úrovní z dát (`levelRep(n)` v `tests/loadData.ts`), takže zmena balansu ich nerozbije.
@@ -153,6 +154,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Konfigurácia `capacitor.config.ts` (appId `sk.meowambulance.app`), natívny projekt v `android/` (commitnutý; web sa doň kopíruje príkazom `npx cap sync android` a je v `.gitignore`).
 - APK zostavuje workflow **Android APK** (`.github/workflows/android.yml`) pri každom zlúčení do `main` (a na PR, ktoré menia `android/`): `npm ci` → `npm run build` → `npx cap sync android` → `./gradlew assembleRelease`. Výsledok je v GitHub Release **`android-latest`** (súbor `meow-ambulance.apk`) a ako artefakt behu. `versionCode` = číslo behu, `versionName` = `0.1.<beh>`.
 - **Podpis:** kľúč je v súkromnom repozitári `public/assets/_signing/` (`meow-ambulance.keystore` + `keystore.properties`), `android/app/build.gradle` ho načíta. Do webového buildu sa nekopíruje. Kľúč sa nesmie meniť ani stratiť – inak sa nová verzia nedá nainštalovať cez starú (Android by vyžadoval odinštalovanie = strata savu).
+- `src/platform.ts`: `isNative`, `exitApp()` a `onBackButton()` (plugin `@capacitor/app`). Späť spracúva `UI.back()` (vývojárske menu → hlavné menu → minihra `MinigameScene.cancel` → okno → výber mačky → pauza); na PC to isté robí Escape. Tlačidlá „Ukončiť hru" sa ukazujú iba pri `isNative`.
 - Hra beží na celú obrazovku (`MainActivity` skryje systémové lišty, ukážu sa potiahnutím od okraja); na Android 15+ `adjustMarginsForEdgeToEdge: 'auto'` odsadí hru od výrezu kamery.
 - Ikona a úvodná obrazovka: vlastná pixel-art kresba zo skriptu `python3 scripts/android-icons.py` (Pillow) – po úprave skriptu ho spustiť a commitnúť `android/app/src/main/res`.
 - Lokálne zostavenie (s Android SDK): `npm run build && npx cap sync android && cd android && ./gradlew assembleRelease` alebo `npx cap open android` (Android Studio).

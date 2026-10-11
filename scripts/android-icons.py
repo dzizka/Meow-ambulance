@@ -85,4 +85,7 @@ for p in RES.glob("drawable*/splash.png"):
     art = cat(max(1, min(w, h) // 3 // len(CAT[0])))
     img.paste(art, ((w - art.width) // 2, (h - art.height) // 2), art)
     img.save(p)
+# ikona aj pre web (hlavné menu, favicon)
+WEB = RES.parent.parent.parent.parent.parent / "public"
+centered(192, 0.8, BG).save(WEB / "icon.png")
 print("ikony a splash hotové")

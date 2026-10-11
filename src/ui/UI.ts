@@ -18,6 +18,7 @@ import { Rng } from '../core/Rng';
 import { lang, setLang, t } from '../i18n/t';
 import { button, el } from './dom';
 import { DevMenu } from './DevMenu';
+import { exitApp, isNative, onBackButton } from '../platform';
 import { computeLayout, type Room } from '../scenes/layout';
 
 /** Čo rozhranie potrebuje od hernej scény. */
@@ -38,6 +39,11 @@ export interface GameBridge {
   readonly speed: number;
   setSpeed(speed: number): void;
   saveNow(): void;
+  /** Hlavné menu / pauza zastaví herný čas. */
+  setPaused(paused: boolean): void;
+  readonly hadSave: boolean;
+  /** Späť počas minihry ju zavrie; vráti true, ak nejaká bežala. */
+  cancelMinigame(): boolean;
 }
 
 export type MinigameKind =
@@ -120,7 +126,7 @@ const STAT_KEYS: Record<keyof CatStats, string> = {
 };
 
 type CardTab = 'health' | 'care' | 'about';
-type MenuTab = 'challenges' | 'achievements' | 'album' | 'postcards' | 'shop' | 'more';
+type MenuTab = 'challenges' | 'achievements' | 'album' | 'postcards' | 'shop';
 /** Časti obchodu – aby sa nemuselo dlho rolovať. */
 type ShopTab = 'build' | 'equipment' | 'staff' | 'decor' | 'cosmetics';
 
@@ -212,15 +218,20 @@ export class UI {
   private tabFor: string | null = null;
   private busy = false;
   private muted = false;
-  private modalKind: 'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | 'event' | null =
-    null;
+  private modalKind:
+    'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | 'event' | 'pause' | null = null;
+  /** Hlavné menu (úvodná obrazovka) – ukáže sa pri spustení a z pauzy. */
+  private title = el('div', { class: 'title-screen', role: 'dialog', 'aria-modal': 'true' });
+  private titleView: 'main' | 'settings' | 'new' = 'main';
+  /** Po prvom „Hrať" už hlavné menu ponúka Pokračovať a Novú hru. */
+  private started = false;
+  private confirmExit = false;
   /** Prístroj kliniky, pri ktorom hráč vyberá pacienta. */
   private stationRoom: ClinicRoomId = 'lab';
   private shopTab: ShopTab = 'build';
   /** Čo okno naposledy ukazovalo – pri prekreslení toho istého sa zachová posun. */
   private modalViewKey = '';
   private menuTab: MenuTab = 'challenges';
-  private confirmReset = false;
   private selectedForVisit: string | null = null;
   private dev: DevMenu;
   private cafeWasOpen: boolean | null = null;
@@ -254,7 +265,7 @@ export class UI {
     this.repPill.style.cursor = 'pointer';
     this.clockPill.style.touchAction = 'manipulation';
     this.buildHud();
-    this.root.append(this.hud, this.sheet, this.zuzka, this.modal, this.toasts);
+    this.root.append(this.hud, this.sheet, this.zuzka, this.modal, this.toasts, this.title);
     document.body.append(this.root);
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.closeModal();
@@ -265,6 +276,177 @@ export class UI {
     this.renderSheet();
     this.updateHud();
     window.setInterval(() => this.tick(), 500);
+    this.started = this.game.hadSave;
+    this.showTitle();
+    onBackButton(() => this.back());
+    // Na PC funguje Escape ako Späť (vývojárske menu si Escape spracuje samo)
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Escape' && !this.dev.isOpen && !isNative) this.back();
+      },
+      true,
+    );
+  }
+
+  // ---------- Hlavné menu, pauza, tlačidlo Späť ----------
+
+  private showTitle(): void {
+    this.titleView = 'main';
+    this.title.hidden = false;
+    this.game.setPaused(true);
+    this.renderTitle();
+  }
+
+  private hideTitle(): void {
+    this.title.hidden = true;
+    this.started = true;
+    this.game.setPaused(this.modalKind === 'pause');
+    this.game.playSound('open', 0.4);
+  }
+
+  private setTitleView(v: UI['titleView']): void {
+    this.titleView = v;
+    this.renderTitle();
+  }
+
+  private quit(): void {
+    this.game.saveNow();
+    exitApp();
+  }
+
+  private renderTitle(): void {
+    const box = el(
+      'div',
+      { class: 'title-box' },
+      el('img', { class: 'title-logo', src: 'icon.png', alt: '' }),
+      el('h1', {}, 'Meow Ambulance'),
+      el('p', { class: 'title-tag' }, t('TITLE_TAGLINE')),
+    );
+    if (this.titleView === 'settings') {
+      box.append(
+        el('h2', {}, t('TITLE_SETTINGS')),
+        ...this.settingsControls(),
+        button(`← ${t('TITLE_BACK')}`, () => this.setTitleView('main')),
+      );
+    } else if (this.titleView === 'new') {
+      box.append(
+        el('p', { class: 'warning' }, t('UI_NEW_GAME_CONFIRM')),
+        el(
+          'div',
+          { class: 'footer' },
+          button(t('UI_CANCEL'), () => this.setTitleView('main')),
+          button(t('UI_YES_DELETE'), () => this.game.resetGame(), { class: 'btn primary' }),
+        ),
+      );
+    } else {
+      box.append(
+        button(`▶ ${t(this.started ? 'TITLE_CONTINUE' : 'TITLE_PLAY')}`, () => this.hideTitle(), {
+          class: 'btn primary big',
+        }),
+        button(`⚙️ ${t('TITLE_SETTINGS')}`, () => this.setTitleView('settings')),
+        ...(this.started ? [button(`↺ ${t('UI_NEW_GAME')}`, () => this.setTitleView('new'))] : []),
+        ...(isNative ? [button(`🚪 ${t('TITLE_EXIT')}`, () => this.quit())] : []),
+        el('p', { class: 'hint' }, t('TITLE_SAVED')),
+      );
+    }
+    this.title.replaceChildren(box);
+  }
+
+  /** Zvuk a jazyk – v hlavnom menu aj v pauze. */
+  private settingsControls(): HTMLElement[] {
+    return [
+      button(this.muted ? `🔇 ${t('UI_SOUND_OFF')}` : `🔊 ${t('UI_SOUND_ON')}`, () =>
+        this.toggleMute(),
+      ),
+      el(
+        'div',
+        { class: 'actions lang-row' },
+        ...(['sk', 'en'] as const).map((l) =>
+          button(
+            l === 'sk' ? '🇸🇰 Slovenčina' : '🇬🇧 English',
+            () => {
+              if (l === lang) return;
+              setLang(l);
+              this.game.saveNow();
+              location.reload();
+            },
+            { class: l === lang ? 'btn primary' : 'btn' },
+          ),
+        ),
+      ),
+    ];
+  }
+
+  /** Pauza: čas stojí; nastavenia, hlavné menu, ukončenie (Android). */
+  private pauseContent(): HTMLElement[] {
+    const s = this.state;
+    const out: HTMLElement[] = [
+      el('h2', {}, `⏸ ${t('UI_PAUSE')}`),
+      el('p', { class: 'hint' }, t('UI_PAUSE_HINT')),
+      button(`▶ ${t('UI_RESUME')}`, () => this.closeModal(), { class: 'btn primary big' }),
+      ...this.settingsControls(),
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_STATS_LINE', { r: s.counters.rescued, a: s.counters.adopted }),
+      ),
+      button(`🏠 ${t('UI_MAIN_MENU')}`, () => {
+        this.game.saveNow();
+        this.closeModal();
+        this.showTitle();
+      }),
+    ];
+    if (isNative) {
+      if (!this.confirmExit)
+        out.push(
+          button(`🚪 ${t('TITLE_EXIT')}`, () => {
+            this.confirmExit = true;
+            this.renderModal();
+          }),
+        );
+      else
+        out.push(
+          el('p', { class: 'warning' }, t('UI_EXIT_CONFIRM')),
+          el(
+            'div',
+            { class: 'footer' },
+            button(t('UI_CANCEL'), () => {
+              this.confirmExit = false;
+              this.renderModal();
+            }),
+            button(t('UI_EXIT_YES'), () => this.quit(), { class: 'btn primary' }),
+          ),
+        );
+    }
+    return out;
+  }
+
+  /** Systémové tlačidlo Späť (Android): zavrie to, čo je navrchu; inak otvorí pauzu. */
+  private back(): void {
+    if (this.dev.isOpen) {
+      this.dev.close();
+      return;
+    }
+    if (!this.title.hidden) {
+      if (this.titleView !== 'main') this.setTitleView('main');
+      else if (isNative) this.quit();
+      else this.hideTitle();
+      return;
+    }
+    if (this.game.cancelMinigame()) return;
+    if (!this.modal.hidden) {
+      if (this.modalKind === 'pause' && this.confirmExit) {
+        this.confirmExit = false;
+        this.renderModal();
+      } else this.closeModal();
+      return;
+    }
+    if (this.selectedId) {
+      this.game.select(null);
+      return;
+    }
+    this.openModal('pause');
   }
 
   // ---------- Rozloženie ----------
@@ -315,6 +497,7 @@ export class UI {
       iconBtn('📋', t('UI_REPORTS'), this.badges.reports, () => this.openModal('reports')),
       iconBtn('🚪', t('UI_VISITORS'), this.badges.visitors, () => this.openModal('visitors')),
       iconBtn('☰', t('UI_MENU'), this.badges.menu, () => this.openMenu()),
+      iconBtn('⏸', t('UI_PAUSE'), null, () => this.openModal('pause')),
     );
   }
 
@@ -382,6 +565,7 @@ export class UI {
     const id = a?.id ?? s.events.offer;
     const def = id ? s.eventDef(id) : undefined;
     this.eventPill.hidden = !def;
+    this.root.classList.toggle('hud-2row', !!def);
     if (!def) return;
     let text: string;
     if (a) {
@@ -494,7 +678,8 @@ export class UI {
     }
     this.game.setMuted(this.muted);
     this.updateHud();
-    if (this.modalKind === 'menu') this.renderModal();
+    if (this.modalKind === 'menu' || this.modalKind === 'pause') this.renderModal();
+    if (!this.title.hidden) this.renderTitle();
   }
 
   private tick(): void {
@@ -1660,6 +1845,8 @@ export class UI {
     this.modalKind = kind;
     this.welcomeLines = lines;
     this.selectedForVisit = null;
+    this.confirmExit = false;
+    if (kind === 'pause') this.game.setPaused(true);
     if (this.modal.hidden) this.game.playSound('open', 0.4);
     this.modal.hidden = false;
     this.renderModal();
@@ -1668,8 +1855,8 @@ export class UI {
   private closeModal(): void {
     if (!this.modal.hidden) this.game.playSound('close', 0.4);
     this.modal.hidden = true;
+    if (this.modalKind === 'pause' && this.title.hidden) this.game.setPaused(false);
     this.modalKind = null;
-    this.confirmReset = false;
     this.updateHud();
   }
 
@@ -1697,6 +1884,10 @@ export class UI {
         break;
       case 'menu':
         box.append(...this.menuContent(), closeBtn);
+        break;
+      case 'pause':
+        box.classList.add('pause-box');
+        box.append(...this.pauseContent());
         break;
       case 'station':
         box.append(...this.stationContent(), closeBtn);
@@ -2071,7 +2262,6 @@ export class UI {
       { id: 'album', icon: '📖', label: t('MENU_ALBUM'), badge: 0 },
       { id: 'postcards', icon: '💌', label: t('MENU_POSTCARDS'), badge: this.unseenPostcards },
       { id: 'shop', icon: '🛒', label: t('MENU_SHOP'), badge: 0 },
-      { id: 'more', icon: '⚙️', label: '', badge: 0 },
     ];
     const bar = el('div', { class: 'tabs menu-tabs', role: 'tablist' });
     for (const tb of tabs) {
@@ -2089,7 +2279,6 @@ export class UI {
       );
       b.addEventListener('click', () => {
         this.menuTab = tb.id;
-        this.confirmReset = false;
         this.renderModal();
       });
       bar.append(b);
@@ -2103,9 +2292,7 @@ export class UI {
             ? this.albumContent()
             : this.menuTab === 'postcards'
               ? this.postcardsContent()
-              : this.menuTab === 'shop'
-                ? this.shopContent()
-                : this.moreContent();
+              : this.shopContent();
     return [bar, ...body];
   }
 
@@ -2484,59 +2671,6 @@ export class UI {
       ),
       ...decor,
     ];
-  }
-
-  /** Viac: štatistiky, zvuk, nová hra. */
-  private moreContent(): HTMLElement[] {
-    const s = this.state;
-    const out: HTMLElement[] = [
-      el(
-        'p',
-        { class: 'hint' },
-        t('UI_STATS_LINE', { r: s.counters.rescued, a: s.counters.adopted }),
-      ),
-      button(this.muted ? `🔇 ${t('UI_SOUND_OFF')}` : `🔊 ${t('UI_SOUND_ON')}`, () =>
-        this.toggleMute(),
-      ),
-      el(
-        'div',
-        { class: 'actions' },
-        ...(['sk', 'en'] as const).map((l) =>
-          button(
-            l === 'sk' ? '🇸🇰 Slovenčina' : '🇬🇧 English',
-            () => {
-              if (l === lang) return;
-              setLang(l);
-              this.game.saveNow();
-              location.reload();
-            },
-            { class: l === lang ? 'btn primary' : 'btn' },
-          ),
-        ),
-      ),
-    ];
-    if (!this.confirmReset) {
-      out.push(
-        button(`↺ ${t('UI_NEW_GAME')}`, () => {
-          this.confirmReset = true;
-          this.renderModal();
-        }),
-      );
-    } else {
-      out.push(
-        el('p', { class: 'warning' }, t('UI_NEW_GAME_CONFIRM')),
-        el(
-          'div',
-          { class: 'footer' },
-          button(t('UI_CANCEL'), () => {
-            this.confirmReset = false;
-            this.renderModal();
-          }),
-          button(t('UI_YES_DELETE'), () => this.game.resetGame(), { class: 'btn primary' }),
-        ),
-      );
-    }
-    return out;
   }
 
   /** Personál: najať raz, potom zapínať a vypínať (GDD §6.4). */

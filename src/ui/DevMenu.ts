@@ -85,6 +85,10 @@ export class DevMenu {
     }
   }
 
+  get isOpen(): boolean {
+    return !this.root.hidden;
+  }
+
   open(): void {
     this.render();
     this.root.hidden = false;

@@ -498,6 +498,10 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 - Ovládanie **jednou rukou / myšou** – pripravené na mobil.
 - Karta mačky dostupná jedným klikom: štatistiky, odhalené rysy, diagnózy, príbeh.
 - Farebné kódovanie potrieb (ikonky nad hlavou mačky).
+- **Hlavné menu** 🟢 pri spustení: logo, ▶ Hrať / Pokračovať, ⚙️ Nastavenia (zvuk, jazyk), ↺ Nová hra (s potvrdením), 🚪 Ukončiť hru (iba Android). Herný čas kým je menu otvorené stojí.
+- **Pauza** 🟢 – tlačidlo ⏸ v hornom paneli (na PC aj Escape, na Androide tlačidlo Späť): Pokračovať, zvuk, jazyk, štatistiky, 🏠 Hlavné menu, 🚪 Ukončiť hru (Android, s potvrdením). Čas v hre stojí.
+- **Tlačidlo Späť (Android)** zavrie to, čo je navrchu: minihru, okno, výber mačky; inak otvorí pauzu. V hlavnom menu hru ukončí. Hra sa ukladá sama, ukončenie nič nestratí.
+- Menu ☰ obsahuje herný obsah: Výzvy, Úspechy, Album, Pohľadnice, Obchod.
 - **Písmo:** všade čitateľné Nunito (nadpisy hrubším rezom). Pixelové písmo sa pri malých veľkostiach rozmazávalo.
 - Prístupnosť: veľkosť písma, režim pre farboslepých (ikony + farby, nie len farby), možnosť vypnúť časový tlak („Pokojný režim").
 
