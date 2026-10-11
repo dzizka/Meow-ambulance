@@ -529,11 +529,13 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     // Rozloženie v CSS pixeloch (rovnaké ako HTML rozhranie), plátno je × DPR
     const l = computeLayout(this.scale.width / DPR, this.scale.height / DPR);
     const cam = this.cameras.main;
+    // Na šírku je svet zvislo v strede (pod horným panelom, ak je miesto)
+    const top = l.portrait ? 0 : Math.max(0, Math.round((l.height - l.worldScreenH) / 2));
     cam.setViewport(
       0,
-      0,
-      Math.round(l.width * DPR),
-      Math.round((l.portrait ? l.worldScreenH : l.height) * DPR),
+      Math.round(top * DPR),
+      Math.round(l.worldScreenW * DPR),
+      Math.round((l.portrait ? l.worldScreenH : l.height - top * 2) * DPR),
     );
     cam.setZoom(l.zoom * DPR);
     const x0 = roomX(this.room);

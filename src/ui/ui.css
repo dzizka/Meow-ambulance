@@ -144,8 +144,12 @@ body.minigame .toast:not(:last-child) {
   right: 10px;
   bottom: calc(env(safe-area-inset-bottom) + 10px);
 }
-.landscape .sheet.empty {
+.landscape:not(.docked) .sheet.empty {
   display: none;
+}
+/* Široká obrazovka: panel je stále vedľa sveta (prehľad miestnosti alebo karta mačky) */
+.landscape.docked .sheet {
+  width: var(--panel-w);
 }
 .sheet h2 {
   margin: 0;
@@ -323,6 +327,11 @@ body.minigame .toast:not(:last-child) {
   gap: 8px;
   align-items: center;
   text-align: left;
+}
+.cat-tile .needs {
+  margin-left: 4px;
+  font-size: 0.85em;
+  letter-spacing: 1px;
 }
 
 /* ---------- Modálne okná ---------- */

@@ -108,6 +108,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Hostia sú postavičky G5 (`personAnims.ts`, hárky sa načítajú podľa `cafe.guest_sprites`). „Sedenie": stolička má väčšiu hĺbku ako hosť, takže mu zakryje nohy.
 - Save v3 pridal `cafe` a `counters.served` (migrácia `MIGRATIONS[2]`). Save v6 pridal `shelter`, `counters.vaccinated` a voliteľné `cat.ward` / `cat.vaccinated`.
 - Pacienti: `cat.ward` = garáž alebo karanténa (`freeIn`, `moveCat`, `totalCages`). Diagnózy, ktoré hráč nemá čím odhaliť, mačky nedostanú (`generateCat({ tools })`).
+- Rozloženie (`computeLayout` v `layout.ts`): na výšku svet hore a panel pod ním; na šírku, ak to svet nezmenší o viac ako ~28 %, je panel **ukotvený vpravo** (`docked`) a stále ukazuje prehľad miestnosti (mačky s ikonkami potrieb, voľné miesta, personál, hlásenia, záujemcovia) alebo kartu mačky. Na užšej obrazovke na šírku sa panel vysúva iba s kartou mačky. Svet je na šírku zvislo v strede.
 - Karta mačky sa prekreslí iba pri zmene obsahu (`UI.setSheet`) – inak by obnovovanie každých 500 ms mohlo zjesť ťuknutie.
 
 ## Ekonomika (GDD §6.1)
