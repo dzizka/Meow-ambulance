@@ -276,6 +276,7 @@ export interface GameData {
   equipment: EquipmentDef[];
   decor: DecorDef[];
   staff: StaffDef[];
+  achievements: AchievementDef[];
 }
 
 export interface CatStats {
@@ -451,6 +452,15 @@ export interface DecorDef {
 export type StaffId = 'caretaker' | 'vet' | 'barista' | 'social';
 
 /** Člen personálu (GDD §6.4). */
+/** Úspech (GDD §7.5). */
+export interface AchievementDef {
+  id: string;
+  icon: string;
+  kind: keyof Counters | 'residents' | 'album' | 'album_all' | 'level' | 'staff_all' | 'buildings';
+  target: number;
+  money: number;
+}
+
 export interface StaffDef {
   id: StaffId;
   name_key: string;

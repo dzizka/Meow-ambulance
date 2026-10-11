@@ -119,7 +119,7 @@ const STAT_KEYS: Record<keyof CatStats, string> = {
 };
 
 type CardTab = 'health' | 'care' | 'about';
-type MenuTab = 'challenges' | 'album' | 'postcards' | 'shop' | 'more';
+type MenuTab = 'challenges' | 'achievements' | 'album' | 'postcards' | 'shop' | 'more';
 /** Časti obchodu – aby sa nemuselo dlho rolovať. */
 type ShopTab = 'build' | 'equipment' | 'staff' | 'decor';
 
@@ -551,6 +551,13 @@ export class UI {
       this.updateHud();
     });
     bus.on('hotelCheckIn', ({ cat }) => this.toast(t('TOAST_HOTEL_IN', { cat: cat.name })));
+    bus.on('achievementUnlocked', ({ def }) => {
+      this.toast(
+        t('TOAST_ACHIEVEMENT', { name: t(`ACH_${def.id.toUpperCase()}`), money: def.money }),
+      );
+      this.game.playSound('success', 0.5);
+      if (this.modalKind === 'menu' && this.menuTab === 'achievements') this.renderModal();
+    });
     bus.on('tripArrived', ({ trip }) => {
       this.toast(t('TOAST_TRIP', { n: trip.kids.length }));
       this.game.playSound('notify', 0.5);
@@ -1868,16 +1875,18 @@ export class UI {
   // ---------- Menu: výzvy, album, pohľadnice, garáž ----------
 
   private menuContent(): HTMLElement[] {
-    const tabs: { id: MenuTab; label: string; badge: number }[] = [
+    const tabs: { id: MenuTab; icon: string; label: string; badge: number }[] = [
       {
         id: 'challenges',
-        label: `🎯 ${t('MENU_CHALLENGES')}`,
+        icon: '🎯',
+        label: t('MENU_CHALLENGES'),
         badge: this.state.claimableChallenges,
       },
-      { id: 'album', label: `📖 ${t('MENU_ALBUM')}`, badge: 0 },
-      { id: 'postcards', label: `💌 ${t('MENU_POSTCARDS')}`, badge: this.unseenPostcards },
-      { id: 'shop', label: `🛒 ${t('MENU_SHOP')}`, badge: 0 },
-      { id: 'more', label: '⚙️', badge: 0 },
+      { id: 'achievements', icon: '🏆', label: t('MENU_ACHIEVEMENTS'), badge: 0 },
+      { id: 'album', icon: '📖', label: t('MENU_ALBUM'), badge: 0 },
+      { id: 'postcards', icon: '💌', label: t('MENU_POSTCARDS'), badge: this.unseenPostcards },
+      { id: 'shop', icon: '🛒', label: t('MENU_SHOP'), badge: 0 },
+      { id: 'more', icon: '⚙️', label: '', badge: 0 },
     ];
     const bar = el('div', { class: 'tabs menu-tabs', role: 'tablist' });
     for (const tb of tabs) {
@@ -1889,7 +1898,8 @@ export class UI {
           role: 'tab',
           'aria-selected': this.menuTab === tb.id ? 'true' : 'false',
         },
-        tb.label,
+        el('span', { class: 'tab-ico' }, tb.icon),
+        tb.label ? el('span', { class: 'tab-txt' }, ` ${tb.label}`) : '',
         tb.badge > 0 && this.menuTab !== tb.id ? el('span', { class: 'dot' }) : '',
       );
       b.addEventListener('click', () => {
@@ -1902,14 +1912,71 @@ export class UI {
     const body =
       this.menuTab === 'challenges'
         ? this.challengesContent()
-        : this.menuTab === 'album'
-          ? this.albumContent()
-          : this.menuTab === 'postcards'
-            ? this.postcardsContent()
-            : this.menuTab === 'shop'
-              ? this.shopContent()
-              : this.moreContent();
+        : this.menuTab === 'achievements'
+          ? this.achievementsContent()
+          : this.menuTab === 'album'
+            ? this.albumContent()
+            : this.menuTab === 'postcards'
+              ? this.postcardsContent()
+              : this.menuTab === 'shop'
+                ? this.shopContent()
+                : this.moreContent();
     return [bar, ...body];
+  }
+
+  /** Úspechy: odomknuté navrchu, ostatné s postupom (GDD §7.5). */
+  private achievementsContent(): HTMLElement[] {
+    const s = this.state;
+    const defs = [...s.data.achievements].sort(
+      (a, b) =>
+        Number(s.achievements[b.id] !== undefined) - Number(s.achievements[a.id] !== undefined),
+    );
+    return [
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_ACH_LINE', { n: s.achievementCount, total: s.data.achievements.length }),
+      ),
+      ...defs.map((def) => {
+        const done = s.achievements[def.id] !== undefined;
+        const p = s.achievementProgress(def);
+        return el(
+          'div',
+          { class: `achievement${done ? ' done' : ''}` },
+          el('span', { class: 'shop-icon' }, done ? def.icon : '🔒'),
+          el(
+            'div',
+            { class: 'grow' },
+            el('strong', {}, t(`ACH_${def.id.toUpperCase()}`)),
+            el(
+              'p',
+              { class: 'hint' },
+              t(
+                p.need === 1 &&
+                  t(`ACHD_${def.kind.toUpperCase()}_1`) !== `ACHD_${def.kind.toUpperCase()}_1`
+                  ? `ACHD_${def.kind.toUpperCase()}_1`
+                  : `ACHD_${def.kind.toUpperCase()}`,
+                { n: p.need },
+              ),
+            ),
+            done
+              ? ''
+              : el(
+                  'div',
+                  { class: 'bar' },
+                  el('i', {
+                    style: `width:${Math.round((p.have / p.need) * 100)}%;background:#f2c14e`,
+                  }),
+                ),
+          ),
+          el(
+            'span',
+            { class: done ? 'chip good' : 'chip' },
+            done ? '✓' : `${p.have}/${p.need} · ${t('UI_ACH_REWARD', { money: def.money })}`,
+          ),
+        );
+      }),
+    ];
   }
 
   private challengesContent(): HTMLElement[] {

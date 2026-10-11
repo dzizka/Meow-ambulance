@@ -21,6 +21,8 @@ export function loadTestData(): GameData {
     equipment: read<{ equipment: GameData['equipment'] }>('equipment.json').equipment,
     decor: read<{ decor: GameData['decor'] }>('decor.json').decor,
     staff: read<{ staff: GameData['staff'] }>('staff.json').staff,
+    achievements: read<{ achievements: GameData['achievements'] }>('achievements.json')
+      .achievements,
   };
 }
 

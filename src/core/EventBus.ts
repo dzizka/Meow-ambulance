@@ -51,6 +51,8 @@ export interface GameEvents {
       | 'floor'
       | 'education';
   };
+  /** Úspech odomknutý (GDD §7.5). */
+  achievementUnlocked: { def: import('../data/types').AchievementDef };
   /** Edukačné centrum (GDD §6.9). */
   tripArrived: { trip: SchoolTrip };
   tripLeft: { trip: SchoolTrip; stars: number; money: number; rep: number };
