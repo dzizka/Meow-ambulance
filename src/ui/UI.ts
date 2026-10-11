@@ -54,6 +54,8 @@ export type MinigameKind =
   | 'xray'
   | 'surgery'
   | 'splint'
+  | 'ct'
+  | 'swim'
   | 'feather'
   | 'hold'
   | 'quiet';
@@ -80,6 +82,7 @@ const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> 
   ear_drops: { kind: 'drops', titleKey: 'MG_DROPS_TITLE' },
   insulin: { kind: 'vaccine', titleKey: 'MG_INSULIN_TITLE' },
   splint: { kind: 'splint', titleKey: 'MG_SPLINT_TITLE' },
+  swim: { kind: 'swim', titleKey: 'MG_SWIM_TITLE' },
   surgery: { kind: 'surgery', titleKey: 'MG_SURGERY_TITLE' },
 };
 const SOCIAL: {
@@ -154,6 +157,14 @@ function decorPreview(def: DecorDef): HTMLElement {
 }
 
 const paws = (n: number): string => '🐾'.repeat(n);
+/** Ikony miestností kliniky (prízemie aj 2. poschodie). */
+const CLINIC_ICONS: Record<ClinicRoomId, string> = {
+  lab: '🔬',
+  xray: '🩻',
+  or: '🩺',
+  ct: '🌀',
+  pool: '🏊',
+};
 const ROOM_ICON: Record<Room, string> = {
   garage: '🏥',
   cafe: '☕',
@@ -161,6 +172,7 @@ const ROOM_ICON: Record<Room, string> = {
   clinic: '⚕️',
   catio: '🌳',
   hotel: '🏨',
+  clinic2: '🏢',
 };
 const ORDER_ICON = { coffee: '☕', tea: '🍵', cake: '🍰' } as const;
 const round1 = (n: number): string =>
@@ -325,6 +337,7 @@ export class UI {
       ...(s.catio.open ? ['catio' as const] : []),
       ...(s.hotel.open ? ['hotel' as const] : []),
       ...(s.clinic.open ? ['clinic' as const] : []),
+      ...(s.hasFloor2 ? ['clinic2' as const] : []),
     ];
   }
 
@@ -504,6 +517,7 @@ export class UI {
         catio: 'TOAST_CATIO_OPEN',
         hotel: 'TOAST_HOTEL_OPEN',
         suite: 'TOAST_BOUGHT_SUITE',
+        floor: 'TOAST_FLOOR_OPEN',
       }[kind];
       this.toast(t(key));
       this.game.playSound('upgrade', 0.6);
@@ -781,8 +795,12 @@ export class UI {
             'li',
             { class: 'row' },
             el('span', {}, t(def?.name_key ?? c.id)),
-            s.needsOperatingRoom(c.id) && !s.hasClinicRoom('or')
-              ? el('span', { class: 'chip lock' }, `🔒 ${t('UI_NEEDS_OR')}`)
+            s.treatmentRoom(c.id) && !s.hasClinicRoom(s.treatmentRoom(c.id) ?? 'or')
+              ? el(
+                  'span',
+                  { class: 'chip lock' },
+                  `🔒 ${t(s.treatmentRoom(c.id) === 'pool' ? 'UI_NEEDS_POOL' : 'UI_NEEDS_OR')}`,
+                )
               : button(`🩹 ${t('UI_TREAT')}`, () => void this.doTreat(cat, c.id), {
                   class: 'btn primary',
                   disabled: this.busy,
@@ -800,6 +818,7 @@ export class UI {
       ['otoscope', '🔦', 'UI_TOOL_OTOSCOPE'],
       ['bloodtest', '🩸', 'UI_TOOL_BLOODTEST'],
       ['xray', '🩻', 'UI_TOOL_XRAY'],
+      ['ct', '🌀', 'UI_TOOL_CT'],
     ];
     const pending = tools.filter(
       ([tool]) => s.tools.includes(tool) && !cat.examined.includes(tool),
@@ -824,18 +843,36 @@ export class UI {
   /** Klinika: kastrácia pred adopciou (GDD §6.5). */
   private clinicActions(cat: CatData): HTMLElement[] {
     const s = this.state;
-    if (cat.resident || !s.hasClinicRoom('or')) return [];
-    if (cat.neutered)
-      return [el('div', {}, el('span', { class: 'chip good' }, `✂️ ${t('UI_NEUTERED')}`))];
-    if (!s.canNeuter(cat)) return [];
-    return [
-      el('p', { class: 'hint' }, t('UI_NEUTER_HINT')),
-      el(
-        'div',
-        { class: 'actions' },
+    if (cat.resident || cat.hotel) return [];
+    const out: HTMLElement[] = [];
+    const chips: HTMLElement[] = [];
+    if (cat.neutered) chips.push(el('span', { class: 'chip good' }, `✂️ ${t('UI_NEUTERED')}`));
+    if (cat.rehabbed) chips.push(el('span', { class: 'chip good' }, `🏊 ${t('UI_REHABBED')}`));
+    if (chips.length) out.push(el('div', { class: 'chips' }, ...chips));
+    const buttons: HTMLElement[] = [];
+    if (s.canNeuter(cat)) {
+      out.push(el('p', { class: 'hint' }, t('UI_NEUTER_HINT')));
+      buttons.push(
         button(`✂️ ${t('UI_NEUTER')}`, () => void this.doNeuter(cat), { disabled: this.busy }),
-      ),
-    ];
+      );
+    }
+    if (s.canRehab(cat)) {
+      out.push(el('p', { class: 'hint' }, t('UI_REHAB_HINT')));
+      buttons.push(
+        button(`🏊 ${t('UI_REHAB')}`, () => void this.doRehab(cat), { disabled: this.busy }),
+      );
+    }
+    if (buttons.length) out.push(el('div', { class: 'actions' }, ...buttons));
+    return out;
+  }
+
+  private async doRehab(cat: CatData): Promise<void> {
+    const stars = await this.runMinigame({ kind: 'swim', cat, title: t('MG_REHAB_TITLE') });
+    if (stars === null) return;
+    if (this.state.rehab(cat.id)) {
+      this.toast(t('TOAST_REHABBED', { cat: cat.name }));
+      this.game.playSound('success', 0.5);
+    }
   }
 
   private async doNeuter(cat: CatData): Promise<void> {
@@ -950,6 +987,10 @@ export class UI {
     }
     if (this.game.room === 'clinic') {
       this.renderClinicPanel();
+      return;
+    }
+    if (this.game.room === 'clinic2') {
+      this.renderClinic2Panel();
       return;
     }
     if (this.game.room === 'catio') {
@@ -1121,6 +1162,33 @@ export class UI {
     );
   }
 
+  /** Panel 2. poschodia kliniky: CT a bazén (GDD §6.8). */
+  private renderClinic2Panel(): void {
+    const s = this.state;
+    const roomLine = (['ct', 'pool'] as const)
+      .map((r) => `${s.hasClinicRoom(r) ? '✓' : '🔒'} ${t(`CLINIC_${r.toUpperCase()}`)}`)
+      .join(' · ');
+    const waiting = s.cats.filter(
+      (c) =>
+        !c.resident &&
+        ((s.hasClinicRoom('ct') && !c.examined.includes('ct')) ||
+          c.conditions.some((x) => x.revealed && !x.treated && x.id === 'spine') ||
+          s.canRehab(c)),
+    );
+    this.setSheet(
+      el('h2', {}, `🏢 ${t('UI_CLINIC2')}`),
+      el('p', { class: 'hint' }, roomLine),
+      waiting.length
+        ? el('div', { class: 'cat-list' }, ...waiting.map((cat) => this.catTile(cat)))
+        : el('p', { class: 'muted' }, t('UI_CLINIC_EMPTY')),
+      el('p', { class: 'hint' }, t('UI_CLINIC2_TAP')),
+      (['ct', 'pool'] as const).some((r) => !s.hasClinicRoom(r))
+        ? button(`🛒 ${t('UI_CLINIC_BUY_ROOMS')}`, () => this.openShop(), { class: 'btn' })
+        : '',
+      this.panelButtons(),
+    );
+  }
+
   /** Panel kaviarne: hostia s objednávkami (obsluha ťuknutím) a stálice (GDD §5.5). */
   private renderCafePanel(): void {
     const s = this.state;
@@ -1263,7 +1331,7 @@ export class UI {
 
   private async doExamine(cat: CatData, tool: DiagnosticTool): Promise<void> {
     // Krvný test a röntgen majú vlastnú minihru (GDD §6.5)
-    if (tool === 'bloodtest' || tool === 'xray') {
+    if (tool === 'bloodtest' || tool === 'xray' || tool === 'ct') {
       const hidden = cat.conditions.find(
         (c) =>
           !c.revealed &&
@@ -1272,7 +1340,9 @@ export class UI {
       const stars = await this.runMinigame({
         kind: tool,
         cat,
-        title: t(tool === 'xray' ? 'MG_XRAY_TITLE' : 'MG_BLOOD_TITLE'),
+        title: t(
+          tool === 'xray' ? 'MG_XRAY_TITLE' : tool === 'ct' ? 'MG_CT_TITLE' : 'MG_BLOOD_TITLE',
+        ),
         xray: hidden ? (hidden.id as 'fracture' | 'swallowed') : null,
       });
       if (stars === null) return;
@@ -1427,7 +1497,7 @@ export class UI {
   private stationContent(): HTMLElement[] {
     const s = this.state;
     const room = this.stationRoom;
-    const icons = { lab: '🔬', xray: '🩻', or: '🩺' } as const;
+    const icons = CLINIC_ICONS;
     const go = (run: () => void) => () => {
       this.closeModal();
       run();
@@ -1456,6 +1526,38 @@ export class UI {
             },
           ),
         );
+      if (room === 'ct' && !cat.examined.includes('ct'))
+        actions.push(
+          button(
+            `🌀 ${t('UI_TOOL_CT')}`,
+            go(() => void this.doExamine(cat, 'ct')),
+            {
+              class: 'btn primary',
+            },
+          ),
+        );
+      if (room === 'pool') {
+        for (const c of cat.conditions) {
+          const def = s.data.conditions.find((d) => d.id === c.id);
+          if (!c.revealed || c.treated || def?.minigame !== 'swim') continue;
+          actions.push(
+            button(
+              `🩹 ${t(def.name_key)}`,
+              go(() => void this.doTreat(cat, c.id)),
+              {
+                class: 'btn primary',
+              },
+            ),
+          );
+        }
+        if (s.canRehab(cat))
+          actions.push(
+            button(
+              `🏊 ${t('UI_REHAB')}`,
+              go(() => void this.doRehab(cat)),
+            ),
+          );
+      }
       if (room === 'or') {
         for (const c of cat.conditions) {
           const def = s.data.conditions.find((d) => d.id === c.id);
@@ -2251,9 +2353,56 @@ export class UI {
         ),
       ];
     }
-    const icons = { lab: '🔬', xray: '🩻', or: '🩺' } as const;
-    return (['lab', 'xray', 'or'] as const).map((room) => {
+    const icons = CLINIC_ICONS;
+    const floorPrice = b.floor_price;
+    const floor = s.hasFloor2
+      ? el(
+          'div',
+          { class: 'upgrade' },
+          el('strong', {}, `🏢 ${t('UI_FLOOR2')}`),
+          el('span', { class: 'chip good' }, '✓'),
+        )
+      : el(
+          'div',
+          { class: 'upgrade cafe' },
+          el(
+            'div',
+            {},
+            el('strong', {}, `🏢 ${t('UI_FLOOR2')}`),
+            el('p', { class: 'hint' }, t('UI_FLOOR2_DESC')),
+          ),
+          !s.hasUnlock('floors')
+            ? el(
+                'span',
+                { class: 'chip lock' },
+                t('UI_LOCKED', { rep: s.unlockRep('floors') ?? '?' }),
+              )
+            : button(
+                t('UI_BUY_CLINIC', { price: floorPrice }),
+                () => {
+                  if (s.buyFloor()) this.renderModal();
+                },
+                { class: 'btn primary', disabled: s.money < floorPrice },
+              ),
+        );
+    const rooms: ClinicRoomId[] = s.hasFloor2
+      ? ['lab', 'xray', 'or', 'ct', 'pool']
+      : ['lab', 'xray', 'or'];
+    const list = rooms.map((room) => {
       const price = s.clinicRoomPrice(room);
+      const unlock = s.clinicRoomUnlock(room);
+      if (unlock && !s.hasUnlock(unlock) && !s.hasClinicRoom(room))
+        return el(
+          'div',
+          { class: 'upgrade cafe' },
+          el(
+            'div',
+            {},
+            el('strong', {}, `${icons[room]} ${t(`CLINIC_${room.toUpperCase()}`)}`),
+            el('p', { class: 'hint' }, t(`CLINIC_${room.toUpperCase()}_DESC`)),
+          ),
+          el('span', { class: 'chip lock' }, t('UI_LOCKED', { rep: s.unlockRep(unlock) ?? '?' })),
+        );
       return el(
         'div',
         { class: 'upgrade cafe' },
@@ -2274,6 +2423,7 @@ export class UI {
             ),
       );
     });
+    return [...list, floor];
   }
 
   /** Kúpa kaviarne, potom dokupovanie stolov (GDD §5.5). */

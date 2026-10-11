@@ -380,6 +380,13 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 - Hosťom klesá spokojnosť 1,5× rýchlejšie (chýba im domov). Majiteľ zaplatí **140 € × (0,5 + priemerná spokojnosť/100)**; pri priemere aspoň 75 % pridá **+1 ★**.
 - Hostia si občas ľahnú do apartmánu, v noci tam spia. Prehľad hotela ukazuje, kedy kto odchádza a ako je spokojný; karta hosťa má záložku Pobyt.
 
+
+### 6.8 Klinika – 2. poschodie: CT a rehabilitačný bazén 🟢 (úroveň 7, 500 ★)
+- „Viac poschodí": klinika dostane **2. poschodie** (4 000 €, Obchod → Stavby), vlastná miestnosť 🏢 so schodmi.
+- **CT** (4 000 €): nový nástroj. Minihra – držať prst, prstenec skenuje; keď sa mačka zavrtí (!), treba pustiť, inak je snímka rozmazaná. Odhalí **srdcovú chorobu** (dospelé a staršie, liečba tabletkami – sirup) a **ochorenie chrbtice**.
+- **Rehabilitačný bazén** (3 500 €): minihra **Plávanie** – striedavo ťukať ľavou a pravou labkou, mačka v plávacej veste preplává bazén. Lieči ochorenie chrbtice (bez bazéna sa nedá – mačky ho bez bazéna ani nedostanú) a ponúka **rehabilitáciu** po zlomenine, operácii alebo chrbtici: +20 zdravia, pri adopcii príspevok +10 %.
+- Prístroje sú ťuknuteľné ako na prízemí, mačka leží na stole CT alebo pláva v bazéne; veterinárka robí CT aj sama.
+
 ---
 
 ## 7. Retenčné mechaniky

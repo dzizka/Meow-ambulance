@@ -37,7 +37,17 @@ export interface GameEvents {
   challengeCompleted: { challenge: ActiveChallenge };
   albumAdded: { key: string };
   upgradeBought: {
-    kind: 'cage' | 'slot' | 'cafe' | 'table' | 'shelter' | 'clinic' | 'catio' | 'hotel' | 'suite';
+    kind:
+      | 'cage'
+      | 'slot'
+      | 'cafe'
+      | 'table'
+      | 'shelter'
+      | 'clinic'
+      | 'catio'
+      | 'hotel'
+      | 'suite'
+      | 'floor';
   };
   /** Mačací hotel (GDD §6.7). */
   hotelCheckIn: { cat: CatData };

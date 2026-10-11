@@ -154,18 +154,23 @@
     }
   },
   "clinic": {
-    "_comment": "Klinika (GDD §6.5): budova, potom miestnosti. Bonusy pri adopcii kastrovanej mačky a prípadu z inej útulne.",
+    "_comment": "Klinika (GDD §6.5): budova, potom miestnosti. Bonusy pri adopcii kastrovanej mačky a prípadu z inej útulne. floor_price = 2. poschodie (CT, bazén); rehabilitácia v bazéne: +zdravie a vyšší príspevok.",
     "price": 1500,
     "rooms": {
       "lab": 2000,
       "xray": 2500,
-      "or": 3500
+      "or": 3500,
+      "ct": 4000,
+      "pool": 3500
     },
     "neuter_fee_bonus": 0.15,
     "neuter_rep_bonus": 1,
     "neuter_match_bonus": 6,
     "case_fee_bonus": 0.25,
-    "case_rep_bonus": 2
+    "case_rep_bonus": 2,
+    "floor_price": 4000,
+    "rehab_fee_bonus": 0.1,
+    "rehab_health": 20
   },
   "catio": {
     "_comment": "Catio – vonkajší výbeh pri kaviarni (GDD §6.6): stálice chodia cez deň von, spokojnosť im klesá pomalšie.",

@@ -2,9 +2,9 @@
 
 export type SocialActivity = 'feather' | 'brush' | 'hand_feed' | 'sit_quietly';
 export type DiagnosticTool =
-  'hand' | 'thermometer' | 'stethoscope' | 'otoscope' | 'bloodtest' | 'xray';
+  'hand' | 'thermometer' | 'stethoscope' | 'otoscope' | 'bloodtest' | 'xray' | 'ct';
 /** Miestnosti kliniky (GDD §6.5). */
-export type ClinicRoomId = 'lab' | 'xray' | 'or';
+export type ClinicRoomId = 'lab' | 'xray' | 'or' | 'ct' | 'pool';
 export type AgeGroup = 'kitten' | 'adult' | 'senior';
 
 export interface TraitDef {
@@ -150,6 +150,10 @@ export interface BalanceData {
   /** Klinika – Fáza 3 (GDD §6.5). */
   clinic: {
     price: number;
+    /** 2. poschodie kliniky (CT a bazén). */
+    floor_price: number;
+    rehab_fee_bonus: number;
+    rehab_health: number;
     rooms: Record<ClinicRoomId, number>;
     neuter_fee_bonus: number;
     neuter_rep_bonus: number;
@@ -306,6 +310,8 @@ export interface CatData {
   vaccinated?: boolean;
   /** Kastrovaná na klinike – bonus ★ a lepšia zhoda pri adopcii. */
   neutered?: boolean;
+  /** Rehabilitácia v bazéne po zlomenine/operácii – vyšší príspevok. */
+  rehabbed?: boolean;
   /** Prišla ako prípad z inej útulne – bonus pri adopcii. */
   clinicCase?: boolean;
   /** Hosť mačacieho hotela (GDD §6.7) – nie je naša, majiteľ si ju vyzdvihne. */

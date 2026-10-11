@@ -116,6 +116,12 @@ export class MinigameScene extends Phaser.Scene {
       case 'splint':
         this.splint();
         break;
+      case 'ct':
+        this.ctScan();
+        break;
+      case 'swim':
+        this.swim();
+        break;
       default:
         this.hold();
     }
@@ -1786,6 +1792,188 @@ export class MinigameScene extends Phaser.Scene {
       ring.beginPath();
       ring.arc(cx, cy, (inner + outer) / 2, -Math.PI / 2, -Math.PI / 2 + turned);
       ring.strokePath();
+    };
+  }
+
+  // ---------- Klinika: CT (GDD §6.8) ----------
+
+  /**
+   * Prstenec CT prechádza po mačke, kým hráč drží prst. Keď sa mačka zavrtí (!), treba pustiť –
+   * inak je snímka rozmazaná.
+   */
+  private ctScan(): void {
+    this.hintText.setText(t('MG_CT_HINT'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const { width: W } = this.scale;
+    this.catSprite.play(catAnimKey(this.cfg.cat.sprite, 'lay_idle', 'right'));
+    const table = this.add.graphics().setDepth(1);
+    this.catSprite.setDepth(2);
+    table.fillStyle(0xe8ecef, 1).fillRoundedRect(cx - S * 20, cy + S * 4, S * 40, S * 3, S);
+    table.fillStyle(0xb8c4ca, 1).fillRect(cx - S * 20, cy + S * 6.5, S * 40, S);
+    const ring = this.add.graphics().setDepth(5);
+    const bar = this.add.graphics().setDepth(5);
+    const warn = this.text(cx, cy - S * 14, '!', S * 5, '#e86a6a', true)
+      .setOrigin(0.5)
+      .setDepth(8)
+      .setVisible(false);
+    const x0 = cx - S * 14;
+    const x1 = cx + S * 14;
+    let pos = 0; // 0..1
+    let faults = 0;
+    let wiggle = 0; // ms, kým sa mačka vrtí
+    let nextWiggle = Phaser.Math.Between(1200, 2200);
+    let faulted = false;
+    const slices: boolean[] = [];
+    const bw = Math.min(W * 0.8, S * 40);
+    const by = cy + S * 16;
+    this.updater = (dt) => {
+      const down = this.input.activePointer.isDown;
+      if (wiggle > 0) {
+        wiggle -= dt;
+        this.catSprite.x = cx + Math.sin(wiggle / 30) * S * 0.8;
+        if (down && !faulted) {
+          faulted = true;
+          faults += 1;
+          this.flash(t('MG_CT_BLUR'), cx, cy - S * 9, '#e86a6a');
+          this.sfx('mew', 0.4);
+          slices.push(false);
+        }
+        if (wiggle <= 0) {
+          warn.setVisible(false);
+          this.catSprite.x = cx;
+          nextWiggle = Phaser.Math.Between(1300, 2600);
+        }
+      } else if (down) {
+        const before = Math.floor(pos * 12);
+        pos = Math.min(1, pos + dt / 5200);
+        if (Math.floor(pos * 12) > before) slices.push(true);
+        nextWiggle -= dt;
+        if (nextWiggle <= 0 && pos < 0.95) {
+          wiggle = 1100;
+          faulted = false;
+          warn.setVisible(true);
+          this.sfx('mew', 0.3);
+        }
+      }
+      const rx = x0 + (x1 - x0) * pos;
+      ring.clear();
+      ring.lineStyle(S * 1.6, 0x3b2f45, 1).strokeEllipse(rx, cy, S * 5, S * 16);
+      ring
+        .lineStyle(S * 1.1, wiggle > 0 ? 0xe86a6a : 0x9ad0ff, 1)
+        .strokeEllipse(rx, cy, S * 5, S * 16);
+      if (down && wiggle <= 0)
+        ring.fillStyle(0x9ad0ff, 0.25).fillRect(rx - S * 0.5, cy - S * 7, S, S * 14);
+      bar.clear();
+      bar.fillStyle(0x3b2f45, 1).fillRoundedRect(cx - bw / 2, by, bw, S * 2.4, S);
+      const sw = bw / 14;
+      slices.slice(-14).forEach((ok, i) => {
+        bar
+          .fillStyle(ok ? 0x9ad17b : 0xe86a6a, 1)
+          .fillRect(cx - bw / 2 + i * sw + 1, by + 2, sw - 2, S * 2.4 - 4);
+      });
+      if (pos >= 1) this.finish((faults === 0 ? 3 : faults <= 1 ? 2 : 1) as Stars);
+    };
+  }
+
+  // ---------- Klinika: plávanie v bazéne ----------
+
+  /** Striedavo ťukať ľavou a pravou labkou – mačka v plávacej veste preplává bazén. */
+  private swim(): void {
+    this.hintText.setText(t('MG_SWIM_HINT'));
+    const S = this.S;
+    const { width: W, height: H } = this.scale;
+    const { cy } = this;
+    const pw = Math.min(W * 0.9, S * 48);
+    const px0 = (W - pw) / 2;
+    const pool = this.add.graphics().setDepth(1);
+    pool.fillStyle(0xc9d3da, 1).fillRoundedRect(px0 - S, cy - S * 9, pw + S * 2, S * 18, S);
+    pool.fillStyle(0x3a8ad0, 1).fillRect(px0, cy - S * 8, pw, S * 16);
+    pool.fillStyle(0x4aa0e0, 1).fillRect(px0, cy - S * 8, pw, S * 2);
+    const goal = this.text(px0 + pw - S * 2, cy - S * 11, '🏁', S * 3, '#fff').setOrigin(0.5);
+    void goal;
+    const waves = this.add.graphics().setDepth(1.5);
+    this.catSprite.setDepth(2);
+    this.catSprite
+      .setScale(this.S * 0.7)
+      .play(catAnimKey(this.cfg.cat.sprite, 'lay_idle', 'right'));
+    const vest = this.add.graphics().setDepth(3);
+    const strokes = 10;
+    let done = 0;
+    let faults = 0;
+    let next: 'L' | 'R' = 'L';
+    let lastTap = 0;
+    let t0 = 0;
+    const startX = px0 + S * 9;
+    const endX = px0 + pw - S * 9;
+    this.catSprite.setPosition(startX, cy);
+    const btnY = Math.min(H - S * 7, cy + S * 15);
+    const btnR = S * 4.5;
+    const btns = this.add.graphics().setDepth(4);
+    const lbl = (x: number, txt: string) =>
+      this.text(x, btnY, txt, S * 2.2, TEXT, true)
+        .setOrigin(0.5)
+        .setDepth(5);
+    const lx = W / 2 - S * 9;
+    const rx = W / 2 + S * 9;
+    lbl(lx, t('MG_SWIM_LEFT'));
+    lbl(rx, t('MG_SWIM_RIGHT'));
+    const drawBtns = () => {
+      btns.clear();
+      for (const [x, side] of [
+        [lx, 'L'],
+        [rx, 'R'],
+      ] as const) {
+        btns.fillStyle(side === next ? 0x9ad17b : 0x5a4a63, 1).fillCircle(x, btnY, btnR);
+        btns
+          .lineStyle(Math.max(2, S * 0.3), 0xf4e6d0, side === next ? 1 : 0.3)
+          .strokeCircle(x, btnY, btnR);
+      }
+    };
+    drawBtns();
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      if (this.finished || p.y < cy + S * 9) return;
+      const side: 'L' | 'R' = p.x < W / 2 ? 'L' : 'R';
+      const now = this.time.now;
+      if (now - lastTap < 180) return;
+      lastTap = now;
+      if (side !== next) {
+        faults += 1;
+        this.flash(t('MG_SWIM_SPLASH'), this.catSprite.x, cy - S * 8, '#e86a6a');
+        this.sfx('error', 0.3);
+        return;
+      }
+      next = next === 'L' ? 'R' : 'L';
+      done += 1;
+      drawBtns();
+      this.sfx('click', 0.4);
+      this.tweens.add({
+        targets: this.catSprite,
+        x: startX + ((endX - startX) * done) / strokes,
+        duration: 260,
+        ease: 'Sine.easeOut',
+      });
+      if (done >= strokes) {
+        this.time.delayedCall(300, () =>
+          this.finish((faults === 0 ? 3 : faults <= 2 ? 2 : 1) as Stars),
+        );
+      }
+    });
+    this.updater = (dt) => {
+      t0 += dt;
+      waves.clear();
+      for (let i = 0; i < 9; i++) {
+        const x = px0 + (((i * pw) / 9 + t0 * 0.03) % pw);
+        waves.fillStyle(0xbfe8ff, 0.7).fillRect(x, cy - S * 4 + (i % 3) * S * 4, S * 2, S * 0.3);
+      }
+      const c = this.catSprite;
+      c.y = cy + Math.sin(t0 / 300) * S * 0.4;
+      vest.clear();
+      vest
+        .fillStyle(0xf08a30, 1)
+        .fillRoundedRect(c.x - S * 4, c.y + S * 1.2, S * 8, S * 2.2, S * 0.6);
+      vest.fillStyle(0xffffff, 1).fillRect(c.x - S * 0.5, c.y + S * 1.2, S, S * 2.2);
+      waves.fillStyle(0x3a8ad0, 0.55).fillRect(c.x - S * 7, c.y + S * 3, S * 14, S * 2);
     };
   }
 }

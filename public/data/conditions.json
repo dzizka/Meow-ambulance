@@ -1,5 +1,5 @@
 {
-  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush, inhalation, bath, nail_trim, ear_drops, vaccine, splint, surgery). ages = iba tento vek; clinic = diagnóza kliniky. surgery potrebuje operačnú sálu.",
+  "_comment": "Diagnózy MVP (GDD §4.1–4.2). reveal_tool = nástroj, ktorý diagnózu odhalí. minigame = id minihry (tick_removal, bandage, ear_cleaning, syrup, hold_brush, inhalation, bath, nail_trim, ear_drops, vaccine, splint, surgery). ages = iba tento vek; clinic = diagnóza kliniky. surgery potrebuje operačnú sálu, swim bazén.",
   "conditions": [
     {
       "id": "ticks",
@@ -120,6 +120,25 @@
       "minigame": "surgery",
       "health_gain": 40,
       "weight": 10,
+      "clinic": true
+    },
+    {
+      "id": "heart",
+      "name_key": "COND_HEART",
+      "reveal_tool": "ct",
+      "minigame": "syrup",
+      "health_gain": 35,
+      "weight": 10,
+      "ages": ["adult", "senior"],
+      "clinic": true
+    },
+    {
+      "id": "spine",
+      "name_key": "COND_SPINE",
+      "reveal_tool": "ct",
+      "minigame": "swim",
+      "health_gain": 40,
+      "weight": 9,
       "clinic": true
     }
   ]
