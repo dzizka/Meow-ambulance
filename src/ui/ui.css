@@ -648,8 +648,8 @@ body.minigame .toast:not(:last-child) {
   padding-right: 2px;
 }
 .menu-tabs {
-  /* 4 záložky s textom + úzka ⚙️ */
-  grid-template-columns: repeat(4, minmax(0, 1fr)) 32px;
+  /* 5 záložiek s textom + úzka ⚙️ */
+  grid-template-columns: repeat(5, minmax(0, 1fr)) 32px;
   gap: 2px;
 }
 .menu-tabs .tab {
@@ -924,4 +924,35 @@ body.minigame .toast:not(:last-child) {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+/* Úzke okno: v záložkách menu iba ikony, text len pri aktívnej */
+@media (max-width: 520px) {
+  .menu-tabs .tab .tab-txt {
+    display: none;
+  }
+  .menu-tabs .tab {
+    font-size: 17px;
+  }
+}
+
+/* ---------- Úspechy (GDD §7.5) ---------- */
+.achievement {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--ui-bg-deep);
+  opacity: 0.85;
+}
+.achievement.done {
+  opacity: 1;
+  outline: 1px solid #f2c14e;
+}
+.achievement .bar {
+  margin-top: 4px;
+}
+.achievement .chip {
+  white-space: nowrap;
 }

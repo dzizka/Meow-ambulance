@@ -1,6 +1,7 @@
 import type {
   ActiveChallenge,
   AdopterVisit,
+  AchievementDef,
   AdoptionRecord,
   AlbumEntry,
   CafeGuest,
@@ -27,7 +28,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -69,6 +70,8 @@ export interface SaveData {
   hotel: HotelState;
   // od verzie 12
   education: EducationState;
+  // od verzie 13
+  achievements: Record<string, number>;
 }
 
 /** Školský výlet: deti s učiteľkou čakajú na prednášku (GDD §6.9). */
@@ -177,6 +180,8 @@ export class GameState {
   hotel: HotelState = emptyHotel();
   /** Edukačné centrum (GDD §6.9). */
   education: EducationState = emptyEducation();
+  /** Odomknuté úspechy (id → herný čas odomknutia) – GDD §7.5. */
+  achievements: Record<string, number> = {};
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
   /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
@@ -371,6 +376,7 @@ export class GameState {
     this.advanceStaff(deltaMs);
     this.deliverPostcards();
     this.checkReadiness();
+    this.checkAchievements();
   }
 
   /**
@@ -1121,7 +1127,63 @@ export class GameState {
     this.checkChallenges();
   }
 
+  // ---------- Úspechy (GDD §7.5) ----------
+
+  /** Postup úspechu: koľko už je a koľko treba. */
+  achievementProgress(def: AchievementDef): { have: number; need: number } {
+    const need = def.kind === 'album_all' ? this.albumSize : def.target;
+    let have: number;
+    switch (def.kind) {
+      case 'residents':
+        have = this.residents.length;
+        break;
+      case 'album':
+      case 'album_all':
+        have = this.albumFilled;
+        break;
+      case 'level':
+        have = this.level + 1;
+        break;
+      case 'staff_all':
+        have = this.data.staff.filter((d) => this.isHired(d.id)).length;
+        return { have, need: this.data.staff.length };
+      case 'buildings':
+        have = [
+          this.cafe.open,
+          this.shelter.open,
+          this.clinic.open &&
+            ['lab', 'xray', 'or'].every((r) => this.clinic.rooms.includes(r as ClinicRoomId)),
+          this.catio.open,
+          this.hotel.open,
+          this.hasFloor2 && this.clinic.rooms.includes('ct') && this.clinic.rooms.includes('pool'),
+          this.education.open,
+          this.hotel.open && this.nextSuitePrice === null,
+        ].filter(Boolean).length;
+        break;
+      default:
+        have = this.counters[def.kind];
+    }
+    return { have: Math.min(have, need), need };
+  }
+
+  /** Odomkne splnené úspechy a pripíše odmenu. */
+  private checkAchievements(): void {
+    for (const def of this.data.achievements ?? []) {
+      if (this.achievements[def.id] !== undefined) continue;
+      const p = this.achievementProgress(def);
+      if (p.have < p.need) continue;
+      this.achievements[def.id] = this.now;
+      this.addMoney(def.money, true);
+      this.bus.emit('achievementUnlocked', { def });
+    }
+  }
+
+  get achievementCount(): number {
+    return Object.keys(this.achievements).length;
+  }
+
   private checkChallenges(): void {
+    this.checkAchievements();
     for (const ch of this.challenges) {
       if (!ch.completed && this.challengeProgress(ch) >= ch.target) {
         ch.completed = true;
@@ -1595,6 +1657,7 @@ export class GameState {
       catio: { ...this.catio },
       hotel: structuredClone(this.hotel),
       education: structuredClone(this.education),
+      achievements: { ...this.achievements },
     };
   }
 
@@ -1629,6 +1692,7 @@ export class GameState {
     s.catio = { ...(save.catio ?? { open: false }) };
     s.hotel = structuredClone(save.hotel ?? emptyHotel());
     s.education = structuredClone(save.education ?? emptyEducation());
+    s.achievements = { ...(save.achievements ?? {}) };
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();

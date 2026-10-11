@@ -181,6 +181,10 @@ export class DevMenu {
       section(
         '🎯 Postup',
         act('Splniť výzvy', () => s.devCompleteChallenges()),
+        act('Úspechy odznova', () => {
+          s.achievements = {};
+          return 'Úspechy vymazané (odomknú sa znova)';
+        }),
         act('Pohľadnice teraz', () => `Doručené: ${s.devDeliverPostcards()}`),
         act('Kaviareň zadarmo', () => s.devOpenCafe() && 'Kaviareň otvorená'),
         act('Útulok zadarmo', () => s.devOpenShelter() && 'Útulok otvorený'),

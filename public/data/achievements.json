@@ -1,0 +1,173 @@
+{
+  "_comment": "Úspechy (GDD §7.5): kind = počítadlo z Counters, alebo residents / album / album_all / level / staff_all / buildings. Odmena money sa pripíše hneď. Názov ACH_<ID>, popis ACHD_<KIND> s {n}.",
+  "achievements": [
+    {
+      "id": "first_rescue",
+      "icon": "💗",
+      "kind": "rescued",
+      "target": 1,
+      "money": 20
+    },
+    {
+      "id": "rescue_10",
+      "icon": "🚑",
+      "kind": "rescued",
+      "target": 10,
+      "money": 50
+    },
+    {
+      "id": "rescue_50",
+      "icon": "🚑",
+      "kind": "rescued",
+      "target": 50,
+      "money": 200
+    },
+    {
+      "id": "rescue_150",
+      "icon": "🏅",
+      "kind": "rescued",
+      "target": 150,
+      "money": 500
+    },
+    {
+      "id": "first_adopt",
+      "icon": "🏡",
+      "kind": "adopted",
+      "target": 1,
+      "money": 30
+    },
+    {
+      "id": "adopt_25",
+      "icon": "🏡",
+      "kind": "adopted",
+      "target": 25,
+      "money": 150
+    },
+    {
+      "id": "adopt_100",
+      "icon": "🏆",
+      "kind": "adopted",
+      "target": 100,
+      "money": 500
+    },
+    {
+      "id": "perfect_10",
+      "icon": "💯",
+      "kind": "perfect",
+      "target": 10,
+      "money": 150
+    },
+    {
+      "id": "shy_5",
+      "icon": "🫣",
+      "kind": "shy_homed",
+      "target": 5,
+      "money": 100
+    },
+    {
+      "id": "kittens_20",
+      "icon": "🍼",
+      "kind": "kittens",
+      "target": 20,
+      "money": 100
+    },
+    {
+      "id": "treat_50",
+      "icon": "🩹",
+      "kind": "treated",
+      "target": 50,
+      "money": 150
+    },
+    {
+      "id": "social_100",
+      "icon": "🪶",
+      "kind": "social",
+      "target": 100,
+      "money": 100
+    },
+    {
+      "id": "fed_200",
+      "icon": "🍽️",
+      "kind": "fed",
+      "target": 200,
+      "money": 100
+    },
+    {
+      "id": "served_100",
+      "icon": "☕",
+      "kind": "served",
+      "target": 100,
+      "money": 150
+    },
+    {
+      "id": "vacc_20",
+      "icon": "💉",
+      "kind": "vaccinated",
+      "target": 20,
+      "money": 120
+    },
+    {
+      "id": "neuter_10",
+      "icon": "✂️",
+      "kind": "neutered",
+      "target": 10,
+      "money": 150
+    },
+    {
+      "id": "hotel_20",
+      "icon": "🏨",
+      "kind": "hotel",
+      "target": 20,
+      "money": 200
+    },
+    {
+      "id": "lectures_10",
+      "icon": "🎓",
+      "kind": "lectures",
+      "target": 10,
+      "money": 200
+    },
+    {
+      "id": "residents_5",
+      "icon": "🛋️",
+      "kind": "residents",
+      "target": 5,
+      "money": 100
+    },
+    {
+      "id": "album_25",
+      "icon": "📖",
+      "kind": "album",
+      "target": 25,
+      "money": 150
+    },
+    {
+      "id": "album_all",
+      "icon": "📚",
+      "kind": "album_all",
+      "target": 1,
+      "money": 1000
+    },
+    {
+      "id": "level_7",
+      "icon": "⭐",
+      "kind": "level",
+      "target": 7,
+      "money": 500
+    },
+    {
+      "id": "staff_all",
+      "icon": "👩‍⚕️",
+      "kind": "staff_all",
+      "target": 4,
+      "money": 200
+    },
+    {
+      "id": "builder",
+      "icon": "🏗️",
+      "kind": "buildings",
+      "target": 8,
+      "money": 1000
+    }
+  ]
+}

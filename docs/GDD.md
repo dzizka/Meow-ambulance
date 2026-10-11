@@ -439,6 +439,12 @@ Pri prechode stavu: krátka „premena" s efektom a zvukom (dopamínový moment)
 - 🟡 **Fotografický režim:** odfoť mačky v herni, ulož do albumu.
 - 🔵 **Návštevy adoptovaných mačiek:** občas sa bývalý majiteľ zastaví s mačkou na kontrolu.
 
+
+### 7.5 Úspechy (achievementy) 🟢
+- 24 úspechov v menu ☰ → **🏆 Úspechy** (`public/data/achievements.json`): záchrany (1 / 10 / 50 / 150), adopcie (1 / 25 / 100), dokonalé zhody, plaché mačky, mačiatka, liečba, socializácia, kŕmenie, kaviareň, očkovanie, kastrácia, hotel, prednášky, stálice, album (25 aj celý), úroveň 7, celý personál, všetky budovy.
+- Každý má odmenu v € (20 – 1 000), ktorá sa pripíše hneď pri odomknutí (oznámenie 🏆). Neodomknuté ukazujú postup.
+- Staré uložené hry dostanú úspechy za to, čo už hráč dokázal, hneď pri načítaní.
+
 ---
 
 ## 8. Naratív a tón

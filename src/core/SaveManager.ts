@@ -60,6 +60,8 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
       tutorialDone: s.adoptions.length > 0,
     };
   },
+  /** v12 → v13: úspechy (GDD §7.5). */
+  12: (s) => ({ ...s, version: 13, achievements: {} }),
   /** v11 → v12: edukačné centrum (GDD §6.9). */
   11: (s) => ({
     ...s,
