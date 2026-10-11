@@ -115,6 +115,11 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Zobrazenie vo svete: `src/scenes/Furnishings.ts` (kŕmidlo, mačací strom, klbko a myška sú nakreslené kódom).
 - Save v5 pridal `equipment` a `decor`.
 
+## Správanie mačiek
+- `CatSprite` dostáva `CatWorld` (`GarageScene.catWorld`): pôdorysy nábytku (`obstacles`), miesta za vysokým nábytkom (`hideZones` – tam nezastaví), ostatné mačky (rozostup ~18 × 10 px, aby nesedeli na sebe) a miesta pri hosťoch v kaviarni (`CafeRoom.guestSpotFor`).
+- Geometriu plnia `addProp` / `addObstacle` zo `src/scenes/world.ts` (garáž, kaviareň, vybavenie, dekorácie).
+- Stálica v kaviarni občas (30 % rozhodnutí, ak má dôveru ≥ 15) príde k sediacemu hosťovi – sadne si pred stôl a pozerá hore, alebo si ľahne vedľa; 8–15 s, srdiečka. K jednému hosťovi najviac jedna mačka.
+
 ## Vývojárske menu (tajné, na testovanie)
 - **Otvorenie:** 5× rýchlo ťuknúť na hodiny v hornom paneli · na PC kláves `` ` `` (na slovenskej klávesnici `;`) · adresa končiaca `#dev`.
 - Peniaze/★, okamžité hlásenie/záujemca/hosť, vyliečenie mačky, rýchlosť času 1×/5×/20×, posun hodín a dennej doby, simulácia offline (1 h / 8 h), splnenie výziev, pohľadnice hneď, kaviareň zadarmo, tutoriál odznova, uloženie, nová hra.

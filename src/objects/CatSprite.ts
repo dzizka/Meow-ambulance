@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { CatData } from '../data/types';
 import type { CatBadge } from '../core/systems/Care';
 import { ensurePixelIcons } from '../scenes/pixelIcons';
+import type { WorldGeom } from '../scenes/world';
 import {
   catAnimKey,
   dirFromVector,
@@ -11,6 +12,20 @@ import {
 } from '../scenes/catAnims';
 
 type Behaviour = 'idle' | 'walking' | 'fleeing' | 'sitting' | 'laying' | 'leaving';
+
+/** Čo mačka vie o svete okolo seba (nábytok, ostatné mačky, hostia). */
+export interface CatWorld extends WorldGeom {
+  /** Všetky mačky v scéne – kvôli rozostupu, aby nesedeli na sebe. */
+  cats(): Iterable<CatSprite>;
+  /** Miesto pri hosťovi v kaviarni, kam môže mačka prísť, alebo null. */
+  guestSpot?(cat: CatSprite): { x: number; y: number } | null;
+  /** Mačka prišla k hosťovi (srdiečka). */
+  onVisit?(cat: CatSprite): void;
+}
+
+/** Rozostup medzi mačkami (elipsa – do strán viac, dopredu/dozadu menej). */
+const GAP_X = 18;
+const GAP_Y = 10;
 
 const WALK_SPEED = 22; // px za sekundu
 const FLEE_SPEED = 70;
@@ -36,6 +51,8 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   private badgeKind: CatBadge = null;
   /** Kedy pustiť ďalšie „z" (spánok) alebo iskričku (čistá srsť). */
   private nextFxAt = 0;
+  /** Ide k hosťovi (kaviareň). */
+  private visiting = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -43,8 +60,8 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     y: number,
     cat: CatData,
     private walkArea: Phaser.Geom.Rectangle,
-    /** Nábytok, cez ktorý mačka nechodí (pôdorysy pri zemi). */
-    private readonly obstacles: Phaser.Geom.Rectangle[] = [],
+    /** Nábytok, ostatné mačky a hostia. */
+    private readonly world: CatWorld,
   ) {
     super(scene, x, y, cat.sprite, 0);
     this.cat = cat;
@@ -118,10 +135,40 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
     });
   }
 
-  /** Prejde k bodu (napr. k hosťovi v kaviarni), ak nie je plachá a práve neodchádza. */
-  visit(x: number, y: number): void {
+  /** Príde k hosťovi a chvíľu pri ňom posedí alebo poleží. */
+  visitSpot(spot: { x: number; y: number }): void {
     if (this.behaviour === 'leaving' || this.behaviour === 'fleeing') return;
-    this.goTo(x, y, 'walking');
+    this.visiting = true;
+    this.goTo(spot.x, spot.y, 'walking', true);
+  }
+
+  get leaving(): boolean {
+    return this.behaviour === 'leaving';
+  }
+
+  /** Kde mačka je, alebo kam práve ide (kvôli rozostupu). */
+  get restPoint(): { x: number; y: number } {
+    return this.target ?? { x: this.x, y: this.y };
+  }
+
+  /** Je tu miesto? Nie pod nábytkom, nie schovaná za ním a nie na inej mačke. */
+  isFreeSpot(x: number, y: number): boolean {
+    return !this.blocked(x, y) && !this.hiddenAt(x, y) && !this.crowdedAt(x, y);
+  }
+
+  private hiddenAt(x: number, y: number): boolean {
+    return this.world.hideZones.some((z) => z.contains(x, y));
+  }
+
+  private crowdedAt(x: number, y: number): boolean {
+    for (const other of this.world.cats()) {
+      if (other === this || other.leaving || !other.active) continue;
+      const p = other.restPoint;
+      const dx = (x - p.x) / GAP_X;
+      const dy = (y - p.y) / GAP_Y;
+      if (dx * dx + dy * dy < 1) return true;
+    }
+    return false;
   }
 
   /** Odchod z garáže (adopcia) – dôjde k dverám a zmizne. */
@@ -166,15 +213,16 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   }
 
   private blocked(x: number, y: number): boolean {
-    return this.obstacles.some((o) => o.contains(x, y));
+    return this.world.obstacles.some((o) => o.contains(x, y));
   }
 
-  private goTo(x: number, y: number, mode: 'walking' | 'fleeing'): void {
+  /** `exact` = presne tento bod (návšteva hosťa); inak sa hľadá voľné viditeľné miesto. */
+  private goTo(x: number, y: number, mode: 'walking' | 'fleeing', exact = false): void {
     const a = this.walkArea;
     let tx = Phaser.Math.Clamp(x, a.left, a.right);
     let ty = Phaser.Math.Clamp(y, a.top, a.bottom);
-    // Cieľ nesmie byť pod nábytkom – skús iné miesto v oblasti
-    for (let i = 0; i < 12 && this.blocked(tx, ty); i++) {
+    // Cieľ nesmie byť pod nábytkom, za ním ani na inej mačke – skús iné miesto v oblasti
+    for (let i = 0; !exact && i < 24 && !this.isFreeSpot(tx, ty); i++) {
       tx = Phaser.Math.Between(a.left, a.right);
       ty = Phaser.Math.Between(a.top, a.bottom);
     }
@@ -185,6 +233,30 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
   }
 
   private decide(now: number): void {
+    // Sedí na inej mačke alebo je schovaná za nábytkom → presuň sa na voľné miesto
+    if (this.crowdedAt(this.x, this.y) || this.hiddenAt(this.x, this.y)) {
+      const a = this.walkArea;
+      this.goTo(
+        this.x + Phaser.Math.Between(-30, 30),
+        this.y + Phaser.Math.Between(-15, 15),
+        'walking',
+      );
+      if (this.target && !this.isFreeSpot(this.target.x, this.target.y))
+        this.goTo(
+          Phaser.Math.Between(a.left, a.right),
+          Phaser.Math.Between(a.top, a.bottom),
+          'walking',
+        );
+      return;
+    }
+    // V kaviarni občas zájde za hosťom, ak sa ľudí nebojí
+    if (!this.sleepy && this.cat.stats.trust >= 15 && Math.random() < 0.3) {
+      const spot = this.world.guestSpot?.(this);
+      if (spot) {
+        this.visitSpot(spot);
+        return;
+      }
+    }
     const roll = Math.random();
     // Unavená/nespokojná mačka viac leží, hravá viac chodí
     const lazy = this.cat.traits.some((t) => t.id === 'lazy');
@@ -243,6 +315,10 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
             this.destroy();
           },
         });
+      } else if (dist <= step && this.visiting) {
+        this.setPosition(this.target.x, this.target.y);
+        this.target = null;
+        this.arriveAtGuest(time);
       } else if (dist <= step) {
         this.setPosition(this.target.x, this.target.y);
         this.target = null;
@@ -258,6 +334,7 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
         if (this.blocked(nx, ny) && !this.blocked(this.x, this.y) && this.behaviour !== 'leaving') {
           // Nábytok v ceste – zastav, ovoňaj a vyber si iný smer
           this.target = null;
+          this.visiting = false;
           this.behaviour = 'idle';
           this.nextDecisionAt = time + Phaser.Math.Between(300, 900);
           this.setAnim('look');
@@ -279,6 +356,21 @@ export class CatSprite extends Phaser.GameObjects.Sprite {
       this.badge.setPosition(Math.round(this.x), Math.round(this.y - top + bob)).setDepth(4500);
     }
     if (time >= this.nextFxAt) this.ambientFx(time);
+  }
+
+  /** Pri hosťovi: sadne si a pozerá hore na neho, alebo si ľahne vedľa – chvíľu ostane. */
+  private arriveAtGuest(time: number): void {
+    this.visiting = false;
+    const lay = Math.random() < 0.5;
+    this.behaviour = lay ? 'laying' : 'sitting';
+    this.dir = lay ? (Math.random() < 0.5 ? 'left' : 'right') : 'up';
+    this.setAnim(lay ? 'lay' : 'sit');
+    this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+      if (this.behaviour === 'laying') this.setAnim('lay_idle');
+      else if (this.behaviour === 'sitting') this.setAnim('sit_idle');
+    });
+    this.nextDecisionAt = time + Phaser.Math.Between(8000, 15000);
+    this.world.onVisit?.(this);
   }
 
   /** Spiaca mačka vypúšťa „z", čistá a spokojná mačka sa ligoce. */

@@ -5,6 +5,7 @@ import { INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import type { CatSprite } from '../objects/CatSprite';
 import { CAFE_X, FLOOR_TOP, ROOM, WORLD_H, WORLD_W } from './layout';
 import { ensurePixelIcons } from './pixelIcons';
+import { addProp, type WorldGeom } from './world';
 import {
   ensurePersonAnims,
   personIdleFrame,
@@ -53,7 +54,7 @@ export class CafeRoom {
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly state: GameState,
-    private readonly obstacles: Phaser.Geom.Rectangle[],
+    private readonly geom: WorldGeom,
     private readonly catSprite: (id: string) => CatSprite | undefined,
     private readonly onServe: (guest: CafeGuest) => void,
   ) {
@@ -130,20 +131,8 @@ export class CafeRoom {
       .image(CAFE_X + x, bottomY, 'interior', name)
       .setOrigin(0.5, 1)
       .setDepth(bottomY);
-    if (footprint > 0) this.addObstacle(CAFE_X + x, bottomY, img.width, footprint);
+    addProp(this.geom, CAFE_X + x, bottomY, img.width, img.height, footprint);
     return img;
-  }
-
-  private addObstacle(x: number, bottomY: number, width: number, depth: number): void {
-    const pad = 3;
-    this.obstacles.push(
-      new Phaser.Geom.Rectangle(
-        x - width / 2 - pad,
-        bottomY - depth - pad,
-        width + pad * 2,
-        depth + pad * 2,
-      ),
-    );
   }
 
   private placeFurniture(): void {
@@ -182,7 +171,7 @@ export class CafeRoom {
         .image(CAFE_X + t.x, t.y - 10, 'interior', 'chair_front')
         .setOrigin(0.5, 1)
         .setDepth(t.y - 3);
-      this.addObstacle(CAFE_X + t.x, t.y - 10, 18, 8);
+      addProp(this.geom, CAFE_X + t.x, t.y - 10, 18, 29, 8);
       if (animate) {
         for (const img of [table, chair]) {
           img.setScale(0.2);
@@ -241,9 +230,12 @@ export class CafeRoom {
         bubble.setVisible(true).setScale(0.2);
         scene.tweens.add({ targets: bubble, scale: 1, ease: 'Back.easeOut', duration: 300 });
       }
-      // Stálica sa príde pozrieť na hosťa
+      // Jeho obľúbená stálica sa príde pozrieť (ak je v kaviarni a nie je k nemu iná mačka)
       const cat = g.catId ? this.catSprite(g.catId) : undefined;
-      cat?.visit(seat.laneX + 4, this.tableOf(g).y + 6);
+      if (cat && cat.x >= CAFE_X && cat.cat.resident) {
+        const spot = this.spotsFor(g).find((p) => cat.isFreeSpot(p.x, p.y));
+        if (spot) cat.visitSpot(spot);
+      }
     };
     // Uličkou k stolu, zboku za stôl a na stoličku
     if (walkIn)
@@ -351,6 +343,35 @@ export class CafeRoom {
       },
       onComplete: () => this.walk(view, sheet, rest, done),
     });
+  }
+
+  /** Miesta pri hosťovi, kam si môže mačka sadnúť: pred stôl a vedľa stola (nie do uličky). */
+  private spotsFor(g: CafeGuest): { x: number; y: number }[] {
+    const t = this.tableOf(g);
+    return [
+      { x: CAFE_X + t.x, y: t.y + 9 },
+      { x: CAFE_X + t.x - 25, y: t.y + 3 },
+    ];
+  }
+
+  /** Voľné miesto pri niektorom sediacom hosťovi pre túto mačku, alebo null. */
+  guestSpotFor(cat: CatSprite): { x: number; y: number } | null {
+    const options: { x: number; y: number }[] = [];
+    for (const g of this.state.cafe.guests) {
+      if (!this.guests.get(g.id)?.seated) continue;
+      // k jednému hosťovi najviac jedna mačka
+      const spots = this.spotsFor(g);
+      const taken = spots.some((p) => !cat.isFreeSpot(p.x, p.y));
+      if (taken) continue;
+      const free = spots.filter((p) => CAFE_AREA.contains(p.x, p.y));
+      options.push(...free);
+    }
+    return options.length ? Phaser.Utils.Array.GetRandom(options) : null;
+  }
+
+  /** Srdiečka nad mačkou, ktorá prišla k hosťovi. */
+  heartsAt(x: number, y: number): void {
+    this.hearts(x, y);
   }
 
   private hearts(x: number, y: number): void {

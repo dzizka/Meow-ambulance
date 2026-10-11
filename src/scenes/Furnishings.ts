@@ -3,6 +3,7 @@ import type { GameState } from '../core/GameState';
 import type { DecorDef } from '../data/types';
 import { CLINIC_FRAMES, INTERIOR_FRAMES } from '../data/frames';
 import { CAFE_X, FLOOR_TOP } from './layout';
+import { addProp, type WorldGeom } from './world';
 
 const WALL_BASE = FLOOR_TOP + 22;
 
@@ -17,7 +18,7 @@ export class Furnishings {
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly state: GameState,
-    private readonly obstacles: Phaser.Geom.Rectangle[],
+    private readonly geom: WorldGeom,
   ) {
     this.makeTextures();
     this.registerFrames();
@@ -80,8 +81,8 @@ export class Furnishings {
     for (const img of this.equipmentShown.get(id) ?? []) img.destroy();
     const imgs = this.equipmentPieces(id, level).map((p) => {
       const img = this.scene.add.image(p.x, p.y, p.key, p.frame).setOrigin(0.5, 1).setDepth(p.y);
-      if (p.footprint && !this.equipmentShown.has(id))
-        this.addObstacle(p.x, p.y, img.width, p.footprint);
+      if (!this.equipmentShown.has(id))
+        addProp(this.geom, p.x, p.y, img.width, img.height, p.footprint ?? 0);
       return img;
     });
     if (level > 0) this.equipmentShown.set(id, imgs);
@@ -100,7 +101,7 @@ export class Furnishings {
         .image(ox + def.x, def.y, def.sheet, def.frame)
         .setOrigin(0.5, 1)
         .setDepth(def.y);
-      if (def.footprint) this.addObstacle(ox + def.x, def.y, img.width, def.footprint);
+      addProp(this.geom, ox + def.x, def.y, img.width, img.height, def.footprint ?? 0);
     } else {
       // na stenu a na zem – za všetkým ostatným, ale nad pozadím
       img = this.scene.add
@@ -129,18 +130,6 @@ export class Furnishings {
         onComplete: () => sp.destroy(),
       });
     }
-  }
-
-  private addObstacle(x: number, bottomY: number, width: number, depth: number): void {
-    const pad = 3;
-    this.obstacles.push(
-      new Phaser.Geom.Rectangle(
-        x - width / 2 - pad,
-        bottomY - depth - pad,
-        width + pad * 2,
-        depth + pad * 2,
-      ),
-    );
   }
 
   private registerFrames(): void {
