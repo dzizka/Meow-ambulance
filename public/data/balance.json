@@ -203,5 +203,14 @@
     "kid_sprites": ["005", "006", "007", "027", "029", "032", "033", "010"],
     "teacher_sprite": "003",
     "quiz_questions": 10
+  },
+  "rare": {
+    "_comment": "Vzácne mačky (GDD §7.2): šanca na rôznofarebné oči a palčiaky; trojfarebný kocúr iba z trojfarebných mačiek. boost = úroveň 4 (vzácne plemená) zdvojnásobí šancu. Pri adopcii vyšší príspevok a ★.",
+    "hetero": 0.02,
+    "poly": 0.025,
+    "tortie_male": 0.12,
+    "boost": 2,
+    "fee_bonus": 0.3,
+    "rep_bonus": 3
   }
 }

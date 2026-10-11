@@ -122,7 +122,7 @@ const STAT_KEYS: Record<keyof CatStats, string> = {
 type CardTab = 'health' | 'care' | 'about';
 type MenuTab = 'challenges' | 'achievements' | 'album' | 'postcards' | 'shop' | 'more';
 /** Časti obchodu – aby sa nemuselo dlho rolovať. */
-type ShopTab = 'build' | 'equipment' | 'staff' | 'decor';
+type ShopTab = 'build' | 'equipment' | 'staff' | 'decor' | 'cosmetics';
 
 /** Portrét mačky: snímka „sedí, pozerá na hráča" (riadok 1, stĺpec 0) z hárka 768×512. */
 function catPortrait(cat: CatData, scale = 3): HTMLElement {
@@ -575,6 +575,10 @@ export class UI {
       this.updateHud();
     });
     bus.on('hotelCheckIn', ({ cat }) => this.toast(t('TOAST_HOTEL_IN', { cat: cat.name })));
+    bus.on('heartsChanged', ({ delta }) => {
+      if (delta > 0) this.toast(t('TOAST_HEARTS', { n: delta }));
+      if (this.modalKind === 'menu' && this.menuTab === 'shop') this.renderModal();
+    });
     bus.on('eventOffered', ({ def }) => {
       this.toast(t('TOAST_EVENT_OFFER', { name: t(`EVENT_${def.id.toUpperCase()}`) }));
       this.game.playSound('notify', 0.5);
@@ -736,7 +740,7 @@ export class UI {
       el(
         'div',
         { class: 'who' },
-        el('h2', {}, cat.name, ' ', status),
+        el('h2', {}, cat.name, cat.special ? ' ✨' : '', ' ', status),
         el(
           'div',
           { class: 'sub' },
@@ -1034,7 +1038,93 @@ export class UI {
     });
     if (feedLeft > 0) feedBtn.append(el('small', {}, t('UI_RESTING', { s: feedLeft })));
     care.append(feedBtn);
-    return [care];
+    return [care, ...this.accessoryPicker(cat)];
+  }
+
+  /** Ozdoba pre stálicu – iba kúpené (GDD §7.6). */
+  private accessoryPicker(cat: CatData): HTMLElement[] {
+    const s = this.state;
+    if (!cat.resident) return [];
+    const owned = (s.data.cosmetics?.accessories ?? []).filter((a) =>
+      s.cosmetics.owned.includes(a.id),
+    );
+    if (!owned.length) return [el('p', { class: 'hint' }, t('UI_ACC_NONE_OWNED'))];
+    const pick = (id: string | null) => () => {
+      if (s.setAccessory(cat.id, id)) this.renderSheet();
+    };
+    return [
+      el('h3', {}, t('UI_ACC_TITLE')),
+      el(
+        'div',
+        { class: 'actions' },
+        button(`✖ ${t('UI_ACC_OFF')}`, pick(null), {
+          class: cat.accessory ? 'btn' : 'btn primary',
+        }),
+        ...owned.map((a) =>
+          button(`${a.icon} ${t(`ACC_${a.id.toUpperCase()}`)}`, pick(a.id), {
+            class: cat.accessory === a.id ? 'btn primary' : 'btn',
+          }),
+        ),
+      ),
+    ];
+  }
+
+  /** Obchod → Ozdoby: srdiečka, ozdoby pre stálice a farby stien (GDD §7.6). */
+  private cosmeticsContent(): HTMLElement[] {
+    const s = this.state;
+    const c = s.data.cosmetics;
+    if (!c) return [];
+    const item = (id: string, icon: string, name: string, price: number) =>
+      el(
+        'div',
+        { class: 'shop-item' },
+        el('span', { class: 'shop-icon' }, icon),
+        el('div', { class: 'grow' }, el('strong', {}, name)),
+        s.cosmetics.owned.includes(id)
+          ? el('span', { class: 'chip good' }, '✓')
+          : button(
+              `${price} ❤`,
+              () => {
+                if (s.buyCosmetic(id)) this.renderModal();
+              },
+              { class: 'btn primary', disabled: s.hearts < price },
+            ),
+      );
+    const wallRow = (room: 'garage' | 'cafe'): HTMLDivElement | '' => {
+      if (room === 'cafe' && !s.cafe.open) return '';
+      const owned = c.walls.filter((w) => s.cosmetics.owned.includes(w.id));
+      if (!owned.length) return '';
+      const set = (id: string | null) => () => {
+        if (s.setWall(room, id)) this.renderModal();
+      };
+      const cur = s.cosmetics.walls[room] ?? null;
+      return el(
+        'div',
+        {},
+        el('strong', {}, t(room === 'garage' ? 'UI_ROOM_GARAGE' : 'UI_ROOM_CAFE')),
+        el(
+          'div',
+          { class: 'actions' },
+          button(t('UI_WALL_DEFAULT'), set(null), { class: cur ? 'btn' : 'btn primary' }),
+          ...owned.map((w) =>
+            button(`${w.icon} ${t(`WALL_${w.id.toUpperCase()}`)}`, set(w.id), {
+              class: cur === w.id ? 'btn primary' : 'btn',
+            }),
+          ),
+        ),
+      );
+    };
+    return [
+      el('p', { class: 'hearts-line' }, t('UI_HEARTS_LINE', { n: s.hearts })),
+      el('p', { class: 'hint' }, t('UI_HEARTS_HINT')),
+      el('h3', {}, t('UI_ACC_TITLE')),
+      ...c.accessories.map((a) => item(a.id, a.icon, t(`ACC_${a.id.toUpperCase()}`), a.price)),
+      el('p', { class: 'hint' }, t('UI_ACC_HINT')),
+      el('h3', {}, t('UI_WALLS_TITLE')),
+      ...c.walls.map((w) => item(w.id, w.icon, t(`WALL_${w.id.toUpperCase()}`), w.price)),
+      wallRow('garage'),
+      wallRow('cafe'),
+    ].filter((x): x is HTMLDivElement => typeof x !== 'string');
   }
 
   /** O mačke: povaha a odkiaľ prišla. */
@@ -1059,6 +1149,13 @@ export class UI {
       ),
       el('p', { class: 'hint' }, t('UI_TRAITS_HINT')),
       cat.clinicCase ? el('p', { class: 'hint' }, `💗 ${t('UI_CLINIC_CASE')}`) : el('span'),
+      cat.special
+        ? el(
+            'p',
+            { class: 'hint rare' },
+            `✨ ${t(`RARE_${cat.special.toUpperCase()}`)} – ${t('UI_RARE_HINT')}`,
+          )
+        : el('span'),
       report
         ? el('p', { class: 'hint' }, t('UI_FOUND_AT', { where: t(report.name_key) }))
         : el('span'),
@@ -2196,6 +2293,33 @@ export class UI {
         grid.append(cell);
       }
     }
+    // strana vzácností (GDD §7.2)
+    grid.append(el('div', { class: 'album-breed' }, `✨ ${t('UI_ALBUM_RARE')}`));
+    for (const mark of ['hetero', 'poly', 'tortie_male'] as const) {
+      const entry = s.album[`special:${mark}`];
+      const label = t(`RARE_${mark.toUpperCase()}`);
+      if (!entry) {
+        grid.append(
+          el('div', { class: 'album-cell empty', title: label, 'aria-label': label }, '✨'),
+        );
+        continue;
+      }
+      const cell = el(
+        'button',
+        {
+          class: 'album-cell rare',
+          type: 'button',
+          title: `${entry.name} – ${label}`,
+          'aria-label': `${entry.name} – ${label}`,
+        },
+        catPortrait(
+          { sprite: entry.sprite, name: entry.name, stats: { cleanliness: 100 } } as CatData,
+          1.4,
+        ),
+      );
+      cell.addEventListener('click', () => this.toast(`✨ ${entry.name} – ${label}`));
+      grid.append(cell);
+    }
     return [
       el(
         'div',
@@ -2344,6 +2468,7 @@ export class UI {
       { id: 'equipment', label: `🧰 ${t('UI_SHOP_EQUIP')}` },
       { id: 'staff', label: `👩‍⚕️ ${t('UI_SECTION_STAFF')}` },
       { id: 'decor', label: `🪴 ${t('UI_SECTION_DECOR')}` },
+      { id: 'cosmetics', label: `❤️ ${t('UI_SHOP_COSMETICS')}` },
     ];
     const bar = el('div', { class: 'tabs shop-tabs', role: 'tablist' });
     for (const tb of tabs) {
@@ -2366,6 +2491,7 @@ export class UI {
     if (this.shopTab === 'build') return [levelCard, bar, ...expand];
     if (this.shopTab === 'equipment') return [levelCard, bar, ...equipment];
     if (this.shopTab === 'staff') return [levelCard, bar, ...this.staffSection().slice(1)];
+    if (this.shopTab === 'cosmetics') return [levelCard, bar, ...this.cosmeticsContent()];
     return [
       levelCard,
       bar,

@@ -630,7 +630,7 @@ body.minigame .toast:not(:last-child) {
 
 /* ---------- Menu ---------- */
 .shop-tabs {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 2px;
   position: sticky;
   top: -16px;
@@ -979,4 +979,18 @@ body.minigame .toast:not(:last-child) {
   .event-pill.offer {
     animation: none;
   }
+}
+
+/* ---------- Srdiečka a kozmetika (GDD §7.6) ---------- */
+.hearts-line {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #f27a9b;
+}
+.album-cell.rare {
+  outline: 2px solid #f2c14e;
+}
+.hint.rare {
+  color: #f2c14e;
 }

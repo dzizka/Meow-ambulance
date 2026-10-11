@@ -25,6 +25,7 @@ import { Furnishings } from './Furnishings';
 import { StaffSprites } from './StaffSprites';
 import { QUARANTINE_AREA, QUARANTINE_CAGES, ShelterRoom } from './ShelterRoom';
 import { ClinicRoom, type Floor1Room } from './ClinicRoom';
+import { ensureAccessoryTextures } from './pixelIcons';
 import { Clinic2Room, type Floor2Room } from './Clinic2Room';
 import { CATIO_AREA, CatioRoom } from './CatioRoom';
 import { HOTEL_AREA, HotelRoom } from './HotelRoom';
@@ -111,6 +112,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   /** Efekty udalosti: sneh (zima) alebo girlandy (deň otvorených dverí). */
   private snow: { g: Phaser.GameObjects.Rectangle; x: number; y: number; v: number }[] = [];
   private bunting: Phaser.GameObjects.Graphics | null = null;
+  /** Farba stien (kozmetika, GDD §7.6) – tónovací obdĺžnik cez stenu miestnosti. */
+  private readonly wallTints = new Map<string, Phaser.GameObjects.Rectangle>();
   /** Mačky práve na klinike (pri prístroji alebo na zotavení) – kedy sa vrátia. */
   private readonly visits = new Map<string, Phaser.Time.TimerEvent>();
   private staff: StaffSprites | null = null;
@@ -126,6 +129,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     const offline = this.registry.get('offline') as OfflineSummary | null;
 
     this.registerFrames();
+    ensureAccessoryTextures(this, this.state.data.cosmetics?.accessories ?? []);
     this.buildBackground();
     this.placeFurniture();
     this.drawCages(false);
@@ -152,6 +156,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     });
     this.listen();
     this.setEventFx(this.state.events.active?.id ?? null);
+    this.applyWall('garage');
+    this.applyWall('cafe');
 
     this.enableDragPan();
     this.input.on(
@@ -350,6 +356,21 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       }
       this.bunting = g;
     }
+  }
+
+  /** Farba stien garáže alebo kaviarne (priesvitná vrstva – vzor tapety presvitá). */
+  private applyWall(room: 'garage' | 'cafe'): void {
+    this.wallTints.get(room)?.destroy();
+    this.wallTints.delete(room);
+    const id = this.state.cosmetics.walls[room];
+    const def = id ? this.state.wallDef(id) : undefined;
+    if (!def || (room === 'cafe' && !this.cafe)) return;
+    const color = Phaser.Display.Color.HexStringToColor(def.color).color;
+    const r = this.add
+      .rectangle(roomX(room) + ROOM.x, ROOM.y, ROOM.w, ROOM.wallH - 4, color, 0.5)
+      .setOrigin(0)
+      .setDepth(-995);
+    this.wallTints.set(room, r);
   }
 
   /** Vločky padajú v tom, čo práve vidí kamera. */
@@ -611,6 +632,10 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     // Mačací hotel: majiteľ prinesie mačku a neskôr si ju vyzdvihne (GDD §6.7)
     // Edukačné centrum: výlet príde, po prednáške sa deti hrajú so stálicami (GDD §6.9)
     bus.on('eventStarted', ({ def }) => this.setEventFx(def.id));
+    bus.on('wallChanged', ({ room }) => {
+      this.applyWall(room);
+      save();
+    });
     bus.on('eventEnded', () => {
       this.setEventFx(null);
       save();
@@ -677,6 +702,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       }
       if (kind === 'cafe') {
         this.openCafeRoom();
+        this.applyWall('cafe');
         for (const sprite of this.sprites.values())
           if (sprite.cat.resident) this.moveToCafe(sprite);
         this.showRoom('cafe');

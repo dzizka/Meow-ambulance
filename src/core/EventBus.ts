@@ -51,6 +51,9 @@ export interface GameEvents {
       | 'floor'
       | 'education';
   };
+  /** Srdiečka a kozmetika (GDD §7.6). */
+  heartsChanged: { hearts: number; delta: number };
+  wallChanged: { room: 'garage' | 'cafe'; id: string | null };
   /** Udalosti (GDD §7.3). */
   eventOffered: { def: import('../data/types').EventDef };
   eventStarted: { def: import('../data/types').EventDef };

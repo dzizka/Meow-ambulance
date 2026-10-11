@@ -78,7 +78,7 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Klinika: laboratórium, röntgen, operačná sála, 4 nové minihry, kastrácia, prípady z iných útulní (GDD §6.5)
 - [x] Catio – vonkajší výbeh pre stálice (GDD §6.6)
 - [x] Udalosť Záchrana z množiarne (GDD §7.3)
-- [ ] Vzácne mačky, Srdiečka a kozmetika
+- [x] Vzácne mačky, Srdiečka a kozmetika (GDD §7.2, §7.6)
 
 ## M5 – Národné centrum (Fáza 4) a vydanie v1.0
 - [x] Mačací hotel (GDD §6.7)
