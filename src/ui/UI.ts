@@ -2463,12 +2463,12 @@ export class UI {
         }),
     ]);
 
-    const tabs: { id: ShopTab; label: string }[] = [
-      { id: 'build', label: `🏗️ ${t('UI_SHOP_BUILD')}` },
-      { id: 'equipment', label: `🧰 ${t('UI_SHOP_EQUIP')}` },
-      { id: 'staff', label: `👩‍⚕️ ${t('UI_SECTION_STAFF')}` },
-      { id: 'decor', label: `🪴 ${t('UI_SECTION_DECOR')}` },
-      { id: 'cosmetics', label: `❤️ ${t('UI_SHOP_COSMETICS')}` },
+    const tabs: { id: ShopTab; icon: string; label: string }[] = [
+      { id: 'build', icon: '🏗️', label: t('UI_SHOP_BUILD') },
+      { id: 'equipment', icon: '🧰', label: t('UI_SHOP_EQUIP') },
+      { id: 'staff', icon: '👩‍⚕️', label: t('UI_SECTION_STAFF') },
+      { id: 'decor', icon: '🪴', label: t('UI_SECTION_DECOR') },
+      { id: 'cosmetics', icon: '❤️', label: t('UI_SHOP_COSMETICS') },
     ];
     const bar = el('div', { class: 'tabs shop-tabs', role: 'tablist' });
     for (const tb of tabs) {
@@ -2478,9 +2478,12 @@ export class UI {
           class: `tab${this.shopTab === tb.id ? ' active' : ''}`,
           type: 'button',
           role: 'tab',
+          title: tb.label,
+          'aria-label': tb.label,
           'aria-selected': this.shopTab === tb.id ? 'true' : 'false',
         },
-        tb.label,
+        el('span', { class: 'tab-ico' }, tb.icon),
+        el('span', { class: 'tab-txt' }, ` ${tb.label}`),
       );
       b.addEventListener('click', () => {
         this.shopTab = tb.id;
@@ -2488,6 +2491,11 @@ export class UI {
       });
       bar.append(b);
     }
+    // na úzkom displeji sú v záložkách iba ikony – názov aktuálnej časti pod nimi
+    const current = tabs.find((x) => x.id === this.shopTab);
+    bar.append(
+      el('div', { class: 'shop-tab-name' }, current ? `${current.icon} ${current.label}` : ''),
+    );
     if (this.shopTab === 'build') return [levelCard, bar, ...expand];
     if (this.shopTab === 'equipment') return [levelCard, bar, ...equipment];
     if (this.shopTab === 'staff') return [levelCard, bar, ...this.staffSection().slice(1)];
