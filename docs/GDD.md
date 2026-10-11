@@ -258,7 +258,7 @@ Adopcia **nie je povinná**. Vyliečenú mačku si hráč môže nechať ako **s
 > Vzniká jemné napätie „chcem si ju nechať" vs. „chcem vidieť, ako je šťastná u babky" – emocionálne, nie stresujúce.
 
 ### 5.5 Mačacia kaviareň 🟢 MVP (už vo Fáze 1)
-Druhá miestnosť vedľa garáže. Kúpi sa v menu ☰ → Garáž (**350 €**). Prepína sa tlačidlom ☕ / 🏥 v hornom paneli.
+Druhá miestnosť vedľa garáže. Kúpi sa v menu ☰ → Obchod (**350 €**). Prepína sa tlačidlom ☕ / 🏥 v hornom paneli.
 
 - **Stálice sa presťahujú do kaviarne.** Kaviareň pridá **+3 miesta** pre stálice a **zdvojnásobí** ich priebežné dary.
 - **Hostia** prichádzajú v reálnom čase (každú ~minútu), keď je v kaviarni aspoň jedna stálica. Sadnú si k voľnému stolu (na začiatku 2 stoly, dokúpiť ďalšie 2).
@@ -276,15 +276,46 @@ Druhá miestnosť vedľa garáže. Kúpi sa v menu ☰ → Garáž (**350 €**)
 ### 6.1 Ekonomika 🟢 MVP
 | Mena | Ako ju získať | Na čo ju míňať |
 |---|---|---|
-| **Peniaze (€)** | Adopčné príspevky, **dary od návštevníkov kaviarne (stálice)**, granty za výzvy | Klietky, rozšírenie kútika/kaviarne, vybavenie, dekorácie, neskôr personál |
-| **Reputácia (★)** | Dobré adopcie, splnené výzvy | Odomykanie fáz a typov hlásení (nemíňa sa – je to úroveň) |
-| **Srdiečka (❤️)** 🟡 v1.0 | Pohľadnice, album, výzvy | Kozmetika: dekorácie, oblečenie mačiek, farby stien |
+| **Peniaze (€)** | Adopčné príspevky (vzácne plemená viac), dary stálic, hostia v kaviarni, odmeny za výzvy | Rozšírenie (klietky, kútik, kaviareň, stoly), **vybavenie**, **dekorácie**, neskôr Fáza 2 |
+| **Reputácia (★)** | Adopcie (lepšia zhoda = viac), výzvy | **Nemíňa sa – je to úroveň**, ktorá odomyká (§6.1.1) |
+| **Srdiečka (❤️)** 🔵 neskôr | Pohľadnice, album | Kozmetika (oblečenie mačiek, farby stien) |
 
 **Dva zdroje príjmu, dva štýly hrania:** kto rád adoptuje, zarába hlavne príspevkami a zbiera pohľadnice; kto si mačky necháva, zarába pomalšie, ale stabilne z kaviarne – aj keď nehrá.
 
-**Vylepšenia Fázy 1** 🟢 (menu ☰ → Garáž): 3. klietka 120 €, 4. klietka 180 €; kútik pre stálice +1 miesto 150 €, +2 220 € (ceny v `balance.json`).
+**Bez prevádzkových nákladov.** Krmivo a bežná starostlivosť sú zadarmo – peniaze sa míňajú iba na rast a krásu. Nikdy bankrot.
 
-**Bez prevádzkových nákladov v MVP.** Krmivo a bežná starostlivosť sú zadarmo – peniaze sa míňajú iba na rast. (Neskôr personál so mzdou, ale nikdy nie bankrot.)
+Všetko sa kupuje v menu ☰ → **🛒 Obchod** (ťuknutie na ★ v hornom paneli ho tiež otvorí).
+
+#### 6.1.1 Úrovne útulku (★) 🟢
+| Úroveň | ★ | Názov | Odomkne |
+|---|---|---|---|
+| 1 | 0 | Garážová záchranka | vybavenie 1. stupňa, prvé dekorácie |
+| 2 | 25 | Známa v susedstve | **mačacia kaviareň**, vybavenie 2. stupňa, ďalšie dekorácie |
+| 3 | 60 | Obľúbený útulok | vybavenie 3. stupňa, ďalšie dekorácie, o 1 záujemcu viac naraz |
+| 4 | 100 | Pýcha mesta | vzácne plemená prichádzajú 2× častejšie, **Fáza 2 – Komunitný útulok** (pripravuje sa) |
+
+Pri novej úrovni: oznámenie, iskričky a zoznam toho, čo sa odomklo. Úrovne sú v `balance.json → levels`.
+
+#### 6.1.2 Vybavenie 🟢
+Každý kus má 3 stupne (2. a 3. stupeň odomyká úroveň ★). Je ho vidieť v garáži. Dáta: `equipment.json`.
+
+| Vybavenie | Účinok (stupeň 1 / 2 / 3) | Ceny |
+|---|---|---|
+| 🥣 Automatické kŕmidlo | prestávka medzi kŕmením −30 % / −50 % / −65 % | 80 / 180 / 350 € |
+| 🌳 Mačací strom | spokojnosť klesá pomalšie −20 % / −35 % / −50 % | 100 / 200 / 380 € |
+| 💊 Lekárnička | rýchlejšie uzdravovanie ×1,5 / ×2 / ×2,5 | 120 / 240 / 420 € |
+| 🧶 Hračky | socializácia +15 % / +30 % / +50 % dôvery | 90 / 190 / 360 € |
+| 🛏️ Pelechy | priebežné dary stálic +20 % / +40 % / +60 % | 150 / 300 / 500 € |
+
+#### 6.1.3 Dekorácie a útulnosť 🟢
+Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v garáži alebo v kaviarni. Každá pridá **útulnosť** (❤ bodov). Dáta: `decor.json`.
+- **Útulnosť garáže** → mačky rýchlejšie získavajú dôveru (+1 % za bod).
+- **Útulnosť kaviarne** → hostia dávajú väčšie dary (+2 % za bod).
+- Niektoré dekorácie odomyká úroveň ★.
+
+#### 6.1.4 Rozšírenie útulku
+- **Fáza 1:** 3. a 4. klietka (120 / 180 €), kútik pre stálice +1 / +2 (150 / 220 €), kaviareň (350 €, od 25 ★), 3. a 4. stôl (180 / 260 €).
+- **Fáza 2 – Komunitný útulok** 🟡 (od 100 ★ a 10 záchran, cena ~1500 €): nová budova s karanténou, ambulanciou a viac klietkami – navrhne sa samostatne (§6.2).
 
 ### 6.2 Fázy rastu útulku
 | Fáza | Názov | Podmienka odomknutia | Kapacita | Nové prvky |

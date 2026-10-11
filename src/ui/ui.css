@@ -609,7 +609,17 @@ body.minigame .toast:not(:last-child) {
 
 /* ---------- Menu ---------- */
 .menu-tabs {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* 4 záložky s textom + úzka ⚙️ */
+  grid-template-columns: repeat(4, minmax(0, 1fr)) 32px;
+  gap: 2px;
+}
+.menu-tabs .tab {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 .challenge {
   background: var(--ui-bg-deep);
@@ -792,4 +802,62 @@ body.minigame .toast:not(:last-child) {
 .dev-row .btn {
   padding: 6px 10px;
   font-size: 14px;
+}
+
+/* ---------- Obchod: úroveň, vybavenie, dekorácie (GDD §6.1) ---------- */
+.level-card {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--ui-bg-deep);
+  border: 1px solid #f2c14e55;
+}
+.level-card .hint {
+  margin: 0;
+}
+.modal-box h3 {
+  margin: 12px 0 4px;
+  font-size: 15px;
+  color: var(--ui-accent);
+}
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--ui-bg-deep);
+  margin-bottom: 6px;
+}
+.shop-item .grow {
+  flex: 1;
+  min-width: 0;
+}
+.shop-item .hint {
+  margin: 2px 0 0;
+}
+.shop-item .btn {
+  flex: none;
+  min-width: 72px;
+}
+.shop-icon {
+  flex: none;
+  width: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+}
+.shop-icon .sprite {
+  image-rendering: pixelated;
+}
+.pips {
+  color: #f2c14e;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.chip.lock {
+  background: #5a4a63;
+  color: var(--ui-dim);
+  white-space: nowrap;
 }

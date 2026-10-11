@@ -29,6 +29,7 @@ function withResident(): { s: GameState; cat: CatData } {
   cat.stats = { health: 100, cleanliness: 80, trust: 90, satisfaction: 60 };
   expect(s.makeResident(cat.id)).toBe(true);
   s.money = 1000;
+  s.reputation = 25; // kaviareň sa odomyká na 2. úrovni
   return { s, cat };
 }
 
@@ -54,6 +55,7 @@ describe('Mačacia kaviareň (GDD §5.5)', () => {
   it('hostia prichádzajú iba so stálicou a najviac toľko, koľko je stolov', () => {
     const s = new GameState(data, 4);
     s.money = 1000;
+    s.reputation = 25;
     s.buyCafe();
     s.tick(c.guest_interval_s * 3 * S);
     expect(s.cafe.guests).toHaveLength(0); // žiadna stálica → nikto nepríde
@@ -106,6 +108,7 @@ describe('Mačacia kaviareň (GDD §5.5)', () => {
       expect(offered()).toBe(false);
     }
     s.money = 1000;
+    s.reputation = 25;
     s.buyCafe();
     let seen = false;
     for (let i = 0; i < 30 && !seen; i++) {

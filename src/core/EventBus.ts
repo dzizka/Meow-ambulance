@@ -4,6 +4,8 @@ import type {
   AdoptionRecord,
   CafeGuest,
   CatData,
+  DecorDef,
+  LevelDef,
   Report,
 } from '../data/types';
 
@@ -37,6 +39,9 @@ export interface GameEvents {
   guestArrived: { guest: CafeGuest };
   guestServed: { guest: CafeGuest };
   guestLeft: { guest: CafeGuest; amount: number };
+  levelUp: { level: number; def: LevelDef };
+  equipmentBought: { id: string; level: number };
+  decorBought: { def: DecorDef };
 }
 
 type Handler<T> = (payload: T) => void;
