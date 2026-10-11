@@ -74,7 +74,7 @@ Každá nová funkcia musí podporovať aspoň jeden pilier. Ak nepodporuje žia
 ### 2.2 Otvorený režim – bez konca dňa 🟢 MVP
 Hra **nemá herné dni ani obrazovku konca dňa**. Hráč robí, čo chce a kedy chce – môže sa aj len pozerať na svoje mačky.
 
-- **Hodiny sú iba atmosféra.** Čas plynie (1 reálna minúta = 1 herná hodina), mení sa svetlo – ráno, deň, večer s lampami, noc, keď mačky spia. Na nič netlačí.
+- **Hodiny sú iba atmosféra.** Čas plynie (cez deň 1 reálna minúta = 1 herná hodina, v noci 3× rýchlejšie – noc trvá ~2,7 min), mení sa svetlo – ráno, deň, večer s lampami, noc, keď mačky spia. Na nič netlačí.
 - **Udalosti prichádzajú v reálnom čase:**
   - **Hlásenia o mačkách** – nové každé ~4 minúty, čaká ich najviac 3. **Nevypršia.** Hráč ich prijme, keď má voľnú klietku a chuť.
   - **Záujemcovia o adopciu** – prídu každé ~3 minúty, ak je aspoň jedna mačka pripravená na adopciu. Čakajú najviac 2 a **neodchádzajú**.
@@ -265,6 +265,7 @@ Druhá miestnosť vedľa garáže. Kúpi sa v menu ☰ → Obchod (**350 €**).
 - Hosť si objedná (☕ káva, 🍵 čaj, 🍰 koláč) – bublina nad hlavou. **Ťuknutím ho obslúžiš.** Pohladká si mačku (stálica +spokojnosť).
 - Po ~minúte odíde a nechá **dar**: základ + bonus za každú stálicu (spokojnejšia = viac). Obslúžený hosť dá **1,5×** viac.
 - **Bez trestu:** neobslúžený hosť nič nezničí, iba nechá menší dar. Hostia nečakajú v rade a nikto sa nehnevá (cozy, §2.2).
+- **V noci (22:00–6:00) je kaviareň zatvorená** – noví hostia neprídu, sediaci v pokoji dopijú; mačky spia. Noc plynie 3× rýchlejšie (`balance.json → clock.night_seconds_per_game_hour`), takže netrvá dlho.
 - Offline hostia neprichádzajú – bežia iba priebežné dary stálic (×2, max. 8 h).
 - Nová výzva: „Obslúž X hostí" (iba keď je kaviareň otvorená).
 - Balans je v `balance.json → cafe`.

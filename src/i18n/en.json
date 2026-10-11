@@ -316,5 +316,8 @@
   "DECOR_C_CURTAINS": "Curtains",
   "TOAST_LEVEL_UP": "New level: {name}! Unlocked: {list}",
   "TOAST_BOUGHT": "Bought: {name}",
-  "UI_EQ_MAX": "Max ✓"
+  "UI_EQ_MAX": "Max ✓",
+  "UI_CAFE_CLOSED": "🌙 The café is closed at night – the cats are asleep. We open at 6:00.",
+  "TOAST_CAFE_NIGHT": "🌙 The café has closed, the cats are going to sleep",
+  "TOAST_CAFE_MORNING": "☀️ Good morning! The café is open"
 }

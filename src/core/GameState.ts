@@ -85,6 +85,9 @@ export const TUTORIAL_STEPS = [
 export type DayPhase = 'night' | 'morning' | 'day' | 'evening';
 
 const MINUTE = 60_000;
+/** Noc: 22:00 – 6:00 (minúty od polnoci). */
+const NIGHT_START = 22 * 60;
+const NIGHT_END = 6 * 60;
 
 /**
  * Celý stav hry v otvorenom režime (GDD §2.2). Bez Phaseru a DOM – testovateľný.
@@ -136,11 +139,41 @@ export class GameState {
 
   // ---------- Hodiny pre atmosféru ----------
 
+  /** Reálne ms na jednu hernú minútu – v noci plynie čas rýchlejšie (GDD §2.2). */
+  private msPerGameMinute(minute: number): number {
+    const c = this.data.balance.clock;
+    const night = minute >= NIGHT_START || minute < NIGHT_END;
+    return ((night ? c.night_seconds_per_game_hour : c.real_seconds_per_game_hour) * 1000) / 60;
+  }
+
+  /** Herná minúta (môže byť desatinná, 0–1440) po `ms` reálneho času od začiatku hry. */
+  private clockAt(ms: number): number {
+    const c = this.data.balance.clock;
+    const cycle =
+      (NIGHT_START - NIGHT_END) * this.msPerGameMinute(12 * 60) +
+      (1440 - NIGHT_START + NIGHT_END) * this.msPerGameMinute(0);
+    let t = ms % cycle;
+    let m = c.start_hour * 60;
+    // Prejdi úseky deň/noc až po hranicu, kým sa neminie zvyšný čas
+    while (t > 0) {
+      const night = m >= NIGHT_START || m < NIGHT_END;
+      const boundary = night ? (m >= NIGHT_START ? 1440 + NIGHT_END : NIGHT_END) : NIGHT_START;
+      const per = this.msPerGameMinute(m);
+      const segMs = (boundary - m) * per;
+      if (t < segMs) {
+        m += t / per;
+        t = 0;
+      } else {
+        m = boundary % 1440;
+        t -= segMs;
+      }
+    }
+    return m % 1440;
+  }
+
   /** Minúty od polnoci (0–1439). */
   get clockMinutes(): number {
-    const c = this.data.balance.clock;
-    const gameMinutes = (this.now / 1000 / c.real_seconds_per_game_hour) * 60;
-    return Math.floor(c.start_hour * 60 + gameMinutes) % 1440;
+    return Math.floor(this.clockAt(this.now));
   }
 
   get clock(): string {
@@ -150,7 +183,7 @@ export class GameState {
 
   get dayPhase(): DayPhase {
     const h = this.clockMinutes / 60;
-    if (h < 6 || h >= 22) return 'night';
+    if (h < NIGHT_END / 60 || h >= NIGHT_START / 60) return 'night';
     if (h < 9) return 'morning';
     if (h < 18) return 'day';
     return 'evening';
@@ -794,9 +827,9 @@ export class GameState {
       }
       this.bus.emit('guestLeft', { guest: g, amount });
     }
-    // Príchody – iba keď je na koho sa prísť pozrieť a je voľný stôl
+    // Príchody – iba cez deň, keď je na koho sa prísť pozrieť a je voľný stôl
     const residents = this.residents;
-    if (residents.length === 0) return;
+    if (residents.length === 0 || !this.cafeOpenNow) return;
     const interval = c.guest_interval_s * 1000;
     this.cafe.timer += deltaMs;
     if (this.cafe.timer < interval) return;
@@ -968,8 +1001,18 @@ export class GameState {
 
   /** Posun hodín o `hours` herných hodín (hlásenia ani potreby sa nemenia). */
   devShiftClock(hours: number): void {
-    this.now += hours * this.data.balance.clock.real_seconds_per_game_hour * 1000;
+    // po herných minútach – v noci je minúta kratšia
+    let m = this.clockAt(this.now);
+    for (let i = 0; i < Math.round(hours * 60); i++) {
+      this.now += this.msPerGameMinute(Math.floor(m) % 1440);
+      m += 1;
+    }
     this.deliverPostcards();
+  }
+
+  /** Kaviareň je v noci zatvorená – mačky spia (GDD §5.5). */
+  get cafeOpenNow(): boolean {
+    return this.dayPhase !== 'night';
   }
 
   /** Všetky výzvy na nástenke splnené. */
