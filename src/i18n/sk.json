@@ -280,7 +280,7 @@
   "UNLOCK_SHELTER_2": "Komunitný útulok",
   "UI_LEVEL": "Úroveň {n}: {name}",
   "UI_NEXT_LEVEL": "Ďalej: {name} – odomkne",
-  "UI_MAX_LEVEL": "Najvyššia úroveň! Komunitný útulok sa pripravuje.",
+  "UI_MAX_LEVEL": "Najvyššia úroveň – si Národné centrum felíd! ❤",
   "UI_SECTION_EXPAND": "Rozšírenie",
   "UI_SECTION_EQUIPMENT": "Vybavenie",
   "UI_SECTION_DECOR": "Dekorácie",
@@ -439,5 +439,9 @@
   "UI_CATIO_NIGHT": "Je noc – stálice spia vnútri v kaviarni.",
   "UI_CATIO_INSIDE": "Všetky stálice sú práve vnútri. O chvíľu niekto vybehne.",
   "UI_CATIO_NONE": "Zatiaľ tu nikto nie je – vyliečenú mačku si nechaj ako stálicu.",
-  "UI_CATIO_HINT": "Stálice chodia von a dnu samy. Vo výbehu sa nudia pomalšie, takže prinášajú viac darov."
+  "UI_CATIO_HINT": "Stálice chodia von a dnu samy. Vo výbehu sa nudia pomalšie, takže prinášajú viac darov.",
+  "UI_ROOM_CLINIC": "Klinika",
+  "UI_ROOM_CATIO": "Catio",
+  "UI_SHOP_BUILD": "Stavby",
+  "UI_SHOP_EQUIP": "Výbava"
 }

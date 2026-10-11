@@ -280,7 +280,7 @@
   "UNLOCK_SHELTER_2": "Community shelter",
   "UI_LEVEL": "Level {n}: {name}",
   "UI_NEXT_LEVEL": "Next: {name} – unlocks",
-  "UI_MAX_LEVEL": "Top level! The community shelter is coming soon.",
+  "UI_MAX_LEVEL": "Top level – you are the National Feline Centre! ❤",
   "UI_SECTION_EXPAND": "Expansion",
   "UI_SECTION_EQUIPMENT": "Equipment",
   "UI_SECTION_DECOR": "Decorations",
@@ -439,5 +439,9 @@
   "UI_CATIO_NIGHT": "It's night – the residents are sleeping inside the café.",
   "UI_CATIO_INSIDE": "All residents are inside right now. Someone will run out soon.",
   "UI_CATIO_NONE": "Nobody here yet – keep a healed cat as a resident.",
-  "UI_CATIO_HINT": "Residents go in and out on their own. Outside they get bored more slowly, so they bring more donations."
+  "UI_CATIO_HINT": "Residents go in and out on their own. Outside they get bored more slowly, so they bring more donations.",
+  "UI_ROOM_CLINIC": "Clinic",
+  "UI_ROOM_CATIO": "Catio",
+  "UI_SHOP_BUILD": "Buildings",
+  "UI_SHOP_EQUIP": "Gear"
 }

@@ -629,6 +629,24 @@ body.minigame .toast:not(:last-child) {
 }
 
 /* ---------- Menu ---------- */
+.shop-tabs {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  position: sticky;
+  top: -16px;
+  z-index: 2;
+  background: var(--ui-bg);
+  margin: -4px 0 0;
+  padding-top: 4px;
+}
+.shop-tabs .tab {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 2px;
+  padding-right: 2px;
+}
 .menu-tabs {
   /* 4 záložky s textom + úzka ⚙️ */
   grid-template-columns: repeat(4, minmax(0, 1fr)) 32px;
