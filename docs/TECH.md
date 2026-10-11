@@ -82,7 +82,7 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - Ukladá sa každých 15 s, po dôležitých udalostiach a pri skrytí/zatvorení stránky. Pri načítaní sa dopočíta offline čas (`GameState.applyOffline`).
 - Adresa končiaca `#novahra` zmaže uloženú hru (na testovanie).
 - Pole `version` (aktuálne 2); pri zmene formátu sa pridá migračná funkcia do `MIGRATIONS` v `SaveManager.ts` a test v `tests/progress.test.ts`. Staré savy nesmú prestať fungovať.
-- „Nová hra" v menu (☰ → Garáž) zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
+- „Nová hra" v menu (☰ → Obchod) zmaže save a znovu načíta stránku; počas toho sa hra už neukladá.
 
 ## Testy a CI
 - Vitest pre `src/core/`: generovanie mačky, starostlivosť, výpočet zhody, hlásenia a adoptéri v čase, offline, ukladanie.
@@ -107,6 +107,13 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Kaviareň kreslí `src/scenes/CafeRoom.ts` (pozadie, nábytok, hostia, bubliny objednávok); stav a pravidlá sú v `GameState` (sekcia Mačacia kaviareň), balans v `balance.json → cafe`.
 - Hostia sú postavičky G5 (`personAnims.ts`, hárky sa načítajú podľa `cafe.guest_sprites`). „Sedenie": stolička má väčšiu hĺbku ako hosť, takže mu zakryje nohy.
 - Save v3 pridal `cafe` a `counters.served` (migrácia `MIGRATIONS[2]`).
+
+## Ekonomika (GDD §6.1)
+- Úrovne podľa ★: `balance.json → levels` (`GameState.level`, `hasUnlock`, udalosť `levelUp`). ★ sa nemíňajú.
+- Vybavenie: `public/data/equipment.json`, stupne v `GameState.equipment`, účinky cez `equipmentEffect(id)` (kŕmidlo, strom, lekárnička, hračky, pelechy).
+- Dekorácie: `public/data/decor.json` (pevné miesta, `layer` wall/floor/prop), útulnosť `GameState.coziness(room)`.
+- Zobrazenie vo svete: `src/scenes/Furnishings.ts` (kŕmidlo, mačací strom, klbko a myška sú nakreslené kódom).
+- Save v5 pridal `equipment` a `decor`.
 
 ## Vývojárske menu (tajné, na testovanie)
 - **Otvorenie:** 5× rýchlo ťuknúť na hodiny v hornom paneli · na PC kláves `` ` `` (na slovenskej klávesnici `;`) · adresa končiaca `#dev`.

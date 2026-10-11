@@ -11,6 +11,8 @@ export const DATA_FILES = {
   balance: 'data/balance.json',
   reports: 'data/reports.json',
   challenges: 'data/challenges.json',
+  equipment: 'data/equipment.json',
+  decor: 'data/decor.json',
 } as const;
 
 export const IMAGES = {

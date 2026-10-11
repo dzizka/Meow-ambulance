@@ -82,5 +82,31 @@
     "pet_satisfaction": 8,
     "guest_sprites": ["005", "006", "007", "027", "029", "032", "033", "000", "003", "010", "015"],
     "barista_sprite": "023"
+  },
+  "levels": [
+    {
+      "rep": 0,
+      "name_key": "LEVEL_1",
+      "unlocks": []
+    },
+    {
+      "rep": 25,
+      "name_key": "LEVEL_2",
+      "unlocks": ["cafe", "equipment_2", "decor_2"]
+    },
+    {
+      "rep": 60,
+      "name_key": "LEVEL_3",
+      "unlocks": ["equipment_3", "decor_3", "adopters_plus"]
+    },
+    {
+      "rep": 100,
+      "name_key": "LEVEL_4",
+      "unlocks": ["rare_cats", "shelter_2"]
+    }
+  ],
+  "coziness": {
+    "garage_trust_per_point": 0.01,
+    "cafe_tip_per_point": 0.02
   }
 }

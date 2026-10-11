@@ -104,6 +104,10 @@ export interface BalanceData {
   /** Ceny ďalších klietok a miest v kútiku – dĺžka poľa = koľko sa dá dokúpiť. */
   upgrades: { cage_prices: number[]; slot_prices: number[] };
   challenges: { active: number };
+  /** Úrovne útulku podľa ★ (GDD §6.1.1). */
+  levels: LevelDef[];
+  /** Účinok útulnosti (GDD §6.1.3). */
+  coziness: { garage_trust_per_point: number; cafe_tip_per_point: number };
   /** Mačacia kaviareň (GDD §5.5). */
   cafe: {
     price: number;
@@ -183,6 +187,8 @@ export interface GameData {
   reports: ReportDef[];
   names: NamesData;
   balance: BalanceData;
+  equipment: EquipmentDef[];
+  decor: DecorDef[];
 }
 
 export interface CatStats {
@@ -274,4 +280,50 @@ export interface CafeState {
   guests: CafeGuest[];
   /** Odpočet do ďalšieho hosťa (ms). */
   timer: number;
+}
+
+/** Čo odomyká úroveň útulku (GDD §6.1.1). */
+export type Unlock =
+  | 'cafe'
+  | 'equipment_2'
+  | 'equipment_3'
+  | 'decor_2'
+  | 'decor_3'
+  | 'adopters_plus'
+  | 'rare_cats'
+  | 'shelter_2';
+
+export interface LevelDef {
+  rep: number;
+  name_key: string;
+  unlocks: Unlock[];
+}
+
+/** Vybavenie so stupňami 1–3 (GDD §6.1.2). */
+export interface EquipmentDef {
+  id: string;
+  name_key: string;
+  desc_key: string;
+  icon: string;
+  /** Ceny 1., 2. a 3. stupňa. */
+  prices: number[];
+  /** Násobok účinku podľa stupňa (index 0 = nekúpené). */
+  effect: number[];
+}
+
+/** Dekorácia na pevnom mieste (GDD §6.1.3). */
+export interface DecorDef {
+  id: string;
+  name_key: string;
+  room: 'garage' | 'cafe';
+  sheet: 'interior' | 'clinic';
+  frame: string;
+  /** wall/floor = ľavý horný roh za všetkým; prop = stred spodnej hrany. */
+  layer: 'wall' | 'floor' | 'prop';
+  x: number;
+  y: number;
+  cozy: number;
+  price: number;
+  unlock?: Unlock;
+  footprint?: number;
 }

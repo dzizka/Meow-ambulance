@@ -21,6 +21,7 @@ import {
   type Room,
 } from './layout';
 import { CAFE_AREA, CafeRoom } from './CafeRoom';
+import { Furnishings } from './Furnishings';
 import type { CafeGuest } from '../data/types';
 import { DPR } from './dpr';
 
@@ -96,6 +97,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     this.createLighting();
     this.makeSparkTexture();
     if (this.state.cafe.open) this.openCafeRoom();
+    new Furnishings(this, this.state, this.obstacles);
 
     this.state.cats.forEach((cat, i) => {
       const area = this.areaFor(cat);

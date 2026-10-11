@@ -1,5 +1,6 @@
 import './ui.css';
-import { catSheetPath, personSheetPath } from '../assets';
+import { IMAGES, catSheetPath, personSheetPath } from '../assets';
+import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { GameState } from '../core/GameState';
 import type { Stars } from '../core/systems/Care';
 import type { MatchResult } from '../core/systems/Match';
@@ -7,6 +8,7 @@ import type {
   AdoptionRecord,
   CatData,
   CatStats,
+  DecorDef,
   DiagnosticTool,
   SocialActivity,
 } from '../data/types';
@@ -94,7 +96,7 @@ const STAT_KEYS: Record<keyof CatStats, string> = {
 };
 
 type CardTab = 'health' | 'care' | 'about';
-type MenuTab = 'challenges' | 'album' | 'postcards' | 'garage';
+type MenuTab = 'challenges' | 'album' | 'postcards' | 'shop' | 'more';
 
 /** Portrét mačky: snímka „sedí, pozerá na hráča" (riadok 1, stĺpec 0) z hárka 768×512. */
 function catPortrait(cat: CatData, scale = 3): HTMLElement {
@@ -115,6 +117,18 @@ function personPortrait(sprite: string, scale = 3): HTMLElement {
   return el('div', {
     class: 'sprite',
     style: `width:${20 * s}px;height:${32 * s}px;background-image:url(${personSheetPath(sprite)});background-size:${64 * s}px ${128 * s}px;background-position:${-20 * s}px 0`,
+  });
+}
+
+/** Náhľad dekorácie: výrez z hárka interiéru alebo kliniky cez CSS. */
+function decorPreview(def: DecorDef): HTMLElement {
+  const frames = def.sheet === 'interior' ? INTERIOR_FRAMES : CLINIC_FRAMES;
+  const [x, y, w, h] = frames[def.frame as keyof typeof frames] as FrameRect;
+  const scale = Math.min(2, 30 / Math.max(w, h));
+  const url = def.sheet === 'interior' ? IMAGES.interior : IMAGES.clinic;
+  return el('div', {
+    class: 'sprite',
+    style: `width:${w * scale}px;height:${h * scale}px;background-image:url(${url});background-position:${-x * scale}px ${-y * scale}px;background-size:${512 * scale}px ${(def.sheet === 'interior' ? 448 : 512) * scale}px`,
   });
 }
 
@@ -180,6 +194,9 @@ export class UI {
     });
     // Tajné: 5× rýchlo ťuknúť na hodiny otvorí vývojárske menu
     this.clockPill.addEventListener('pointerdown', () => this.dev.secretTap());
+    // ★ v hornom paneli otvorí obchod s úrovňou útulku
+    this.repPill.addEventListener('click', () => this.openMenu('shop'));
+    this.repPill.style.cursor = 'pointer';
     this.clockPill.style.touchAction = 'manipulation';
     this.buildHud();
     this.root.append(this.hud, this.sheet, this.zuzka, this.modal, this.toasts);
@@ -246,7 +263,7 @@ export class UI {
       `${Math.floor(s.money)} €`,
       rate > 0 ? el('small', {}, t('UI_PER_MIN', { n: round1(rate) })) : '',
     );
-    this.repPill.textContent = `★ ${s.reputation}`;
+    this.repPill.replaceChildren(`★ ${s.reputation}`, el('small', {}, ` · ${s.level + 1}`));
     this.setBadge(this.badges.reports, s.reports.length);
     this.setBadge(this.badges.visitors, s.adopters.length);
     this.setBadge(this.badges.menu, s.claimableChallenges + this.unseenPostcards);
@@ -380,6 +397,24 @@ export class UI {
       this.toast(t(key));
       this.game.playSound('upgrade', 0.6);
       this.updateHud();
+    });
+    // Úrovne, vybavenie a dekorácie (GDD §6.1)
+    bus.on('levelUp', ({ def }) => {
+      const list = def.unlocks.map((u) => t(`UNLOCK_${u.toUpperCase()}`)).join(', ');
+      this.toast(t('TOAST_LEVEL_UP', { name: t(def.name_key), list }));
+      this.game.playSound('upgrade', 0.6);
+      this.game.playSound('mewPurr', 0.5);
+      this.updateHud();
+      if (this.modalKind === 'menu') this.renderModal();
+    });
+    bus.on('equipmentBought', ({ id }) => {
+      const def = this.state.equipmentDef(id);
+      if (def) this.toast(t('TOAST_BOUGHT', { name: t(def.name_key) }));
+      this.game.playSound('upgrade', 0.5);
+    });
+    bus.on('decorBought', ({ def }) => {
+      this.toast(t('TOAST_BOUGHT', { name: t(def.name_key) }));
+      this.game.playSound('upgrade', 0.5);
     });
     // Mačacia kaviareň (GDD §5.5)
     const refreshCafe = () => {
@@ -1051,7 +1086,8 @@ export class UI {
       },
       { id: 'album', label: `📖 ${t('MENU_ALBUM')}`, badge: 0 },
       { id: 'postcards', label: `💌 ${t('MENU_POSTCARDS')}`, badge: this.unseenPostcards },
-      { id: 'garage', label: `🔨 ${t('MENU_GARAGE')}`, badge: 0 },
+      { id: 'shop', label: `🛒 ${t('MENU_SHOP')}`, badge: 0 },
+      { id: 'more', label: '⚙️', badge: 0 },
     ];
     const bar = el('div', { class: 'tabs menu-tabs', role: 'tablist' });
     for (const tb of tabs) {
@@ -1080,7 +1116,9 @@ export class UI {
           ? this.albumContent()
           : this.menuTab === 'postcards'
             ? this.postcardsContent()
-            : this.garageContent();
+            : this.menuTab === 'shop'
+              ? this.shopContent()
+              : this.moreContent();
     return [bar, ...body];
   }
 
@@ -1198,30 +1236,59 @@ export class UI {
     ];
   }
 
-  private garageContent(): HTMLElement[] {
+  /** Obchod: úroveň útulku, rozšírenie, vybavenie a dekorácie (GDD §6.1). */
+  private shopContent(): HTMLElement[] {
     const s = this.state;
     const cagePrice = s.nextCagePrice;
     const slotPrice = s.nextSlotPrice;
-    const out: HTMLElement[] = [
+    const buy = (label: string, price: number, run: () => boolean) =>
+      button(
+        label,
+        () => {
+          if (run()) this.renderModal();
+        },
+        { class: 'btn primary', disabled: s.money < price },
+      );
+    const lockChip = (rep: number | null) =>
+      el('span', { class: 'chip lock' }, t('UI_LOCKED', { rep: rep ?? '?' }));
+
+    // Úroveň útulku
+    const lvl = s.levelDef;
+    const next = s.nextLevelDef;
+    const from = lvl?.rep ?? 0;
+    const pct = next ? Math.min(100, ((s.reputation - from) / (next.rep - from)) * 100) : 100;
+    const levelCard = el(
+      'div',
+      { class: 'level-card' },
+      el(
+        'div',
+        { class: 'row' },
+        el('strong', {}, `★ ${t('UI_LEVEL', { n: s.level + 1, name: t(lvl?.name_key ?? '') })}`),
+        el(
+          'span',
+          { class: 'muted' },
+          next ? `${s.reputation} / ${next.rep} ★` : `${s.reputation} ★`,
+        ),
+      ),
+      el('div', { class: 'bar' }, el('i', { style: `width:${pct}%;background:#f2c14e` })),
       el(
         'p',
         { class: 'hint' },
-        t('UI_STATS_LINE', { r: s.counters.rescued, a: s.counters.adopted }),
+        next
+          ? `${t('UI_NEXT_LEVEL', { name: t(next.name_key) })} ${next.unlocks.map((u) => t(`UNLOCK_${u.toUpperCase()}`)).join(', ')}`
+          : t('UI_MAX_LEVEL'),
       ),
+    );
+
+    // Rozšírenie
+    const expand: HTMLElement[] = [
       el(
         'div',
         { class: 'upgrade' },
         el('strong', {}, `🐈 ${t('UI_CAGES', { n: s.cageCount })}`),
         cagePrice === null
           ? el('span', { class: 'muted' }, t('UI_MAXED'))
-          : button(
-              t('UI_BUY_CAGE', { price: cagePrice }),
-              () => {
-                s.buyCage();
-                this.renderModal();
-              },
-              { class: 'btn primary', disabled: s.money < cagePrice },
-            ),
+          : buy(t('UI_BUY_CAGE', { price: cagePrice }), cagePrice, () => s.buyCage()),
       ),
       el(
         'div',
@@ -1229,16 +1296,98 @@ export class UI {
         el('strong', {}, `🛋️ ${t('UI_SLOTS', { n: s.residentSlots })}`),
         slotPrice === null
           ? el('span', { class: 'muted' }, t('UI_MAXED'))
-          : button(
-              t('UI_BUY_SLOT', { price: slotPrice }),
-              () => {
-                s.buySlot();
-                this.renderModal();
-              },
-              { class: 'btn primary', disabled: s.money < slotPrice },
-            ),
+          : buy(t('UI_BUY_SLOT', { price: slotPrice }), slotPrice, () => s.buySlot()),
       ),
       this.cafeUpgrade(),
+    ];
+
+    // Vybavenie
+    const equipment = s.data.equipment.map((def) => {
+      const level = s.equipmentLevel(def.id);
+      const price = s.nextEquipmentPrice(def.id);
+      const unlock = s.nextEquipmentUnlock(def.id);
+      const locked = unlock !== null && !s.hasUnlock(unlock);
+      const pips = '●'.repeat(level) + '○'.repeat(def.prices.length - level);
+      return el(
+        'div',
+        { class: 'shop-item' },
+        el('span', { class: 'shop-icon' }, def.icon),
+        el(
+          'div',
+          { class: 'grow' },
+          el('strong', {}, t(def.name_key), ' ', el('span', { class: 'pips' }, pips)),
+          el('p', { class: 'hint' }, t(def.desc_key)),
+        ),
+        price === null
+          ? el('span', { class: 'chip good' }, t('UI_EQ_MAX'))
+          : locked
+            ? lockChip(unlock ? s.unlockRep(unlock) : null)
+            : buy(`${price} €`, price, () => s.buyEquipment(def.id)),
+      );
+    });
+
+    // Dekorácie
+    const gc = s.coziness('garage');
+    const cc = s.coziness('cafe');
+    const cz = s.data.balance.coziness;
+    const decor = (['garage', 'cafe'] as const).flatMap((room) => [
+      el('h3', {}, t(room === 'garage' ? 'UI_DECOR_GARAGE' : 'UI_DECOR_CAFE')),
+      ...s.data.decor
+        .filter((d) => d.room === room)
+        .map((def) => {
+          const owned = s.decor.includes(def.id);
+          const locked = def.unlock !== undefined && !s.hasUnlock(def.unlock);
+          return el(
+            'div',
+            { class: 'shop-item' },
+            el('span', { class: 'shop-icon' }, decorPreview(def)),
+            el(
+              'div',
+              { class: 'grow' },
+              el('strong', {}, t(def.name_key)),
+              el('p', { class: 'hint' }, `❤ +${def.cozy}`),
+            ),
+            owned
+              ? el('span', { class: 'chip good' }, '✓')
+              : locked
+                ? lockChip(def.unlock ? s.unlockRep(def.unlock) : null)
+                : room === 'cafe' && !s.cafe.open
+                  ? el('span', { class: 'chip lock' }, t('UI_CAFE_NEEDED'))
+                  : buy(`${def.price} €`, def.price, () => s.buyDecor(def.id)),
+          );
+        }),
+    ]);
+
+    return [
+      levelCard,
+      el('h3', {}, t('UI_SECTION_EXPAND')),
+      ...expand,
+      el('h3', {}, t('UI_SECTION_EQUIPMENT')),
+      ...equipment,
+      el('h3', {}, t('UI_SECTION_DECOR')),
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_COZY_LINE', {
+          g: gc,
+          gp: Math.round(gc * cz.garage_trust_per_point * 100),
+          c: cc,
+          cp: Math.round(cc * cz.cafe_tip_per_point * 100),
+        }),
+      ),
+      ...decor,
+    ];
+  }
+
+  /** Viac: štatistiky, zvuk, nová hra. */
+  private moreContent(): HTMLElement[] {
+    const s = this.state;
+    const out: HTMLElement[] = [
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_STATS_LINE', { r: s.counters.rescued, a: s.counters.adopted }),
+      ),
       button(this.muted ? `🔇 ${t('UI_SOUND_OFF')}` : `🔊 ${t('UI_SOUND_ON')}`, () =>
         this.toggleMute(),
       ),
@@ -1272,6 +1421,7 @@ export class UI {
     const s = this.state;
     if (!s.cafe.open) {
       const price = s.data.balance.cafe.price;
+      const locked = !s.hasUnlock('cafe');
       return el(
         'div',
         { class: 'upgrade cafe' },
@@ -1281,13 +1431,15 @@ export class UI {
           el('strong', {}, `☕ ${t('UI_CAFE')}`),
           el('p', { class: 'hint' }, t('UI_CAFE_DESC', { slots: s.data.balance.cafe.slots })),
         ),
-        button(
-          t('UI_BUY_CAFE', { price }),
-          () => {
-            if (s.buyCafe()) this.closeModal();
-          },
-          { class: 'btn primary', disabled: s.money < price },
-        ),
+        locked
+          ? el('span', { class: 'chip lock' }, t('UI_LOCKED', { rep: s.unlockRep('cafe') ?? '?' }))
+          : button(
+              t('UI_BUY_CAFE', { price }),
+              () => {
+                if (s.buyCafe()) this.closeModal();
+              },
+              { class: 'btn primary', disabled: s.money < price },
+            ),
       );
     }
     const price = s.nextTablePrice;

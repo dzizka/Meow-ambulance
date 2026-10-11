@@ -58,6 +58,8 @@ export function socialize(
   stars: Stars,
   now: number,
   data: GameData,
+  /** Hračky a útulnosť garáže (GDD §6.1.2–3). */
+  trustMult = 1,
 ): SocialResult | null {
   if (socialCooldownLeft(cat, now, data) > 0) return null;
   let mult = 1;
@@ -70,7 +72,9 @@ export function socialize(
       revealed.push(t.id);
     }
   }
-  const gain = Math.round(data.balance.care.social_base_trust * mult * (0.7 + 0.15 * stars));
+  const gain = Math.round(
+    data.balance.care.social_base_trust * mult * trustMult * (0.7 + 0.15 * stars),
+  );
   addStats(cat, {
     trust: gain,
     satisfaction: 4,
@@ -81,13 +85,19 @@ export function socialize(
   return { trustGain: gain, reaction, revealed };
 }
 
-export function feedCooldownLeft(cat: CatData, now: number, data: GameData): number {
-  return Math.max(0, cat.lastFedAt + data.balance.care.feed_cooldown_s * 1000 - now);
+/** `cooldownMult` = automatické kŕmidlo (GDD §6.1.2). */
+export function feedCooldownLeft(
+  cat: CatData,
+  now: number,
+  data: GameData,
+  cooldownMult = 1,
+): number {
+  return Math.max(0, cat.lastFedAt + data.balance.care.feed_cooldown_s * 1000 * cooldownMult - now);
 }
 
 /** Kŕmenie – vždy zadarmo (GDD §6.1), iba s prestávkou. */
-export function feed(cat: CatData, now: number, data: GameData): boolean {
-  if (feedCooldownLeft(cat, now, data) > 0) return false;
+export function feed(cat: CatData, now: number, data: GameData, cooldownMult = 1): boolean {
+  if (feedCooldownLeft(cat, now, data, cooldownMult) > 0) return false;
   const foodie = cat.traits.some((t) => t.id === 'foodie');
   addStats(cat, {
     satisfaction: data.balance.care.feed_satisfaction * (foodie ? 1.5 : 1),
@@ -121,7 +131,21 @@ export function badgeFor(cat: CatData, data: GameData): CatBadge {
 }
 
 /** Zmeny štatistík za `minutes` hry, iba keď hra beží (GDD §3.3). */
-export function passTime(cat: CatData, minutes: number, data: GameData): void {
+/** Účinky vybavenia na plynutie času (GDD §6.1.2). */
+export interface TimeMods {
+  /** Mačací strom – pomalší pokles spokojnosti. */
+  satisfactionDecay: number;
+  /** Lekárnička – rýchlejšie uzdravovanie. */
+  healthRecovery: number;
+}
+const NO_MODS: TimeMods = { satisfactionDecay: 1, healthRecovery: 1 };
+
+export function passTime(
+  cat: CatData,
+  minutes: number,
+  data: GameData,
+  mods: TimeMods = NO_MODS,
+): void {
   const b = data.balance;
   const floor = b.stat_floor;
   const dec = (v: number, by: number) => (v <= floor ? v : Math.max(floor, v - by));
@@ -132,7 +156,8 @@ export function passTime(cat: CatData, minutes: number, data: GameData): void {
   cat.stats.cleanliness = dec(cat.stats.cleanliness, b.decay_per_min.cleanliness * dirt * minutes);
   cat.stats.satisfaction = dec(
     cat.stats.satisfaction,
-    b.decay_per_min.satisfaction * bored * minutes,
+    b.decay_per_min.satisfaction * bored * mods.satisfactionDecay * minutes,
   );
-  if (allTreated(cat)) addStats(cat, { health: b.recovery_health_per_min * minutes });
+  if (allTreated(cat))
+    addStats(cat, { health: b.recovery_health_per_min * mods.healthRecovery * minutes });
 }

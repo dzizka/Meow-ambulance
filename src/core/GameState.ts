@@ -6,6 +6,10 @@ import type {
   CafeGuest,
   CafeState,
   ChallengeDef,
+  DecorDef,
+  EquipmentDef,
+  LevelDef,
+  Unlock,
   Counters,
   CatData,
   DiagnosticTool,
@@ -20,7 +24,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -47,6 +51,9 @@ export interface SaveData {
   tutorialDone: boolean;
   // od verzie 3
   cafe: CafeState;
+  // od verzie 5
+  equipment: Record<string, number>;
+  decor: string[];
 }
 
 export const emptyCafe = (): CafeState => ({ open: false, tables: 0, guests: [], timer: 0 });
@@ -99,6 +106,10 @@ export class GameState {
   album: Record<string, AlbumEntry> = {};
   upgrades = { cages: 0, slots: 0 };
   cafe: CafeState = emptyCafe();
+  /** Stupeň vybavenia podľa id (GDD §6.1.2). */
+  equipment: Record<string, number> = {};
+  /** Kúpené dekorácie (GDD §6.1.3). */
+  decor: string[] = [];
   tutorialStep = 0;
   tutorialDone = false;
   private nextId = 1;
@@ -183,7 +194,10 @@ export class GameState {
   /** Dary za minútu od návštevníkov (GDD §5.4) – spokojnejšie stálice prinášajú viac. */
   get donationsPerMinute(): number {
     const b = this.data.balance;
-    const rate = b.residents.donation_per_min * (this.cafe.open ? b.cafe.donation_multiplier : 1);
+    const rate =
+      b.residents.donation_per_min *
+      (this.cafe.open ? b.cafe.donation_multiplier : 1) *
+      this.equipmentEffect('beds');
     return this.residents.reduce((sum, c) => sum + rate * (0.5 + c.stats.satisfaction / 100), 0);
   }
 
@@ -195,7 +209,11 @@ export class GameState {
     const minutes = deltaMs / MINUTE;
     this.now += deltaMs;
 
-    for (const cat of this.cats) Care.passTime(cat, minutes, this.data);
+    const mods = {
+      satisfactionDecay: this.equipmentEffect('scratcher'),
+      healthRecovery: this.equipmentEffect('medicine'),
+    };
+    for (const cat of this.cats) Care.passTime(cat, minutes, this.data, mods);
     this.addMoney(this.donationsPerMinute * minutes, false);
     this.advanceReports(deltaMs);
     this.advanceAdopters(deltaMs);
@@ -252,7 +270,7 @@ export class GameState {
     const interval = a.interval_s * 1000;
     this.adopterTimer += deltaMs;
     if (this.adopterTimer < interval) return;
-    if (this.adopters.length >= a.max_waiting) {
+    if (this.adopters.length >= a.max_waiting + (this.hasUnlock('adopters_plus') ? 1 : 0)) {
       this.adopterTimer = interval;
       return;
     }
@@ -306,6 +324,7 @@ export class GameState {
       conditionCount: def.difficulty,
       reportId: def.id,
       now: this.now,
+      rareBoost: this.hasUnlock('rare_cats'),
     });
     this.cats.push(cat);
     this.counters.rescued += 1;
@@ -343,7 +362,7 @@ export class GameState {
   socialize(catId: string, activity: SocialActivity, stars: Care.Stars): Care.SocialResult | null {
     const cat = this.getCat(catId);
     if (!cat) return null;
-    const result = Care.socialize(cat, activity, stars, this.now, this.data);
+    const result = Care.socialize(cat, activity, stars, this.now, this.data, this.trustMult);
     if (result) {
       this.counters.social += 1;
       this.changed(cat);
@@ -358,7 +377,7 @@ export class GameState {
 
   feed(catId: string): boolean {
     const cat = this.getCat(catId);
-    if (!cat || !Care.feed(cat, this.now, this.data)) return false;
+    if (!cat || !Care.feed(cat, this.now, this.data, this.equipmentEffect('feeder'))) return false;
     this.counters.fed += 1;
     this.changed(cat);
     return true;
@@ -366,7 +385,9 @@ export class GameState {
 
   feedCooldownLeft(catId: string): number {
     const cat = this.getCat(catId);
-    return cat ? Care.feedCooldownLeft(cat, this.now, this.data) : 0;
+    return cat
+      ? Care.feedCooldownLeft(cat, this.now, this.data, this.equipmentEffect('feeder'))
+      : 0;
   }
 
   /** Nechať si mačku ako stálicu (GDD §5.4) – uvoľní klietku. */
@@ -441,8 +462,7 @@ export class GameState {
     if (cat.traits.some((t) => t.id === 'shy')) this.counters.shy_homed += 1;
     if (!cat.resident) this.addToAlbum(cat, 'adopted');
     this.addMoney(fee, true);
-    this.reputation += rep;
-    this.bus.emit('reputationChanged', { reputation: this.reputation });
+    this.gainRep(rep);
     this.bus.emit('catAdopted', { record });
     this.checkChallenges();
     return record;
@@ -512,8 +532,7 @@ export class GameState {
     this.challenges = this.challenges.filter((c) => c !== ch);
     this.challengeTiers[def.id] = (this.challengeTiers[def.id] ?? 0) + 1;
     this.addMoney(def.money, true);
-    this.reputation += def.rep;
-    this.bus.emit('reputationChanged', { reputation: this.reputation });
+    this.gainRep(def.rep);
     this.fillChallenges();
     return def;
   }
@@ -588,6 +607,109 @@ export class GameState {
     return true;
   }
 
+  // ---------- Úrovne útulku (★), vybavenie a dekorácie (GDD §6.1) ----------
+
+  /** Index aktuálnej úrovne (0 = prvá). */
+  get level(): number {
+    const levels = this.data.balance.levels;
+    let i = 0;
+    while (i + 1 < levels.length && this.reputation >= (levels[i + 1]?.rep ?? Infinity)) i++;
+    return i;
+  }
+
+  get levelDef(): LevelDef | undefined {
+    return this.data.balance.levels[this.level];
+  }
+
+  get nextLevelDef(): LevelDef | null {
+    return this.data.balance.levels[this.level + 1] ?? null;
+  }
+
+  hasUnlock(u: Unlock): boolean {
+    return this.data.balance.levels.slice(0, this.level + 1).some((l) => l.unlocks.includes(u));
+  }
+
+  /** Od koľkých ★ je odomknutie dostupné (pre zámky v obchode). */
+  unlockRep(u: Unlock): number | null {
+    return this.data.balance.levels.find((l) => l.unlocks.includes(u))?.rep ?? null;
+  }
+
+  private gainRep(n: number): void {
+    if (n === 0) return;
+    const before = this.level;
+    this.reputation += n;
+    this.bus.emit('reputationChanged', { reputation: this.reputation });
+    for (let l = before + 1; l <= this.level; l++) {
+      const def = this.data.balance.levels[l];
+      if (def) this.bus.emit('levelUp', { level: l, def });
+    }
+  }
+
+  equipmentDef(id: string): EquipmentDef | undefined {
+    return this.data.equipment.find((e) => e.id === id);
+  }
+
+  equipmentLevel(id: string): number {
+    return this.equipment[id] ?? 0;
+  }
+
+  /** Násobok účinku vybavenia podľa kúpeného stupňa (1 = bez účinku). */
+  equipmentEffect(id: string): number {
+    return this.equipmentDef(id)?.effect[this.equipmentLevel(id)] ?? 1;
+  }
+
+  /** Cena ďalšieho stupňa, null = už je na maxime. */
+  nextEquipmentPrice(id: string): number | null {
+    return this.equipmentDef(id)?.prices[this.equipmentLevel(id)] ?? null;
+  }
+
+  /** Odomknutie potrebné pre ďalší stupeň (null = netreba). */
+  nextEquipmentUnlock(id: string): Unlock | null {
+    const next = this.equipmentLevel(id) + 1;
+    return next === 2 ? 'equipment_2' : next === 3 ? 'equipment_3' : null;
+  }
+
+  buyEquipment(id: string): boolean {
+    const price = this.nextEquipmentPrice(id);
+    const unlock = this.nextEquipmentUnlock(id);
+    if (price === null || this.money < price || (unlock && !this.hasUnlock(unlock))) return false;
+    this.addMoney(-price, true);
+    this.equipment[id] = this.equipmentLevel(id) + 1;
+    this.bus.emit('equipmentBought', { id, level: this.equipment[id] });
+    return true;
+  }
+
+  decorDef(id: string): DecorDef | undefined {
+    return this.data.decor.find((d) => d.id === id);
+  }
+
+  buyDecor(id: string): boolean {
+    const def = this.decorDef(id);
+    if (!def || this.decor.includes(id) || this.money < def.price) return false;
+    if (def.unlock && !this.hasUnlock(def.unlock)) return false;
+    if (def.room === 'cafe' && !this.cafe.open) return false;
+    this.addMoney(-def.price, true);
+    this.decor.push(id);
+    this.bus.emit('decorBought', { def });
+    return true;
+  }
+
+  /** Body útulnosti miestnosti zo zakúpených dekorácií. */
+  coziness(room: 'garage' | 'cafe'): number {
+    return this.decor.reduce((sum, id) => {
+      const d = this.decorDef(id);
+      return d && d.room === room ? sum + d.cozy : sum;
+    }, 0);
+  }
+
+  /** Násobok dôvery pri socializácii: hračky × útulnosť garáže. */
+  get trustMult(): number {
+    return (
+      this.equipmentEffect('toys') *
+      (1 + this.coziness('garage') * this.data.balance.coziness.garage_trust_per_point)
+    );
+  }
+
   // ---------- Mačacia kaviareň (GDD §5.5) ----------
 
   get tableCount(): number {
@@ -606,14 +728,19 @@ export class GameState {
 
   buyCafe(): boolean {
     const c = this.data.balance.cafe;
-    if (this.cafe.open || this.money < c.price) return false;
+    if (this.cafe.open || this.money < c.price || !this.hasUnlock('cafe')) return false;
     this.addMoney(-c.price, true);
+    this.openCafe();
+    return true;
+  }
+
+  private openCafe(): void {
+    const c = this.data.balance.cafe;
     this.cafe.open = true;
     // Prvý hosť príde čoskoro
     this.cafe.timer = (c.guest_interval_s - c.guest_first_delay_s) * 1000;
     this.bus.emit('upgradeBought', { kind: 'cafe' });
     this.fillChallenges();
-    return true;
   }
 
   buyTable(): boolean {
@@ -646,7 +773,8 @@ export class GameState {
       (sum, cat) => sum + c.tip_per_resident * (0.5 + cat.stats.satisfaction / 100) * charm(cat),
       0,
     );
-    const tip = (c.tip_base + bonus) * (served ? c.served_multiplier : 1);
+    const cozy = 1 + this.coziness('cafe') * this.data.balance.coziness.cafe_tip_per_point;
+    const tip = (c.tip_base + bonus) * (served ? c.served_multiplier : 1) * cozy;
     return Math.round(tip * 10) / 10;
   }
 
@@ -751,6 +879,8 @@ export class GameState {
       tutorialStep: this.tutorialStep,
       tutorialDone: this.tutorialDone,
       cafe: structuredClone(this.cafe),
+      equipment: { ...this.equipment },
+      decor: [...this.decor],
     };
   }
 
@@ -774,6 +904,8 @@ export class GameState {
     s.tutorialStep = save.tutorialStep;
     s.tutorialDone = save.tutorialDone;
     s.cafe = save.cafe ?? emptyCafe();
+    s.equipment = { ...(save.equipment ?? {}) };
+    s.decor = [...(save.decor ?? [])];
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();
@@ -785,10 +917,7 @@ export class GameState {
   /** Peniaze a reputácia navyše. */
   devGive(money: number, rep = 0): void {
     this.addMoney(money, true);
-    if (rep) {
-      this.reputation += rep;
-      this.bus.emit('reputationChanged', { reputation: this.reputation });
-    }
+    this.gainRep(rep);
   }
 
   /** Nové hlásenie hneď (ak nie je nástenka plná). */
@@ -861,8 +990,8 @@ export class GameState {
   /** Kaviareň zadarmo. */
   devOpenCafe(): boolean {
     if (this.cafe.open) return false;
-    this.addMoney(this.data.balance.cafe.price, false);
-    return this.buyCafe();
+    this.openCafe();
+    return true;
   }
 
   // ---------- Pomocné ----------
