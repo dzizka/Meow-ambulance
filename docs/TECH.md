@@ -110,6 +110,8 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Pacienti: `cat.ward` = garáž alebo karanténa (`freeIn`, `moveCat`, `totalCages`). Diagnózy, ktoré hráč nemá čím odhaliť, mačky nedostanú (`generateCat({ tools })`).
 - Rozloženie (`computeLayout` v `layout.ts`): na výšku svet hore a panel pod ním; na šírku, ak to svet nezmenší o viac ako ~28 %, je panel **ukotvený vpravo** (`docked`) a stále ukazuje prehľad miestnosti (mačky s ikonkami potrieb, voľné miesta, personál, hlásenia, záujemcovia) alebo kartu mačky. Na užšej obrazovke na šírku sa panel vysúva iba s kartou mačky. Svet je na šírku zvislo v strede.
 - Obchod má záložky (`ShopTab`: stavby, výbava, personál, dekorácie). Okno po kúpe zachová posun (`UI.renderModal` – `modalViewKey`).
+- Jazyk: ⚙️ v menu prepína slovenčinu a angličtinu (`setLang`, uloží sa do `localStorage` `meow:lang`, hra sa znovu načíta). Bez voľby podľa prehliadača.
+- Mačka, ktorá 3× za sebou narazí do prekážky, sa presunie na voľné miesto vo svojej oblasti (`CatSprite.unstick`); pri načítaní sa mačky rozmiestnia v rámci vlastnej oblasti.
 - Karta mačky sa prekreslí iba pri zmene obsahu (`UI.setSheet`) – inak by obnovovanie každých 500 ms mohlo zjesť ťuknutie.
 
 ## Ekonomika (GDD §6.1)
