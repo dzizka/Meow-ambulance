@@ -1917,7 +1917,10 @@ export class UI {
             ),
       ),
     );
-    const residents = s.residents.map((cat) => this.catTile(cat));
+    // stálice vonku vo výbehu sú v prehľade výbehu, nie tu
+    const outside = this.game.catsOutside();
+    const inside = s.residents.filter((c) => !outside.includes(c.id));
+    const residents = inside.map((cat) => this.catTile(cat));
     this.setSheet(
       el('h2', {}, `☕ ${t('UI_CAFE')}`),
       el(
@@ -1937,6 +1940,9 @@ export class UI {
           ? el('p', { class: 'muted' }, t(s.cafeOpenNow ? 'UI_CAFE_NO_GUESTS' : 'UI_CAFE_CLOSED'))
           : el('div', { class: 'guests' }, ...rows),
       residents.length ? el('div', { class: 'cat-list' }, ...residents) : '',
+      outside.length
+        ? el('p', { class: 'hint' }, `🌳 ${t('UI_CAFE_OUTSIDE', { n: outside.length })}`)
+        : '',
       this.staffHere('cafe'),
       this.panelButtons(),
     );
@@ -1967,6 +1973,8 @@ export class UI {
         el('span', { class: 'muted' }, ` · ${t('UI_RATING_COUNT', { n: list.length })}`),
       ),
       effect ? el('p', { class: 'hint' }, effect) : el('span'),
+      el('p', { class: 'hint' }, t('UI_RATING_HOW', { n: c.reviews_keep })),
+      ...this.ratingTips(list),
       ...list
         .slice(-3)
         .reverse()
@@ -1984,6 +1992,20 @@ export class UI {
           ),
         ),
     ];
+  }
+
+  /** Čo kazí hodnotenie – spočítané z posledných odkazov, aby hráč vedel, čo zlepšiť. */
+  private ratingTips(list: { stars: number; key: string }[]): HTMLElement[] {
+    const count = (k: string) => list.filter((r) => r.key === k).length;
+    const tips: string[] = [];
+    const notServed = count('REVIEW_NOT_SERVED');
+    const sad = count('REVIEW_CAT_SAD');
+    const plain = count('REVIEW_PLAIN');
+    if (notServed) tips.push(t('UI_RATING_TIP_SERVE', { n: notServed }));
+    if (sad) tips.push(t('UI_RATING_TIP_SAD', { n: sad }));
+    if (plain) tips.push(t('UI_RATING_TIP_COZY', { n: plain }));
+    if (!tips.length) return [];
+    return [el('ul', { class: 'rating-tips' }, ...tips.map((x) => el('li', {}, x)))];
   }
 
   private catTile(cat: CatData): HTMLButtonElement {

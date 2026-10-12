@@ -823,5 +823,10 @@
   "BREED_EGYPTIAN_MAU": "egyptská mau",
   "BREED_DEVON_REX": "devon rex",
   "BREED_TURKISH_VAN": "turecká van",
-  "TITLE_WIKI": "Príručka hráča"
+  "TITLE_WIKI": "Príručka hráča",
+  "UI_CAFE_OUTSIDE": "Vo výbehu (catio) je teraz stálic: {n}.",
+  "UI_RATING_HOW": "Priemer z posledných {n} hostí – staré hodnotenia postupne vypadnú. Na 5 ★: obslúž hosťa, jeho stálica nech je spokojná (aspoň 70 %) a kaviareň útulná.",
+  "UI_RATING_TIP_SERVE": "🍰 Neobslúžení hostia: {n} – ťukni na bublinu nad hosťom alebo najmi baristku.",
+  "UI_RATING_TIP_SAD": "😿 Smutná stálica: {n}× – nakŕm ju a venuj sa jej, splň jej želanie.",
+  "UI_RATING_TIP_COZY": "🛋️ Málo útulné: {n}× – kúp dekorácie do kaviarne (Obchod → Dekorácie)."
 }

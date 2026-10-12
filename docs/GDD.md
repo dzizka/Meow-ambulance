@@ -291,7 +291,7 @@ Druhá miestnosť vedľa garáže. Kúpi sa v menu ☰ → Obchod (**350 €**).
 ## 6. Fáza 4 – Rozširovanie (Progression)
 
 
-**Hodnotenie hostí** 🟢 – pri odchode hosť dá 1–5 ★ (nad hlavou sa ukážu hviezdičky) a krátky odkaz: základ 3, +1 obslúžený hráčom (+0,5 baristkou, −1 neobslúžený), ±1 podľa spokojnosti jeho mačky, +0,5/+1 za útulnosť kaviarne. Odkaz povie, čo hosťa najviac potešilo alebo mrzelo („na kávu som sa nedočkal", „{mačka} vyzerala smutne", „mohlo by tu byť útulnejšie"). Panel kaviarne ukazuje priemer z posledných 20 a 3 posledné odkazy. Priemer ≥ 4,3 → hostia chodia o 10 % častejšie, ≤ 2,7 → o 10 % zriedkavejšie (`balance.cafe.rating_*`).
+**Hodnotenie hostí** 🟢 – pri odchode hosť dá 1–5 ★ (nad hlavou sa ukážu hviezdičky) a krátky odkaz: základ 3, +1 obslúžený hráčom (+0,5 baristkou, −1 neobslúžený), ±1 podľa spokojnosti jeho mačky, +0,5/+1 za útulnosť kaviarne. Odkaz povie, čo hosťa najviac potešilo alebo mrzelo („na kávu som sa nedočkal", „{mačka} vyzerala smutne", „mohlo by tu byť útulnejšie"). Panel kaviarne ukazuje priemer z posledných 20, ako sa dá dostať na 5 ★, čo hodnotenie kazí (neobslúžení hostia, smutná stálica, málo útulné – spočítané z posledných odkazov) a 3 posledné odkazy. Strop je 5 ★; staré zlé hodnotenia vypadnú po 20 ďalších hosťoch, takže dobrou obsluhou sa dá vždy dostať na čistých 5 ★. Stálice vonku vo výbehu sa v zozname kaviarne neukazujú (sú v prehľade výbehu). Priemer ≥ 4,3 → hostia chodia o 10 % častejšie, ≤ 2,7 → o 10 % zriedkavejšie (`balance.cafe.rating_*`).
 ### 6.1 Ekonomika 🟢 MVP
 | Mena | Ako ju získať | Na čo ju míňať |
 |---|---|---|
