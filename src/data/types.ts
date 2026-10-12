@@ -230,6 +230,23 @@ export interface BalanceData {
     /** Postavička za pultom. */
     barista_sprite: string;
   };
+  /** Kastračné kampane (GDD §7.7). */
+  campaigns: {
+    per_district: number;
+    districts_per_tier: number;
+    tiers: number;
+    base_price: number;
+    growth: number;
+    duration_s: number;
+    duration_step_s: number;
+    duration_max_s: number;
+    rep: number;
+    rep_step: number;
+    hearts: number;
+    district_hearts: number;
+    adopter_bonus_per_district: number;
+    adopter_bonus_max: number;
+  };
 }
 
 /** Čo sa v hre počíta (pre výzvy a štatistiky). */
@@ -248,6 +265,7 @@ export interface Counters {
   neutered: number;
   hotel: number;
   lectures: number;
+  campaigns: number;
 }
 
 export type ChallengeKind = keyof Counters | 'residents';
@@ -425,6 +443,13 @@ export interface CafeState {
   timer: number;
   /** Posledné hodnotenia hostí (najnovšie na konci). */
   reviews?: CafeReview[];
+}
+
+/** Kastračné kampane: koľko je hotových a ktorá práve beží. */
+export interface CampaignState {
+  done: number;
+  /** Bežiaca kampaň – kedy skončí (ms simulácie). */
+  active: { endsAt: number; price: number } | null;
 }
 
 /** Hodnotenie hosťa kaviarne pri odchode (1–5 ★) s krátkym odkazom. */

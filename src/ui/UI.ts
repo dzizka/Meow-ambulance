@@ -143,7 +143,7 @@ const STAT_KEYS: Record<keyof CatStats, string> = {
 };
 
 type CardTab = 'health' | 'care' | 'about';
-type MenuTab = 'challenges' | 'achievements' | 'album' | 'postcards' | 'shop';
+type MenuTab = 'challenges' | 'achievements' | 'album' | 'postcards' | 'city' | 'shop';
 /** Časti obchodu – aby sa nemuselo dlho rolovať. */
 type ShopTab = 'build' | 'equipment' | 'staff' | 'decor' | 'cosmetics';
 
@@ -812,6 +812,9 @@ export class UI {
     // Odpočet prestávok na karte aj prehľad miestnosti (hostia hotela, časy) – setSheet
     // mení DOM, iba keď sa obsah naozaj zmenil
     if (!this.busy) this.renderSheet();
+    // odpočet bežiacej kampane v menu
+    if (this.modalKind === 'menu' && this.menuTab === 'city' && this.state.campaigns.active)
+      this.renderModal();
   }
 
   // ---------- Udalosti hry ----------
@@ -991,6 +994,16 @@ export class UI {
     bus.on('guestServed', () => {
       this.game.playSound('success', 0.4);
       refreshCafe();
+    });
+    bus.on('campaignStarted', () => {
+      this.toast(t('TOAST_CAMPAIGN_START'));
+      this.game.playSound('success', 0.4);
+    });
+    bus.on('campaignDone', ({ district, cleared }) => {
+      const { name } = this.districtName(district);
+      this.toast(t(cleared ? 'TOAST_DISTRICT_CLEARED' : 'TOAST_CAMPAIGN_DONE', { name }));
+      this.game.playSound('success', 0.5);
+      if (this.modalKind === 'menu') this.renderModal();
     });
     bus.on('guestLeft', ({ amount, review }) => {
       this.toast(`${t('TOAST_GUEST_TIP', { n: round1(amount) })} · ${'★'.repeat(review.stars)}`);
@@ -2499,6 +2512,9 @@ export class UI {
       { id: 'achievements', icon: '🏆', label: t('MENU_ACHIEVEMENTS'), badge: 0 },
       { id: 'album', icon: '📖', label: t('MENU_ALBUM'), badge: 0 },
       { id: 'postcards', icon: '💌', label: t('MENU_POSTCARDS'), badge: this.unseenPostcards },
+      ...(this.state.campaignsUnlocked
+        ? [{ id: 'city' as MenuTab, icon: '🏘️', label: t('MENU_CITY'), badge: 0 }]
+        : []),
       { id: 'shop', icon: '🛒', label: t('MENU_SHOP'), badge: 0 },
     ];
     const bar = el('div', { class: 'tabs menu-tabs', role: 'tablist' });
@@ -2530,8 +2546,110 @@ export class UI {
             ? this.albumContent()
             : this.menuTab === 'postcards'
               ? this.postcardsContent()
-              : this.shopContent();
+              : this.menuTab === 'city'
+                ? this.cityContent()
+                : this.shopContent();
     return [bar, ...body];
+  }
+
+  /** Názov obvodu kampane: úroveň (mesto → okolie → kraj) a meno; po kraji ďalšie kolo. */
+  private districtName(i: number): { tier: string; name: string } {
+    const c = this.state.data.balance.campaigns;
+    const tierIdx = Math.floor(i / c.districts_per_tier);
+    const round = Math.floor(tierIdx / c.tiers);
+    const tier = t(`CITY_TIER_${tierIdx % c.tiers}`);
+    const name = t(`CITY_D_${tierIdx % c.tiers}_${i % c.districts_per_tier}`);
+    return { tier: round > 0 ? `${tier} · ${t('CITY_ROUND', { n: round + 1 })}` : tier, name };
+  }
+
+  /** Kastračné kampane (GDD §7.7): obvody mesta, okolia a kraja, cena stále rastie. */
+  private cityContent(): HTMLElement[] {
+    const s = this.state;
+    const c = s.data.balance.campaigns;
+    const d = s.campaignDistrict;
+    const { tier, name } = this.districtName(d);
+    const a = s.campaigns.active;
+    const price = s.campaignPrice;
+    const per = c.per_district;
+    const tierStart = d - (d % c.districts_per_tier);
+    const dots = (k: number) => '●'.repeat(k) + '○'.repeat(per - k);
+    const out: HTMLElement[] = [
+      el('p', { class: 'hint' }, t('UI_CITY_INTRO')),
+      el(
+        'div',
+        { class: 'campaign-card' },
+        el('span', { class: 'shop-icon' }, '🏘️'),
+        el(
+          'div',
+          { class: 'grow' },
+          el('strong', {}, name),
+          el('p', { class: 'hint' }, `${tier} · ${dots(s.campaignDistrictDone)}`),
+        ),
+      ),
+    ];
+    if (a) {
+      const left = Math.max(0, a.endsAt - s.now);
+      const total = s.campaignDurationMs;
+      const pct = Math.round(100 - (left / total) * 100);
+      const sec = Math.ceil(left / 1000);
+      out.push(
+        el(
+          'p',
+          {},
+          t('UI_CITY_RUNNING', {
+            t: `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`,
+          }),
+        ),
+        el('div', { class: 'bar' }, el('i', { style: `width:${pct}%;background:var(--ui-good)` })),
+      );
+    } else {
+      out.push(
+        button(
+          `✂️ ${t('UI_CITY_START', { price })}`,
+          () => {
+            if (s.startCampaign()) this.renderModal();
+          },
+          { class: 'btn primary', disabled: s.money < price },
+        ),
+      );
+    }
+    out.push(
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_CITY_REWARD', {
+          rep: c.rep + c.rep_step * s.campaigns.done,
+          h: c.hearts,
+          dh: c.district_hearts,
+          min: Math.round(s.campaignDurationMs / 60000),
+        }),
+      ),
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_CITY_BONUS', { n: d, p: Math.round(s.campaignAdopterBonus * 100) }),
+      ),
+    );
+    // obvody aktuálnej úrovne
+    const list = el('div', { class: 'districts' });
+    for (let i = tierStart; i < tierStart + c.districts_per_tier; i++) {
+      const st = i < d ? 'done' : i === d ? 'now' : 'todo';
+      list.append(
+        el(
+          'div',
+          { class: `district ${st}` },
+          el('span', {}, st === 'done' ? '✓' : st === 'now' ? '✂️' : '·'),
+          el('span', { class: 'grow' }, this.districtName(i).name),
+          el(
+            'span',
+            { class: 'muted' },
+            st === 'done' ? dots(per) : st === 'now' ? dots(s.campaignDistrictDone) : '',
+          ),
+        ),
+      );
+    }
+    out.push(el('h3', {}, tier), list);
+    return out;
   }
 
   /** Úspechy: odomknuté navrchu, ostatné s postupom (GDD §7.5). */

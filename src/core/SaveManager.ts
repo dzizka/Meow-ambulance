@@ -62,6 +62,7 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
   },
   /** v14 → v15: srdiečka a kozmetika (GDD §7.6). */
   14: (s) => ({ ...s, version: 15, hearts: 0, cosmetics: { owned: [], walls: {} } }),
+  15: (s) => ({ ...s, version: 16, campaigns: { done: 0, active: null } }),
   /** v13 → v14: udalosti (GDD §7.3) – prvá ponuka o 15 minút. */
   13: (s) => ({
     ...s,

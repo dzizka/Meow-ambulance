@@ -7,6 +7,7 @@ import type {
   AlbumEntry,
   CafeGuest,
   CafeReview,
+  CampaignState,
   CafeState,
   ChallengeDef,
   DecorDef,
@@ -31,7 +32,7 @@ import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
 import { computeMatch, type MatchResult } from './systems/Match';
 
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 
 /** Uložená hra (JSON). Pri zmene formátu zvýšiť SAVE_VERSION a doplniť migráciu. */
 export interface SaveData {
@@ -80,6 +81,8 @@ export interface SaveData {
   // od verzie 15
   hearts: number;
   cosmetics: CosmeticsState;
+  // od verzie 16
+  campaigns: CampaignState;
 }
 
 /** Kozmetika (GDD §7.6): kúpené ozdoby a farby stien, zvolená farba v miestnostiach. */
@@ -155,6 +158,7 @@ export const emptyCounters = (): Counters => ({
   neutered: 0,
   hotel: 0,
   lectures: 0,
+  campaigns: 0,
 });
 
 /** Kroky tutoriálu so Zuzkou (kľúče textov) – postupujú podľa toho, čo hráč už urobil. */
@@ -215,6 +219,7 @@ export class GameState {
   /** Srdiečka ❤ – za pohľadnice, album, úspechy a udalosti (GDD §7.6). */
   hearts = 0;
   cosmetics: CosmeticsState = { owned: [], walls: {} };
+  campaigns: CampaignState = { done: 0, active: null };
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
   /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
@@ -413,6 +418,7 @@ export class GameState {
     this.advanceGuests(deltaMs);
     this.advanceStaff(deltaMs);
     this.deliverPostcards();
+    this.advanceCampaign();
     this.checkReadiness();
     this.checkAchievements();
   }
@@ -442,6 +448,7 @@ export class GameState {
     summary.donations += Math.floor(this.money - before2);
     const delivered = this.deliverPostcards();
     summary.postcards = delivered;
+    this.advanceCampaign(); // kampaň medzitým skončila
     return summary;
   }
 
@@ -477,7 +484,11 @@ export class GameState {
     const social = this.staffWorking('social') ? this.data.balance.staff.social : null;
     const openDay = this.eventActive('openday');
     const interval =
-      a.interval_s * 1000 * (social?.adopter_interval_mult ?? 1) * (openDay ? 0.35 : 1);
+      a.interval_s *
+      1000 *
+      (social?.adopter_interval_mult ?? 1) *
+      (openDay ? 0.35 : 1) *
+      (1 - this.campaignAdopterBonus);
     this.adopterTimer += deltaMs;
     if (this.adopterTimer < interval) return;
     const maxWaiting =
@@ -1889,6 +1900,73 @@ export class GameState {
     this.bus.emit('guestArrived', { guest });
   }
 
+  // ---------- Kastračné kampane (GDD §7.7) ----------
+
+  /** Kampane sa dajú robiť, keď má útulok kliniku (kastrácie). */
+  get campaignsUnlocked(): boolean {
+    return this.clinic.open;
+  }
+
+  /** Cena ďalšej kampane – rastie bez konca. */
+  get campaignPrice(): number {
+    const c = this.data.balance.campaigns;
+    // exponent so stropom – aj po stovkách kampaní ostane číslo konečné
+    const raw = c.base_price * Math.pow(c.growth, Math.min(this.campaigns.done, 150));
+    // zaokrúhliť na pekné čísla (10 / 100 / 1000 podľa veľkosti)
+    const step = raw < 2000 ? 10 : raw < 20000 ? 100 : 1000;
+    return Math.round(raw / step) * step;
+  }
+
+  get campaignDurationMs(): number {
+    const c = this.data.balance.campaigns;
+    return (
+      Math.min(c.duration_max_s, c.duration_s + c.duration_step_s * this.campaigns.done) * 1000
+    );
+  }
+
+  /** Index obvodu, v ktorom sa práve robia kampane (rastie donekonečna). */
+  get campaignDistrict(): number {
+    return Math.floor(this.campaigns.done / this.data.balance.campaigns.per_district);
+  }
+
+  /** Koľko kampaní z obvodu je hotových. */
+  get campaignDistrictDone(): number {
+    return this.campaigns.done % this.data.balance.campaigns.per_district;
+  }
+
+  /** Bonus k príchodom záujemcov za každý vyčistený obvod (zlomok, max. adopter_bonus_max). */
+  get campaignAdopterBonus(): number {
+    const c = this.data.balance.campaigns;
+    return Math.min(c.adopter_bonus_max, this.campaignDistrict * c.adopter_bonus_per_district);
+  }
+
+  startCampaign(): boolean {
+    if (!this.campaignsUnlocked || this.campaigns.active) return false;
+    const price = this.campaignPrice;
+    if (this.money < price) return false;
+    this.addMoney(-price, true);
+    this.campaigns.active = { endsAt: this.now + this.campaignDurationMs, price };
+    this.bus.emit('campaignStarted', { district: this.campaignDistrict });
+    return true;
+  }
+
+  private advanceCampaign(): void {
+    const a = this.campaigns.active;
+    if (!a || this.now < a.endsAt) return;
+    const c = this.data.balance.campaigns;
+    const n = this.campaigns.done;
+    const district = this.campaignDistrict;
+    this.campaigns.active = null;
+    this.campaigns.done += 1;
+    this.counters.campaigns += 1;
+    this.gainRep(c.rep + c.rep_step * n);
+    let hearts = c.hearts;
+    const cleared = this.campaignDistrict > district;
+    if (cleared) hearts += c.district_hearts;
+    this.addHearts(hearts);
+    this.bus.emit('campaignDone', { district, cleared });
+  }
+
   // ---------- Tutoriál so Zuzkou ----------
 
   /** Kľúč textu aktuálnej rady, alebo null, ak je tutoriál hotový. */
@@ -1952,6 +2030,7 @@ export class GameState {
       events: structuredClone(this.events),
       hearts: this.hearts,
       cosmetics: structuredClone(this.cosmetics),
+      campaigns: structuredClone(this.campaigns),
     };
   }
 
@@ -1991,6 +2070,7 @@ export class GameState {
     if (save.events) s.events = structuredClone(save.events);
     s.hearts = save.hearts ?? 0;
     s.cosmetics = structuredClone(save.cosmetics ?? { owned: [], walls: {} });
+    s.campaigns = structuredClone(save.campaigns ?? { done: 0, active: null });
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();

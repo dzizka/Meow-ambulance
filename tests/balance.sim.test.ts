@@ -19,12 +19,21 @@ interface SimLog {
   adoptions: number;
   rep: number;
   money: number;
+  campaigns: number;
 }
 
 export function simulate(hours: number, seed = 1, stars: 1 | 2 | 3 = 2): SimLog {
   const s = new GameState(data, seed);
   s.dismissTutorial();
-  const log: SimLog = { levels: [0], built: {}, income: {}, adoptions: 0, rep: 0, money: 0 };
+  const log: SimLog = {
+    levels: [0],
+    built: {},
+    income: {},
+    adoptions: 0,
+    rep: 0,
+    money: 0,
+    campaigns: 0,
+  };
   const add = (k: string, v: number) => (log.income[k] = (log.income[k] ?? 0) + v);
   s.bus.on('levelUp', ({ level }) => (log.levels[level] = Math.round(s.now / 60_000)));
   s.bus.on('catAdopted', ({ record }) => {
@@ -95,6 +104,8 @@ export function simulate(hours: number, seed = 1, stars: 1 | 2 | 3 = 2): SimLog 
       (s.hasUnlock('catio') && !s.catio.open) ||
       (s.hasUnlock('hotel') && !s.hotel.open) ||
       (s.hasUnlock('education') && !s.education.open);
+    // kastračné kampane – keď nie je na čo šetriť a peniaze prebývajú
+    if (!saving && s.campaignsUnlocked && s.money > s.campaignPrice * 1.5 + 2000) s.startCampaign();
     if (!saving && s.money > 600) {
       for (const e of data.equipment) s.buyEquipment(e.id);
       if (s.nextTablePrice !== null) s.buyTable();
@@ -103,6 +114,7 @@ export function simulate(hours: number, seed = 1, stars: 1 | 2 | 3 = 2): SimLog 
   }
   log.rep = s.reputation;
   log.money = Math.round(s.money);
+  log.campaigns = s.campaigns.done;
   return log;
 }
 
@@ -120,7 +132,9 @@ describe.skipIf(!process.env.SIM)('Simulácia balansu', () => {
           .map(([k, v]) => `${k} ${Math.round(v)}`)
           .join(', '),
       );
-      console.log(`adopcie ${log.adoptions}, ★ ${log.rep}, peniaze ${log.money}`);
+      console.log(
+        `adopcie ${log.adoptions}, ★ ${log.rep}, peniaze ${log.money}, kampane ${log.campaigns}`,
+      );
     }
     expect(true).toBe(true);
   }, 600_000);

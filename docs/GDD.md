@@ -477,6 +477,15 @@ Pri prechode stavu: krátka „premena" s efektom a zvukom (dopamínový moment)
 - **Obchod → ❤️ Ozdoby:** za srdiečka sa kupujú farby stien. (Ozdoby na mačkách – obojky, mašličky – boli skúšobne pridané a odstránené: pôsobili neprirodzene.)
 - **Farba stien** garáže a kaviarne (mätová, levanduľová, broskyňová, nebeská – po 8 ❤); kúpená farba sa dá použiť v oboch miestnostiach a kedykoľvek vrátiť pôvodnú.
 
+
+### 7.7 Kastračné kampane 🟢 (s klinikou)
+Nekonečné míňanie peňazí s dobrým pocitom – tak, ako to robia skutočné útulky (odchyt, kastrácia, návrat).
+- Menu ☰ → **🏘️ Mesto**. Obvody: **Mesto** (Staré mesto, Sídlisko Juh, Pri rieke, Nádražie, Záhradky, Priemyselná zóna) → **Okolie** (6 dedín) → **Kraj** (6 miest) → potom ďalšie kolo („2. kolo") donekonečna.
+- Obvod sa vyčistí po **3 kampaniach**. Beží vždy jedna kampaň; trvá 2 min (+15 s za každú ďalšiu, max. 8 min) a dobehne aj keď je hra zatvorená.
+- Cena: **800 € × 1,18ⁿ** (n = počet hotových kampaní) – 800, 940, 1 110 … po meste ~13 000 €, po kraji státisíce.
+- Odmena: **+6 ★ (+1 za každú ďalšiu)** a **+2 ❤**, za vyčistený obvod ešte **+6 ❤**. Každý vyčistený obvod: záujemcovia o adopciu chodia o **3 % častejšie** (max. 30 %).
+- Úspechy: Prvá kampaň, Pokojný obvod (3), Mesto bez túlavých mačiek (18).
+- Simulácia (10 h, aktívny hráč): po dostavaní budov (~5 h) ~15–16 kampaní, prebytočné peniaze sa míňajú. Hodnoty: `balance.json → campaigns`.
 ---
 
 ## 8. Naratív a tón
