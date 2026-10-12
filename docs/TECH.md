@@ -165,6 +165,8 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Vyšetrenia `hand/thermometer/stethoscope/otoscope` spúšťajú minihry `exam_*` (`EXAM_GAMES` v `UI.ts`); `MinigameRequest.exam` nesie skryté diagnózy, ktoré nástroj odhalí (id + názov), minihra ich ukáže a skončí textom „Vyšetrené" namiesto hviezdičiek. Stav mení až `GameState.examine` po minihre.
 - Nové minihry starostlivosti: `brush` (zlepená srsť + česanie), `treat` (kŕmenie z ruky), `warm` (podchladenie). `hold` zostal ako záloha.
 
+- `CatData.reactions` (voliteľné, bez migrácie): posledná reakcia mačky na každú socializačnú aktivitu, zapisuje `Care.socialize`; ukazuje `UI.likesSection` a tlačidlá v Opatere.
+
 ## Podmodul s assetmi
 - Klonovanie: `git clone --recurse-submodules …`, aktualizácia: `git submodule update --remote public/assets`.
 - Nové assety sa commitujú **najprv** v podmodule (`public/assets/`), potom sa vo verejnom repozitári commitne posun podmodulu.

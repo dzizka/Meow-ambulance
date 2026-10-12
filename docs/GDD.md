@@ -192,6 +192,7 @@ Zvyšuje **Dôveru**. Účinnosť závisí od povahy:
 | Tiché sedenie | Nerob nič 10 s (pasívne) | ×2 | ×0.5 | ×1.5 | ×0.5 | ×0.5 |
 
 > Hráč spoznáva povahu skúšaním – ✨ pri úspechu, 💢 pri nevhodnej aktivite. Odhalená povaha sa zapíše do karty mačky.
+> Karta mačky → **O mačke → Čo má rada**: pri každej aktivite je zapísaná posledná reakcia (✨ má rada / 🙂 ide to / 💢 nebaví ju / ❔ ešte neskúšané); rovnaká značka je aj na tlačidlách v Opatere.
 
 ### 4.4 Povahové rysy a plemená 🟢 MVP (15 rysov, 12 plemien)
 Mačka má 1–2 rysy, odhaľujú sa pri socializácii (aktivita, ktorá jej sedí / nesedí) alebo pri adopcii. Socializačné násobky sú v `traits.json`.

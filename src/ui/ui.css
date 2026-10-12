@@ -1170,3 +1170,27 @@ body.minigame .toast:not(:last-child) {
 .pc-thumb .sprite {
   position: static;
 }
+
+/* ---------- Čo má mačka rada (karta O mačke) ---------- */
+.likes {
+  display: grid;
+  gap: 4px;
+}
+.like-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--ui-bg-deep);
+  font-size: 14px;
+}
+.like-row.love .like-val {
+  color: var(--ui-good);
+}
+.like-row.meh .like-val {
+  color: var(--ui-bad);
+}
+.like-row.unknown .like-val {
+  color: var(--ui-dim);
+}

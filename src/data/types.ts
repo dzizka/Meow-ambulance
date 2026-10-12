@@ -352,6 +352,8 @@ export interface CatData {
   hotel?: HotelStay;
   /** Herný čas (ms simulácie) posledného kontaktu – kvôli prestávkam medzi aktivitami. */
   lastSocialAt: number;
+  /** Ako mačka reagovala na jednotlivé aktivity (zobrazí sa v karte „O mačke"). */
+  reactions?: Partial<Record<SocialActivity, 'love' | 'ok' | 'meh'>>;
   lastFedAt: number;
   /** Odkiaľ prišla (id hlásenia). */
   reportId: string;

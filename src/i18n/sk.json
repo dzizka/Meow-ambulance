@@ -690,5 +690,11 @@
   "MG_TREAT_HINT": "Pomaly podaj rybičku k papuľke – rýchly pohyb mačku vyľaká.",
   "MG_TOO_FAST": "Pomalšie!",
   "MG_WARM_HINT": "Rozotieraj mačku krúživými pohybmi, kým sa nezohreje.",
-  "MG_WARM_DONE": "Teplúčko!"
+  "MG_WARM_DONE": "Teplúčko!",
+  "UI_LIKES": "Čo má rada",
+  "UI_LIKE_LOVE": "má rada",
+  "UI_LIKE_OK": "ide to",
+  "UI_LIKE_MEH": "nebaví ju",
+  "UI_LIKE_UNTRIED": "ešte neskúšané",
+  "UI_LIKES_HINT": "Vyskúšaj aktivity v karte Opatera – zapíše sa sem, ako mačka reagovala."
 }
