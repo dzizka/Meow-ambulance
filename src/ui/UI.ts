@@ -249,6 +249,7 @@ export class UI {
   /** Rozbalená stará pohľadnica v Pošte. */
   private openPostcard: string | null = null;
   private postcardBatch = 0;
+  private confirmPrestige = false;
   private heartBatch = 0;
   /** Prístroj kliniky, pri ktorom hráč vyberá pacienta. */
   private stationRoom: ClinicRoomId = 'lab';
@@ -815,6 +816,13 @@ export class UI {
     // odpočet bežiacej kampane v menu
     if (this.modalKind === 'menu' && this.menuTab === 'city' && this.state.campaigns.active)
       this.renderModal();
+    // odpočet Dňa adopcií / prestávky v okne záujemcov (iba ak sa nič nevyberá)
+    if (
+      this.modalKind === 'visitors' &&
+      !this.selectedForVisit &&
+      (this.state.adoptionDayActive || this.state.adoptionDayCooldown > 0)
+    )
+      this.renderModal();
   }
 
   // ---------- Udalosti hry ----------
@@ -995,6 +1003,17 @@ export class UI {
       this.game.playSound('success', 0.4);
       refreshCafe();
     });
+    bus.on('campaignPrestige', ({ gained }) => {
+      this.toast(t('TOAST_PRESTIGE', { n: gained }));
+      this.game.playSound('success', 0.6);
+    });
+    bus.on('adoptionDay', ({ active }) => {
+      this.toast(t(active ? 'TOAST_ADAY_ON' : 'TOAST_ADAY_OFF'));
+      if (active) this.game.playSound('success', 0.5);
+      if (this.modalKind === 'visitors') this.renderModal();
+    });
+    bus.on('wishAppeared', ({ cat }) => this.toast(t('TOAST_WISH', { cat: cat.name })));
+    bus.on('wishGranted', ({ cat }) => this.toast(t('TOAST_WISH_DONE', { cat: cat.name })));
     bus.on('campaignStarted', () => {
       this.toast(t('TOAST_CAMPAIGN_START'));
       this.game.playSound('success', 0.4);
@@ -1378,7 +1397,7 @@ export class UI {
     });
     if (feedLeft > 0) feedBtn.append(el('small', {}, t('UI_RESTING', { s: feedLeft })));
     care.append(feedBtn);
-    return [care];
+    return [...this.wishBlock(cat), care];
   }
 
   /** Obchod → Ozdoby: srdiečka a farby stien (GDD §7.6). */
@@ -1429,11 +1448,14 @@ export class UI {
     return [
       el('p', { class: 'hearts-line' }, t('UI_HEARTS_LINE', { n: s.hearts })),
       el('p', { class: 'hint' }, t('UI_HEARTS_HINT')),
+      el('h3', {}, `🎉 ${t('UI_ADAY_TITLE')}`),
+      this.adoptionDayBlock(),
+      el('p', { class: 'hint' }, `💭 ${t('UI_WISH_SHOP_HINT')}`),
       el('h3', {}, t('UI_WALLS_TITLE')),
       ...c.walls.map((w) => item(w.id, w.icon, t(`WALL_${w.id.toUpperCase()}`), w.price)),
       wallRow('garage'),
       wallRow('cafe'),
-    ].filter((x): x is HTMLDivElement => typeof x !== 'string');
+    ].filter((x): x is HTMLElement => typeof x !== 'string');
   }
 
   /** O mačke: povaha a odkiaľ prišla. */
@@ -1936,6 +1958,7 @@ export class UI {
         needs.push(['💊', t('UI_NEED_TREAT')]);
       if (cat.examined.length < s.tools.length) needs.push(['🔍', t('UI_NEED_EXAMINE')]);
     }
+    if (cat.wish) needs.push(['💭', t('UI_NEED_WISH')]);
     if (cat.stats.satisfaction < 40) needs.push(['🍽️', t('UI_NEED_FOOD')]);
     if (cat.stats.cleanliness < 40) needs.push(['🛁', t('UI_NEED_CLEAN')]);
     if (!needs.length) return '';
@@ -2405,7 +2428,12 @@ export class UI {
     const def = visit && s.adopterDef(visit.id);
     const close = button(t('UI_CLOSE'), () => this.closeModal(), { class: 'btn' });
     if (!visit || !def)
-      return [el('h2', {}, t('UI_VISITORS')), el('p', { class: 'muted' }, t('UI_NO_READY')), close];
+      return [
+        el('h2', {}, t('UI_VISITORS')),
+        el('p', { class: 'muted' }, t('UI_NO_READY')),
+        this.adoptionDayBlock(),
+        close,
+      ];
 
     const head = el(
       'div',
@@ -2494,6 +2522,7 @@ export class UI {
       ready.length ? list : el('p', { class: 'muted' }, t('UI_NO_READY')),
       chosen?.quality === 'poor' ? el('p', { class: 'warning' }, t('UI_POOR_WARNING')) : null,
       el('div', { class: 'footer' }, notNow, adopt),
+      this.adoptionDayBlock(),
       close,
     ];
     return parts.filter((x): x is HTMLElement => x !== null);
@@ -2550,6 +2579,82 @@ export class UI {
                 ? this.cityContent()
                 : this.shopContent();
     return [bar, ...body];
+  }
+
+  /** Deň adopcií za ❤ (GDD §7.8): tlačidlo alebo odpočet. */
+  private adoptionDayBlock(): HTMLElement {
+    const s = this.state;
+    const d = s.data.cosmetics?.adoption_day;
+    if (!d) return el('span');
+    const mmss = (ms: number) => {
+      const sec = Math.ceil(ms / 1000);
+      return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+    };
+    if (s.adoptionDayActive)
+      return el(
+        'p',
+        { class: 'adoption-day on' },
+        `🎉 ${t('UI_ADAY_ON', { t: mmss(s.adoptionDay.until - s.now) })}`,
+      );
+    const cd = s.adoptionDayCooldown;
+    const anyReady = s.cats.some((c) => s.isReady(c));
+    return el(
+      'div',
+      { class: 'adoption-day' },
+      el('p', { class: 'hint' }, t('UI_ADAY_HINT', { min: Math.round(d.duration_s / 60) })),
+      button(
+        cd > 0
+          ? `🎉 ${t('UI_ADAY_WAIT', { t: mmss(cd) })}`
+          : `🎉 ${t('UI_ADAY_START', { price: d.price })}`,
+        () => {
+          if (s.startAdoptionDay()) this.renderModal();
+        },
+        {
+          class: 'btn primary',
+          disabled: cd > 0 || s.hearts < d.price || !anyReady,
+          title: anyReady ? '' : t('UI_NO_READY'),
+        },
+      ),
+    );
+  }
+
+  /** Želanie stálice v karte Opatera (GDD §7.8). */
+  private wishBlock(cat: CatData): HTMLElement[] {
+    const s = this.state;
+    if (!cat.resident) return [];
+    const rules = s.data.cosmetics?.wish_rules;
+    const bond = cat.bond ?? 0;
+    const bondLine = rules
+      ? el(
+          'p',
+          { class: 'hint' },
+          `💞 ${t('UI_BOND', { n: bond, max: rules.bond_max, p: Math.round(bond * rules.bond_donation * 100) })}`,
+        )
+      : el('span');
+    const def = s.wishDef(cat.wish);
+    if (!def) return [bondLine];
+    const price = s.wishPrice(cat);
+    return [
+      el(
+        'div',
+        { class: 'wish' },
+        el('span', { class: 'shop-icon' }, def.icon),
+        el(
+          'div',
+          { class: 'grow' },
+          el('strong', {}, t('UI_WISH_TITLE', { cat: cat.name })),
+          el('p', {}, t(`WISH_${def.id.toUpperCase()}`)),
+        ),
+        button(
+          `${price} ❤`,
+          () => {
+            if (s.grantWish(cat.id)) this.renderSheet();
+          },
+          { class: 'btn primary', disabled: s.hearts < price },
+        ),
+      ),
+      bondLine,
+    ];
   }
 
   /** Názov obvodu kampane: úroveň (mesto → okolie → kraj) a meno; po kraji ďalšie kolo. */
@@ -2618,18 +2723,77 @@ export class UI {
         'p',
         { class: 'hint' },
         t('UI_CITY_REWARD', {
-          rep: c.rep + c.rep_step * s.campaigns.done,
-          h: c.hearts,
-          dh: c.district_hearts,
+          rep: Math.round((c.rep + c.rep_step * s.campaigns.done) * s.campaignRewardMult),
+          h: Math.round(c.hearts * s.campaignRewardMult),
+          dh: Math.round(c.district_hearts * s.campaignRewardMult),
           min: Math.round(s.campaignDurationMs / 60000),
         }),
       ),
       el(
         'p',
         { class: 'hint' },
-        t('UI_CITY_BONUS', { n: d, p: Math.round(s.campaignAdopterBonus * 100) }),
+        t('UI_CITY_BONUS', { n: s.campaignsCleared, p: Math.round(s.campaignAdopterBonus * 100) }),
       ),
     );
+    // prestíž: nový program od mesta, trvalé bonusy (GDD §7.7)
+    const pr = s.campaignPrestige;
+    if (pr > 0)
+      out.push(
+        el(
+          'p',
+          { class: 'hint' },
+          `🏅 ${t('UI_PRESTIGE_LINE', {
+            n: pr,
+            fee: Math.round((s.prestigeFeeMult - 1) * 100),
+            rew: Math.round((s.campaignRewardMult - 1) * 100),
+          })}`,
+        ),
+      );
+    const tiers = s.campaignTiersDone;
+    if (tiers > 0 && !a) {
+      const box = el(
+        'div',
+        { class: 'prestige' },
+        el('strong', {}, `🏅 ${t('UI_PRESTIGE_TITLE')}`),
+        el(
+          'p',
+          { class: 'hint' },
+          t('UI_PRESTIGE_DESC', {
+            n: tiers,
+            fee: Math.round(c.prestige_fee * 100 * tiers),
+            rew: Math.round(c.prestige_reward * 100 * tiers),
+          }),
+        ),
+      );
+      if (this.confirmPrestige)
+        box.append(
+          el(
+            'div',
+            { class: 'footer' },
+            button(t('UI_CANCEL'), () => {
+              this.confirmPrestige = false;
+              this.renderModal();
+            }),
+            button(
+              t('UI_PRESTIGE_YES'),
+              () => {
+                this.confirmPrestige = false;
+                s.prestigeCampaigns();
+                this.renderModal();
+              },
+              { class: 'btn primary' },
+            ),
+          ),
+        );
+      else
+        box.append(
+          button(`🏅 ${t('UI_PRESTIGE_BTN', { n: tiers })}`, () => {
+            this.confirmPrestige = true;
+            this.renderModal();
+          }),
+        );
+      out.push(box);
+    }
     // obvody aktuálnej úrovne
     const list = el('div', { class: 'districts' });
     for (let i = tierStart; i < tierStart + c.districts_per_tier; i++) {

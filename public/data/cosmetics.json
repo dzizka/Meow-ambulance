@@ -1,5 +1,5 @@
 {
-  "_comment": "Srdiečka a kozmetika (GDD §7.6). hearts = koľko ❤ hráč dostane za čo. walls = farby stien garáže a kaviarne (tón cez celú stenu).",
+  "_comment": "Srdiečka (GDD §7.6): hearts = koľko ❤ hráč dostane za čo; walls = farby stien; adoption_day = Deň adopcií za ❤; wishes = želania stálic (cena ❤ + puto, max. bond_max).",
   "hearts": {
     "postcard": 3,
     "album": 2,
@@ -31,6 +31,74 @@
       "icon": "🟦",
       "price": 8,
       "color": "#a8d0f0"
+    }
+  ],
+  "adoption_day": {
+    "price": 15,
+    "duration_s": 180,
+    "cooldown_s": 600,
+    "interval_mult": 0.25,
+    "extra_waiting": 2
+  },
+  "wish_rules": {
+    "interval_s": [
+      240,
+      480
+    ],
+    "satisfaction": 30,
+    "bond_max": 10,
+    "bond_donation": 0.05
+  },
+  "wishes": [
+    {
+      "id": "tuna",
+      "icon": "🐟",
+      "price": 4
+    },
+    {
+      "id": "catnip",
+      "icon": "🌿",
+      "price": 5
+    },
+    {
+      "id": "box",
+      "icon": "📦",
+      "price": 3
+    },
+    {
+      "id": "mouse",
+      "icon": "🐭",
+      "price": 5
+    },
+    {
+      "id": "blanket",
+      "icon": "🧣",
+      "price": 6
+    },
+    {
+      "id": "brush",
+      "icon": "🪮",
+      "price": 4
+    },
+    {
+      "id": "fountain",
+      "icon": "⛲",
+      "price": 8
+    },
+    {
+      "id": "treats",
+      "icon": "🍬",
+      "price": 3
+    },
+    {
+      "id": "yarn",
+      "icon": "🧶",
+      "price": 4
+    },
+    {
+      "id": "window",
+      "icon": "🪟",
+      "price": 6
     }
   ]
 }

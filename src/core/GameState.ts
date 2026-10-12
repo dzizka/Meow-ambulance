@@ -8,6 +8,7 @@ import type {
   CafeGuest,
   CafeReview,
   CampaignState,
+  WishDef,
   CafeState,
   ChallengeDef,
   DecorDef,
@@ -83,6 +84,7 @@ export interface SaveData {
   cosmetics: CosmeticsState;
   // od verzie 16
   campaigns: CampaignState;
+  adoptionDay?: { until: number; readyAt: number };
 }
 
 /** Kozmetika (GDD §7.6): kúpené ozdoby a farby stien, zvolená farba v miestnostiach. */
@@ -159,6 +161,7 @@ export const emptyCounters = (): Counters => ({
   hotel: 0,
   lectures: 0,
   campaigns: 0,
+  wishes: 0,
 });
 
 /** Kroky tutoriálu so Zuzkou (kľúče textov) – postupujú podľa toho, čo hráč už urobil. */
@@ -220,6 +223,9 @@ export class GameState {
   hearts = 0;
   cosmetics: CosmeticsState = { owned: [], walls: {} };
   campaigns: CampaignState = { done: 0, active: null };
+  /** Deň adopcií za ❤: do kedy beží a odkedy sa dá znova (ms simulácie). */
+  adoptionDay = { until: 0, readyAt: 0 };
+  private adDayWasActive = false;
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
   /** Odpočty personálu a kedy ošetrovateľ naposledy česal mačku (neukladá sa). */
@@ -387,7 +393,11 @@ export class GameState {
       b.residents.donation_per_min *
       (this.cafe.open ? b.cafe.donation_multiplier : 1) *
       this.equipmentEffect('beds');
-    return this.residents.reduce((sum, c) => sum + rate * (0.5 + c.stats.satisfaction / 100), 0);
+    const bondBonus = this.data.cosmetics?.wish_rules.bond_donation ?? 0;
+    return this.residents.reduce(
+      (sum, c) => sum + rate * (0.5 + c.stats.satisfaction / 100) * (1 + bondBonus * (c.bond ?? 0)),
+      0,
+    );
   }
 
   // ---------- Čas ----------
@@ -419,6 +429,10 @@ export class GameState {
     this.advanceStaff(deltaMs);
     this.deliverPostcards();
     this.advanceCampaign();
+    this.advanceWishes();
+    if (this.adDayWasActive && !this.adoptionDayActive)
+      this.bus.emit('adoptionDay', { active: false });
+    this.adDayWasActive = this.adoptionDayActive;
     this.checkReadiness();
     this.checkAchievements();
   }
@@ -488,6 +502,7 @@ export class GameState {
       1000 *
       (social?.adopter_interval_mult ?? 1) *
       (openDay ? 0.35 : 1) *
+      (this.adoptionDayActive ? (this.data.cosmetics?.adoption_day.interval_mult ?? 1) : 1) *
       (1 - this.campaignAdopterBonus);
     this.adopterTimer += deltaMs;
     if (this.adopterTimer < interval) return;
@@ -495,7 +510,8 @@ export class GameState {
       a.max_waiting +
       (this.hasUnlock('adopters_plus') ? 1 : 0) +
       (social?.extra_waiting ?? 0) +
-      (openDay ? 1 : 0);
+      (openDay ? 1 : 0) +
+      (this.adoptionDayActive ? (this.data.cosmetics?.adoption_day.extra_waiting ?? 0) : 0);
     if (this.adopters.length >= maxWaiting) {
       this.adopterTimer = interval;
       return;
@@ -1268,7 +1284,9 @@ export class GameState {
           (cat.clinicCase ? 1 + this.data.balance.clinic.case_fee_bonus : 1) *
           (cat.rehabbed ? 1 + this.data.balance.clinic.rehab_fee_bonus : 1) *
           // vzácna mačka (GDD §7.2)
-          (cat.special ? 1 + this.data.balance.rare.fee_bonus : 1)) /
+          (cat.special ? 1 + this.data.balance.rare.fee_bonus : 1) *
+          // prestíž kastračných kampaní (GDD §7.7)
+          this.prestigeFeeMult) /
           5,
       ) * 5;
     const rep =
@@ -1900,6 +1918,88 @@ export class GameState {
     this.bus.emit('guestArrived', { guest });
   }
 
+  // ---------- Srdiečka: Deň adopcií a želania stálic (GDD §7.8) ----------
+
+  get adoptionDayActive(): boolean {
+    return this.now < this.adoptionDay.until;
+  }
+
+  /** Ms do konca prestávky (0 = dá sa vyhlásiť). */
+  get adoptionDayCooldown(): number {
+    return Math.max(0, this.adoptionDay.readyAt - this.now);
+  }
+
+  /** Vyhlásiť Deň adopcií: na pár minút príde veľa záujemcov naraz. */
+  startAdoptionDay(): boolean {
+    const d = this.data.cosmetics?.adoption_day;
+    if (!d || this.adoptionDayActive || this.adoptionDayCooldown > 0) return false;
+    if (this.hearts < d.price || !this.cats.some((c) => this.isReady(c))) return false;
+    this.spendHearts(d.price);
+    this.adoptionDay = {
+      until: this.now + d.duration_s * 1000,
+      readyAt: this.now + (d.duration_s + d.cooldown_s) * 1000,
+    };
+    // prvý záujemca hneď
+    this.adopterTimer = Number.MAX_SAFE_INTEGER / 2;
+    this.bus.emit('adoptionDay', { active: true });
+    return true;
+  }
+
+  private spendHearts(n: number): void {
+    this.hearts -= n;
+    this.bus.emit('heartsChanged', { hearts: this.hearts, delta: -n });
+  }
+
+  wishDef(id: string | null | undefined): WishDef | undefined {
+    return id ? this.data.cosmetics?.wishes.find((w) => w.id === id) : undefined;
+  }
+
+  /** Cena splnenia želania: základ + puto (čím bližšia mačka, tým väčšie prianie). */
+  wishPrice(cat: CatData): number {
+    const def = this.wishDef(cat.wish);
+    return def ? def.price + (cat.bond ?? 0) : 0;
+  }
+
+  /** Stálice si občas niečo zaželajú (nevyprší, nikto sa neurazí). */
+  private advanceWishes(): void {
+    const rules = this.data.cosmetics?.wish_rules;
+    const wishes = this.data.cosmetics?.wishes;
+    if (!rules || !wishes?.length) return;
+    const [lo, hi] = rules.interval_s;
+    for (const cat of this.residents) {
+      if (cat.wish) continue;
+      if (cat.nextWishAt === undefined) {
+        cat.nextWishAt = this.now + this.rng.int(lo, hi) * 1000;
+        continue;
+      }
+      if (this.now < cat.nextWishAt) continue;
+      const pool = wishes.filter((w) => w.id !== cat.wish);
+      cat.wish = this.rng.pick(pool).id;
+      this.bus.emit('wishAppeared', { cat });
+      this.bus.emit('catChanged', { cat });
+    }
+  }
+
+  /** Splniť želanie stálice za ❤: veľká radosť, puto +1 (vyššie dary). */
+  grantWish(catId: string): boolean {
+    const cat = this.getCat(catId);
+    const rules = this.data.cosmetics?.wish_rules;
+    const def = cat ? this.wishDef(cat.wish) : undefined;
+    if (!cat || !rules || !def || !cat.resident) return false;
+    const price = this.wishPrice(cat);
+    if (this.hearts < price) return false;
+    this.spendHearts(price);
+    cat.wish = null;
+    cat.bond = Math.min(rules.bond_max, (cat.bond ?? 0) + 1);
+    const [lo, hi] = rules.interval_s;
+    cat.nextWishAt = this.now + this.rng.int(lo, hi) * 1000;
+    Care.addStats(cat, { satisfaction: rules.satisfaction, trust: 10 });
+    this.counters.wishes += 1;
+    this.bus.emit('wishGranted', { cat, def });
+    this.bus.emit('catChanged', { cat });
+    return true;
+  }
+
   // ---------- Kastračné kampane (GDD §7.7) ----------
 
   /** Kampane sa dajú robiť, keď má útulok kliniku (kastrácie). */
@@ -1911,7 +2011,10 @@ export class GameState {
   get campaignPrice(): number {
     const c = this.data.balance.campaigns;
     // exponent so stropom – aj po stovkách kampaní ostane číslo konečné
-    const raw = c.base_price * Math.pow(c.growth, Math.min(this.campaigns.done, 150));
+    const raw =
+      c.base_price *
+      (1 + c.prestige_price * this.campaignPrestige) *
+      Math.pow(c.growth, Math.min(this.campaigns.done, 150));
     // zaokrúhliť na pekné čísla (10 / 100 / 1000 podľa veľkosti)
     const step = raw < 2000 ? 10 : raw < 20000 ? 100 : 1000;
     return Math.round(raw / step) * step;
@@ -1937,7 +2040,46 @@ export class GameState {
   /** Bonus k príchodom záujemcov za každý vyčistený obvod (zlomok, max. adopter_bonus_max). */
   get campaignAdopterBonus(): number {
     const c = this.data.balance.campaigns;
-    return Math.min(c.adopter_bonus_max, this.campaignDistrict * c.adopter_bonus_per_district);
+    return Math.min(c.adopter_bonus_max, this.campaignsCleared * c.adopter_bonus_per_district);
+  }
+
+  /** Vyčistené obvody spolu – aj z predošlých programov. */
+  get campaignsCleared(): number {
+    return (this.campaigns.cleared ?? 0) + this.campaignDistrict;
+  }
+
+  get campaignPrestige(): number {
+    return this.campaigns.prestige ?? 0;
+  }
+
+  /** Koľko celých úrovní (mesto / okolie / kraj…) je v tomto programe hotových. */
+  get campaignTiersDone(): number {
+    const c = this.data.balance.campaigns;
+    return Math.floor(this.campaigns.done / (c.per_district * c.districts_per_tier));
+  }
+
+  /** Násobok odmien kampaní z prestíže. */
+  get campaignRewardMult(): number {
+    return 1 + this.data.balance.campaigns.prestige_reward * this.campaignPrestige;
+  }
+
+  /** Násobok príspevkov z adopcií z prestíže. */
+  get prestigeFeeMult(): number {
+    return 1 + this.data.balance.campaigns.prestige_fee * this.campaignPrestige;
+  }
+
+  /**
+   * Nový program (prestíž): kampane začnú znova od mesta a lacno, za každú hotovú úroveň
+   * hráč dostane 🏅 – trvalo vyššie odmeny kampaní a príspevky z adopcií.
+   */
+  prestigeCampaigns(): number {
+    const tiers = this.campaignTiersDone;
+    if (tiers < 1 || this.campaigns.active) return 0;
+    this.campaigns.cleared = this.campaignsCleared;
+    this.campaigns.prestige = this.campaignPrestige + tiers;
+    this.campaigns.done = 0;
+    this.bus.emit('campaignPrestige', { prestige: this.campaigns.prestige, gained: tiers });
+    return tiers;
   }
 
   startCampaign(): boolean {
@@ -1959,11 +2101,12 @@ export class GameState {
     this.campaigns.active = null;
     this.campaigns.done += 1;
     this.counters.campaigns += 1;
-    this.gainRep(c.rep + c.rep_step * n);
+    const mult = this.campaignRewardMult;
+    this.gainRep(Math.round((c.rep + c.rep_step * n) * mult));
     let hearts = c.hearts;
     const cleared = this.campaignDistrict > district;
     if (cleared) hearts += c.district_hearts;
-    this.addHearts(hearts);
+    this.addHearts(Math.round(hearts * mult));
     this.bus.emit('campaignDone', { district, cleared });
   }
 
@@ -2031,6 +2174,7 @@ export class GameState {
       hearts: this.hearts,
       cosmetics: structuredClone(this.cosmetics),
       campaigns: structuredClone(this.campaigns),
+      adoptionDay: { ...this.adoptionDay },
     };
   }
 
@@ -2071,6 +2215,7 @@ export class GameState {
     s.hearts = save.hearts ?? 0;
     s.cosmetics = structuredClone(save.cosmetics ?? { owned: [], walls: {} });
     s.campaigns = structuredClone(save.campaigns ?? { done: 0, active: null });
+    s.adoptionDay = { ...(save.adoptionDay ?? { until: 0, readyAt: 0 }) };
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();

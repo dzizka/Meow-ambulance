@@ -176,7 +176,12 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 
 ## Kastračné kampane
 - `GameState.campaigns` (save v16, `MIGRATIONS[15]`): `done` + `active { endsAt, price }`. `startCampaign`, `advanceCampaign` (v `tick` aj `applyOffline`), `campaignPrice` (exponent so stropom 150), `campaignDistrict`, `campaignAdopterBonus` (násobí interval záujemcov). Udalosti `campaignStarted`, `campaignDone { district, cleared }`, počítadlo `counters.campaigns`.
+- Prestíž: `campaigns.prestige`, `campaigns.cleared` (voliteľné), `prestigeCampaigns`, `campaignRewardMult`, `prestigeFeeMult` (v príspevku z adopcie), `campaignsCleared`.
 - Názvy obvodov: `CITY_TIER_<0–2>`, `CITY_D_<úroveň>_<0–5>`, `UI.districtName` (po poslednej úrovni ďalšie kolo).
+
+## Srdiečka: Deň adopcií, želania
+- `GameState.adoptionDay { until, readyAt }` (save, voliteľné), `startAdoptionDay`, `adoptionDayActive` (násobí interval a max. čakajúcich v `advanceAdopters`), udalosť `adoptionDay { active }` → girlandy (`setEventFx('openday')`).
+- Želania: `CatData.wish / nextWishAt / bond` (voliteľné), `advanceWishes` v `tick`, `grantWish`, `wishPrice`; puto násobí `donationsPerMinute`. Udalosti `wishAppeared`, `wishGranted`, počítadlo `counters.wishes`. Dáta v `cosmetics.json`.
 
 ## Podmodul s assetmi
 - Klonovanie: `git clone --recurse-submodules …`, aktualizácia: `git submodule update --remote public/assets`.

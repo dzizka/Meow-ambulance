@@ -474,7 +474,7 @@ Pri prechode stavu: krátka „premena" s efektom a zvukom (dopamínový moment)
 
 ### 7.6 Srdiečka ❤ a kozmetika 🟢
 - **Srdiečka** sa nedajú kúpiť za €: +3 za pohľadnicu, +2 za nové políčko albumu, +5 za vzácnu mačku v albume, +5 za úspech, +3 za splnený cieľ udalosti (`public/data/cosmetics.json → hearts`).
-- **Obchod → ❤️ Ozdoby:** za srdiečka sa kupujú farby stien. (Ozdoby na mačkách – obojky, mašličky – boli skúšobne pridané a odstránené: pôsobili neprirodzene.)
+- **Obchod → ❤️ Srdiečka:** Deň adopcií (§7.8) a farby stien; srdiečka sa míňajú aj na želania stálic. (Ozdoby na mačkách – obojky, mašličky – boli skúšobne pridané a odstránené: pôsobili neprirodzene.)
 - **Farba stien** garáže a kaviarne (mätová, levanduľová, broskyňová, nebeská – po 8 ❤); kúpená farba sa dá použiť v oboch miestnostiach a kedykoľvek vrátiť pôvodnú.
 
 
@@ -486,6 +486,12 @@ Nekonečné míňanie peňazí s dobrým pocitom – tak, ako to robia skutočn�
 - Odmena: **+6 ★ (+1 za každú ďalšiu)** a **+2 ❤**, za vyčistený obvod ešte **+6 ❤**. Každý vyčistený obvod: záujemcovia o adopciu chodia o **3 % častejšie** (max. 30 %).
 - Úspechy: Prvá kampaň, Pokojný obvod (3), Mesto bez túlavých mačiek (18).
 - Simulácia (10 h, aktívny hráč): po dostavaní budov (~5 h) ~15–16 kampaní, prebytočné peniaze sa míňajú. Hodnoty: `balance.json → campaigns`.
+- **Nový program (prestíž)** – keď je hotová aspoň jedna úroveň (mesto = 18 kampaní), hráč môže začať odznova od mesta: kampane sú znova lacné (cena ×(1 + 0,3 × 🏅)), za každú hotovú úroveň dostane **1 🏅 certifikát**: príspevky z adopcií **+10 %** a odmeny kampaní **+25 %** natrvalo. Bonus k záujemcom z vyčistených obvodov sa nestráca. Vďaka tomu kampane nikdy nie sú nedosiahnuteľné – keď sú príliš drahé, oplatí sa začať nový program.
+
+### 7.8 Srdiečka: Deň adopcií a želania stálic 🟢
+- **🎉 Deň adopcií** (15 ❤, okno Záujemcovia alebo Obchod → ❤ Srdiečka): na 3 min chodia záujemcovia 4× častejšie a čaká ich o 2 viac, prvý príde hneď; v miestnostiach visia girlandy. Potom 10 min prestávka. Treba mať pripravenú mačku.
+- **💭 Želania stálic** – každá stálica si raz za 4–8 min niečo zaželá (konzervu s tuniakom, šantu, krabicu, myšku, vyhriatu deku, kefu, fontánku, maškrty, klbko, poličku pri okne). Bez novej grafiky: želanie je v karte stálice (Opatera) a 💭 na jej dlaždici. Splnenie stojí ❤ (cena želania + puto), dá +30 spokojnosti, iskričky a srdiečka nad mačkou a **puto +1** (max. 10). Každý stupeň puta = dary tejto stálice +5 %. Želania nevypršia a nikto sa neurazí.
+- Úspechy: Splnený sen (1), Dobrá víla (25). Hodnoty: `cosmetics.json → adoption_day, wish_rules, wishes`.
 ---
 
 ## 8. Naratív a tón

@@ -105,7 +105,10 @@
     "hearts": 2,
     "district_hearts": 6,
     "adopter_bonus_per_district": 0.03,
-    "adopter_bonus_max": 0.3
+    "adopter_bonus_max": 0.3,
+    "prestige_price": 0.3,
+    "prestige_reward": 0.25,
+    "prestige_fee": 0.1
   },
   "levels": [
     {
