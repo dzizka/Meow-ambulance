@@ -41,7 +41,9 @@
     "rep_good": 8,
     "rep_poor": 2,
     "postcard_delay_s": [120, 300],
-    "postcard_chance_good": 0.5
+    "postcard_chance_good": 0.5,
+    "postcard_keep": 60,
+    "postcard_pins": 6
   },
   "care": {
     "social_base_trust": 12,

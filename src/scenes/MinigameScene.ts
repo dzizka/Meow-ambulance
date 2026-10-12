@@ -15,6 +15,8 @@ export interface MinigameInit {
   xray?: 'fracture' | 'swallowed' | null;
   /** Operácia: kastrácia (bez kroku s pinzetou). */
   neuter?: boolean;
+  /** Vyšetrenie: čo sa nájde (id + preložený názov). Bez hviezdičiek, iba „Vyšetrené". */
+  exam?: { id: string; name: string }[];
   done: (stars: Stars | null) => void;
 }
 
@@ -127,6 +129,27 @@ export class MinigameScene extends Phaser.Scene {
       case 'quiz':
         this.quiz();
         break;
+      case 'exam_hand':
+        this.examHand();
+        break;
+      case 'exam_thermo':
+        this.examThermo();
+        break;
+      case 'exam_steth':
+        this.examSteth();
+        break;
+      case 'exam_oto':
+        this.examOto();
+        break;
+      case 'brush':
+        this.brush();
+        break;
+      case 'treat':
+        this.treat();
+        break;
+      case 'warm':
+        this.warm();
+        break;
       default:
         this.hold();
     }
@@ -175,7 +198,9 @@ export class MinigameScene extends Phaser.Scene {
     this.text(
       W / 2,
       H * 0.84,
-      `${t('MG_DONE')}  ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}`,
+      this.cfg.exam
+        ? t('MG_EXAM_DONE')
+        : `${t('MG_DONE')}  ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}`,
       font,
       '#f2c14e',
       true,
@@ -2071,5 +2096,631 @@ export class MinigameScene extends Phaser.Scene {
       });
     };
     ask();
+  }
+
+  // ---------- Vyšetrenia: ruka, teplomer, stetoskop, otoskop ----------
+
+  /** Trvalá značka po vyšetrení miesta: ✓ (v poriadku) alebo ! (nález). */
+  private mark(x: number, y: number, found: boolean): void {
+    const S = this.S;
+    const g = this.add.graphics().setDepth(7);
+    g.fillStyle(found ? 0xf2c14e : 0x9ad17b, 1).fillCircle(x, y, S * 1.6);
+    g.lineStyle(Math.max(2, S * 0.4), 0x2b2533, 1);
+    if (found) {
+      g.lineBetween(x, y - S * 0.9, x, y + S * 0.2);
+      g.fillStyle(0x2b2533, 1).fillCircle(x, y + S * 0.8, S * 0.25);
+    } else {
+      g.beginPath();
+      g.moveTo(x - S * 0.8, y);
+      g.lineTo(x - S * 0.2, y + S * 0.6);
+      g.lineTo(x + S * 0.8, y - S * 0.6);
+      g.strokePath();
+    }
+    g.setScale(0.2);
+    g.setPosition(x * 0.8, y * 0.8); // škáluje sa od (0,0) – kompenzácia
+    this.tweens.add({ targets: g, scale: 1, x: 0, y: 0, duration: 260, ease: 'Back.easeOut' });
+  }
+
+  /** Názvy nálezov daného vyšetrenia, ktoré patria k miestu (`ids`). */
+  private examHits(ids: string[]): string[] {
+    return (this.cfg.exam ?? []).filter((f) => ids.includes(f.id)).map((f) => f.name);
+  }
+
+  /** Prehliadka rukou: prejsť prstom po hlavičke, tele a labkách (4 miesta). */
+  private examHand(): void {
+    this.hintText.setText(t('MG_HAND_HINT'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const r = S * 3.4;
+    const need = S * 12;
+    const zones = [
+      { x: cx, y: cy - S * 6, ids: ['ticks', 'ear_infect'] },
+      { x: cx, y: cy + S * 3, ids: ['fleas', 'dirty'] },
+      { x: cx - S * 3, y: cy + S * 9, ids: ['paw_injury'] },
+      { x: cx + S * 3, y: cy + S * 9, ids: ['long_claws'] },
+    ].map((z) => ({ ...z, rub: 0, done: false }));
+    // nález, ktorý nesedí k žiadnemu miestu, sa ukáže na tele
+    const known = zones.flatMap((z) => z.ids);
+    for (const f of this.cfg.exam ?? []) if (!known.includes(f.id)) zones[1]!.ids.push(f.id);
+    const g = this.add.graphics().setDepth(5);
+    let left = zones.length;
+    let pulse = 0;
+    const draw = () => {
+      g.clear();
+      for (const z of zones) {
+        if (z.done) continue;
+        const p = z.rub / need;
+        const rr = r * (1 + Math.sin(pulse) * 0.06);
+        g.lineStyle(Math.max(2, S * 0.35), 0xf4e6d0, 0.55).strokeCircle(z.x, z.y, rr);
+        g.fillStyle(ACCENT, 0.25 + 0.45 * p).fillCircle(z.x, z.y, rr * Math.max(0.12, p));
+      }
+    };
+    let lx = 0;
+    let ly = 0;
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      lx = p.x;
+      ly = p.y;
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown || this.finished) return;
+      const d = Phaser.Math.Distance.Between(lx, ly, p.x, p.y);
+      lx = p.x;
+      ly = p.y;
+      for (const z of zones) {
+        if (z.done || Phaser.Math.Distance.Between(p.x, p.y, z.x, z.y) > r * 1.3) continue;
+        z.rub += d;
+        if (z.rub < need) continue;
+        z.done = true;
+        left -= 1;
+        const hits = this.examHits(z.ids);
+        this.mark(z.x, z.y, hits.length > 0);
+        if (hits.length) {
+          this.flash(hits.join(', '), z.x, z.y - S * 3, '#f2c14e');
+          this.sfx('found', 0.4);
+        } else {
+          this.hearts(1);
+          this.sfx('mewPurr', 0.25);
+        }
+        if (left === 0) this.time.delayedCall(450, () => this.finish(3));
+      }
+    });
+    this.updater = (dt) => {
+      pulse += dt * 0.006;
+      draw();
+    };
+  }
+
+  /** Teplomer: striasť, priložiť k mačke, počkať na pípnutie. */
+  private examThermo(): void {
+    this.hintText.setText(t('MG_THERMO_HINT_SHAKE'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const ids = (this.cfg.exam ?? []).map((f) => f.id);
+    const temp = ids.includes('hypothermia')
+      ? 36.1
+      : ids.includes('fever')
+        ? 40.3
+        : ids.includes('ear_infect')
+          ? 39.6
+          : 38.6;
+    const L = S * 16;
+    const W = S * 1.6;
+    const th = this.add.container(cx + S * 15, cy).setDepth(6);
+    const g = this.add.graphics();
+    th.add(g);
+    let level = 0.85; // 0 = 35 °C, 1 = 42 °C
+    const draw = () => {
+      g.clear();
+      g.fillStyle(0xf4e6d0, 1).fillRoundedRect(-W / 2, -L / 2, W, L, W / 2);
+      g.fillStyle(0xe0525a, 1).fillCircle(0, L / 2, W);
+      const h = level * (L - W);
+      g.fillRect(-W / 4, L / 2 - h - W / 2, W / 2, h + W / 2);
+      g.lineStyle(Math.max(1, S / 5), 0x7a6a80, 1);
+      for (let i = 0; i <= 7; i++) {
+        const y = L / 2 - W / 2 - (i / 7) * (L - W);
+        g.lineBetween(W / 2, y, W / 2 + S * 0.6, y);
+      }
+      // zelené pásmo normálnej teploty (38–39,2 °C)
+      const y1 = L / 2 - W / 2 - (3 / 7) * (L - W);
+      const y2 = L / 2 - W / 2 - (4.2 / 7) * (L - W);
+      g.fillStyle(0x9ad17b, 0.8).fillRect(-W / 2 - S * 0.5, y2, S * 0.35, y1 - y2);
+    };
+    draw();
+    th.setSize(W * 5, L + W * 3).setInteractive({ useHandCursor: true, draggable: true });
+
+    let phase: 'shake' | 'place' | 'read' = 'shake';
+    let shakes = 0;
+    let lastY = 0;
+    let dirY = 0;
+    let travel = 0;
+    const target = { x: cx + S * 6, y: cy + S * 1 };
+    const ring = this.add.graphics().setDepth(5);
+    let pulse = 0;
+    th.on('dragstart', (p: Phaser.Input.Pointer) => {
+      lastY = p.y;
+    });
+    th.on('drag', (p: Phaser.Input.Pointer) => {
+      if (phase === 'read') return;
+      th.setPosition(p.x, p.y);
+      if (phase === 'shake') {
+        const dy = p.y - lastY;
+        lastY = p.y;
+        travel += Math.abs(dy);
+        const dir = Math.sign(dy);
+        if (dir !== 0 && dir !== dirY) {
+          if (dirY !== 0 && travel > S * 2) {
+            shakes += 1;
+            level = Math.max(0, level - 0.2);
+            th.setAngle(dir * 8);
+            this.sfx('click', 0.25);
+            draw();
+          }
+          dirY = dir;
+          travel = 0;
+        }
+        if (shakes >= 4) {
+          phase = 'place';
+          th.setAngle(0);
+          this.hintText.setText(t('MG_THERMO_HINT_PLACE'));
+        }
+      } else if (Phaser.Math.Distance.Between(p.x, p.y, target.x, target.y) < S * 3.5) {
+        phase = 'read';
+        ring.clear();
+        this.input.setDragState(p, 0);
+        th.disableInteractive();
+        th.setPosition(target.x, target.y).setAngle(-25);
+        this.hintText.setText(t('MG_THERMO_HINT_WAIT'));
+        const goal = Phaser.Math.Clamp((temp - 35) / 7, 0, 1);
+        this.tweens.addCounter({
+          from: level,
+          to: goal,
+          duration: 1100,
+          ease: 'Sine.easeOut',
+          onUpdate: (tw) => {
+            level = tw.getValue() ?? goal;
+            draw();
+          },
+          onComplete: () => {
+            this.sfx('found', 0.5);
+            const verdict =
+              temp >= 39.3 ? 'MG_THERMO_HIGH' : temp < 37.5 ? 'MG_THERMO_LOW' : 'MG_THERMO_OK';
+            const color = verdict === 'MG_THERMO_OK' ? '#9ad17b' : '#f2c14e';
+            this.text(
+              cx,
+              cy + S * 15,
+              `${temp.toFixed(1).replace('.', t('DECIMAL_SEP'))} °C – ${t(verdict)}`,
+              S * 2.4,
+              color,
+              true,
+            )
+              .setOrigin(0.5)
+              .setDepth(20);
+            this.mark(target.x - S * 3, target.y - S * 6, verdict !== 'MG_THERMO_OK');
+            this.time.delayedCall(700, () => this.finish(3));
+          },
+        });
+      }
+    });
+    this.updater = (dt) => {
+      if (phase !== 'place') return;
+      pulse += dt * 0.006;
+      ring.clear();
+      ring
+        .lineStyle(Math.max(2, S * 0.4), 0x9ad17b, 0.6 + Math.sin(pulse) * 0.3)
+        .strokeCircle(target.x, target.y, S * (3 + Math.sin(pulse) * 0.3));
+    };
+  }
+
+  /** Stetoskop: priložiť na srdce a obe pľúca a chvíľu počúvať. */
+  private examSteth(): void {
+    this.hintText.setText(t('MG_STETH_HINT'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const crackle = this.examHits(['cold']);
+    const spots = [
+      { x: cx - S * 3, y: cy + S * 2, heart: false },
+      { x: cx + S * 3, y: cy + S * 2, heart: false },
+      { x: cx, y: cy + S * 6, heart: true },
+    ].map((sp) => ({ ...sp, heard: 0, done: false }));
+    const ear = { x: cx - S * 15, y: cy - S * 12 };
+    const home = { x: cx - S * 14, y: cy + S * 12 };
+    const tube = this.add.graphics().setDepth(5);
+    const rings = this.add.graphics().setDepth(4);
+    const piece = this.add.container(home.x, home.y).setDepth(6);
+    const pg = this.add.graphics();
+    pg.fillStyle(0xc9ccd6, 1).fillCircle(0, 0, S * 1.8);
+    pg.fillStyle(0x8a8f9c, 1).fillCircle(0, 0, S * 1.1);
+    pg.lineStyle(Math.max(1, S / 4), 0x5a5f6c, 1).strokeCircle(0, 0, S * 1.8);
+    piece.add(pg);
+    piece.setSize(S * 6, S * 6).setInteractive({ useHandCursor: true, draggable: true });
+    let holding = false;
+    piece.on('dragstart', () => (holding = true));
+    piece.on('dragend', () => (holding = false));
+    piece.on('drag', (p: Phaser.Input.Pointer) => piece.setPosition(p.x, p.y));
+    let left = spots.length;
+    let pulse = 0;
+    let waveT = 0;
+    this.updater = (dt) => {
+      pulse += dt * 0.006;
+      tube.clear();
+      tube.lineStyle(Math.max(2, S * 0.5), 0x4a4f5c, 1);
+      const midX = (ear.x + piece.x) / 2 - S * 4;
+      const curve = new Phaser.Curves.QuadraticBezier(
+        new Phaser.Math.Vector2(ear.x, ear.y),
+        new Phaser.Math.Vector2(midX, piece.y),
+        new Phaser.Math.Vector2(piece.x, piece.y),
+      );
+      curve.draw(tube, 24);
+      tube.fillStyle(0x4a4f5c, 1).fillCircle(ear.x, ear.y, S * 0.9);
+      rings.clear();
+      for (const sp of spots) {
+        if (sp.done) continue;
+        const near = Phaser.Math.Distance.Between(piece.x, piece.y, sp.x, sp.y) < S * 2.4;
+        rings
+          .lineStyle(Math.max(2, S * 0.35), near ? 0x9ad17b : 0xf4e6d0, 0.5 + Math.sin(pulse) * 0.2)
+          .strokeCircle(sp.x, sp.y, S * 2.2);
+        if (!near || !holding) continue;
+        sp.heard += dt;
+        waveT += dt;
+        const k = (waveT % 500) / 500;
+        rings
+          .lineStyle(Math.max(1, S / 4), 0x9ad17b, 1 - k)
+          .strokeCircle(sp.x, sp.y, S * (2 + k * 4));
+        if (sp.heard < 900) continue;
+        sp.done = true;
+        left -= 1;
+        const bad = !sp.heart && crackle.length > 0;
+        this.mark(sp.x, sp.y, bad);
+        this.flash(
+          t(sp.heart ? 'MG_STETH_HEART' : bad ? 'MG_STETH_CRACKLE' : 'MG_STETH_CLEAR'),
+          sp.x,
+          sp.y - S * 3,
+          bad ? '#f2c14e' : '#9ad17b',
+        );
+        this.sfx(bad ? 'found' : 'click', 0.4);
+        if (left === 0) {
+          piece.disableInteractive();
+          if (crackle.length) this.flash(crackle.join(', '), cx, cy - S * 10, '#f2c14e');
+          this.time.delayedCall(700, () => this.finish(3));
+        }
+      }
+    };
+  }
+
+  /** Otoskop: posvietiť do ucha a nájsť 3 miesta (roztoče alebo čisto). */
+  private examOto(): void {
+    this.hintText.setText(t('MG_OTO_HINT'));
+    this.catSprite.setVisible(false);
+    const S = this.S;
+    const { cx, cy } = this;
+    const mites = this.examHits(['ear_mites']);
+    // veľké ucho
+    const ear = this.add.graphics().setDepth(2);
+    const top = { x: cx, y: cy - S * 16 };
+    const bl = { x: cx - S * 13, y: cy + S * 12 };
+    const br = { x: cx + S * 13, y: cy + S * 12 };
+    ear.fillStyle(0x7a5a48, 1).fillTriangle(top.x, top.y, bl.x, bl.y, br.x, br.y);
+    ear
+      .fillStyle(0x6e4a52, 1)
+      .fillTriangle(cx, cy - S * 11, cx - S * 9, cy + S * 10, cx + S * 9, cy + S * 10);
+    ear.fillStyle(0x3a2128, 1).fillEllipse(cx, cy + S * 6, S * 7, S * 4.5);
+    const spots = [
+      { x: cx - S * 3, y: cy - S * 3 },
+      { x: cx + S * 3.5, y: cy + S * 1 },
+      { x: cx - S * 0.5, y: cy + S * 6 },
+    ].map((sp) => ({ ...sp, done: false }));
+    const lens = this.add.container(cx, cy + S * 18).setDepth(6);
+    const lg = this.add.graphics();
+    lg.fillStyle(0xfff6d8, 0.35).fillCircle(0, 0, S * 3.6);
+    lg.lineStyle(Math.max(2, S * 0.5), 0x3b3f4c, 1).strokeCircle(0, 0, S * 3.6);
+    lg.fillStyle(0x3b3f4c, 1).fillRoundedRect(-S * 0.9, S * 3.6, S * 1.8, S * 7, S * 0.4);
+    lens.add(lg);
+    lens.setSize(S * 8, S * 8).setInteractive({ useHandCursor: true, draggable: true });
+    let left = spots.length;
+    const bugs: Phaser.GameObjects.Graphics[] = [];
+    lens.on('drag', (p: Phaser.Input.Pointer) => {
+      lens.setPosition(p.x, p.y);
+      for (const sp of spots) {
+        if (sp.done || Phaser.Math.Distance.Between(p.x, p.y, sp.x, sp.y) > S * 2.8) continue;
+        sp.done = true;
+        left -= 1;
+        if (mites.length) {
+          const b = this.add.graphics().setDepth(5).setPosition(sp.x, sp.y);
+          b.fillStyle(0x3a2418, 1);
+          for (const [dx, dy] of [
+            [0, 0],
+            [0.9, 0.5],
+            [-0.7, 0.7],
+          ] as const)
+            b.fillCircle(dx * S, dy * S, S * 0.35);
+          bugs.push(b);
+          this.flash(t('MG_OTO_MITE'), sp.x, sp.y - S * 2.5, '#f2c14e');
+          this.sfx('found', 0.35);
+        } else {
+          this.mark(sp.x, sp.y, false);
+          this.sfx('click', 0.35);
+        }
+        if (left === 0) {
+          lens.disableInteractive();
+          this.flash(
+            mites.length ? mites.join(', ') : t('MG_OTO_CLEAN'),
+            cx,
+            cy - S * 13,
+            mites.length ? '#f2c14e' : '#9ad17b',
+          );
+          this.time.delayedCall(800, () => this.finish(3));
+        }
+      }
+    });
+    let wig = 0;
+    this.updater = (dt) => {
+      wig += dt * 0.02;
+      bugs.forEach((b, i) => b.setAngle(Math.sin(wig + i) * 15));
+    };
+  }
+
+  // ---------- Starostlivosť: česanie, maškrta z ruky, zohriatie ----------
+
+  /** Česanie: ťahy hrebeňom zľava doprava (v smere srsti). */
+  private brush(): void {
+    this.hintText.setText(t('MG_BRUSH_HINT'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const dirty = this.cfg.cat.stats.cleanliness < 30;
+    const need = 5;
+    let strokes = 0;
+    let against = 0;
+    const guide = this.add.graphics().setDepth(4);
+    const drawGuide = (a: number) => {
+      guide.clear();
+      guide.lineStyle(Math.max(2, S * 0.4), 0xf4e6d0, a);
+      const y = cy - S * 13;
+      guide.lineBetween(cx - S * 6, y, cx + S * 6, y);
+      guide.lineBetween(cx + S * 6, y, cx + S * 4.5, y - S * 1.2);
+      guide.lineBetween(cx + S * 6, y, cx + S * 4.5, y + S * 1.2);
+    };
+    const comb = this.add.container(0, 0).setDepth(8).setVisible(false);
+    const cg = this.add.graphics();
+    cg.fillStyle(0xc98b5a, 1).fillRoundedRect(-S * 3, -S * 1.6, S * 6, S * 1.4, S * 0.4);
+    cg.fillStyle(0x8a5a36, 1);
+    for (let i = 0; i < 7; i++) cg.fillRect(-S * 2.7 + i * S * 0.88, -S * 0.3, S * 0.35, S * 1.6);
+    comb.add(cg);
+    const bar = this.add.graphics().setDepth(9);
+    const drawBar = () => {
+      bar.clear();
+      const w = S * 18;
+      bar.fillStyle(0x3b2f45, 1).fillRoundedRect(cx - w / 2, cy + S * 16, w, S * 1.4, S * 0.7);
+      bar
+        .fillStyle(0x7ec8e3, 1)
+        .fillRoundedRect(cx - w / 2, cy + S * 16, (w * strokes) / need, S * 1.4, S * 0.7);
+    };
+    drawBar();
+    const tintFor = (k: number) => {
+      if (!dirty) return;
+      const lerp = (a: number, b: number) => Math.round(a + (b - a) * k);
+      this.catSprite.setTint(
+        Phaser.Display.Color.GetColor(lerp(0xa8, 0xff), lerp(0x9a, 0xff), lerp(0x8c, 0xff)),
+      );
+    };
+    let sx = 0;
+    let sy = 0;
+    let active = false;
+    let pulse = 0;
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      active = Math.abs(p.x - cx) < S * 14 && Math.abs(p.y - cy) < S * 14;
+      sx = p.x;
+      sy = p.y;
+      comb.setPosition(p.x, p.y).setVisible(active);
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!active || !p.isDown) return;
+      comb.setPosition(p.x, p.y);
+      if (Math.random() < 0.3) this.dust(p.x, p.y + S, dirty ? 0x8a6a4a : 0xf4e6d0);
+    });
+    this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
+      comb.setVisible(false);
+      if (!active || this.finished) return;
+      active = false;
+      const dx = p.x - sx;
+      if (Math.abs(dx) < S * 6 || Math.abs(p.y - sy) > Math.abs(dx)) return;
+      if (dx > 0) {
+        strokes += 1;
+        this.sfx('brush', 0.5);
+        this.hearts(1);
+        tintFor(strokes / need);
+        drawBar();
+        if (strokes >= need) this.finish(Math.max(1, 3 - Math.floor(against / 2)) as Stars);
+      } else {
+        against += 1;
+        this.flash(t('MG_AGAINST_FUR'), cx, cy - S * 9, '#e86a6a');
+        this.sfx('mew', 0.4);
+      }
+    });
+    tintFor(0);
+    this.updater = (dt) => {
+      pulse += dt * 0.005;
+      drawGuide(0.35 + Math.sin(pulse) * 0.25);
+    };
+  }
+
+  /** Smietka / chlpy odlietajúce od hrebeňa. */
+  private dust(x: number, y: number, color: number): void {
+    const S = this.S;
+    const d = this.add.circle(x, y, S * 0.35, color, 0.9).setDepth(7);
+    this.tweens.add({
+      targets: d,
+      x: x + Phaser.Math.Between(-S * 3, S * 3),
+      y: y + S * Phaser.Math.Between(3, 7),
+      alpha: 0,
+      duration: 600,
+      onComplete: () => d.destroy(),
+    });
+  }
+
+  /** Maškrta z ruky: pomaly podať rybičku k papuľke (3×). Rýchly pohyb mačku vyľaká. */
+  private treat(): void {
+    this.hintText.setText(t('MG_TREAT_HINT'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const mouth = { x: cx, y: cy - S * 4 };
+    const home = { x: cx, y: cy + S * 17 };
+    const maxSpeed = S * 0.12;
+    let eaten = 0;
+    let scares = 0;
+    const meter = this.add.graphics().setDepth(10);
+    const spawn = () => {
+      const fish = this.add.container(home.x, home.y).setDepth(6);
+      const g = this.add.graphics();
+      g.fillStyle(0xf2a65a, 1).fillEllipse(0, 0, S * 3.4, S * 1.8);
+      g.fillTriangle(S * 1.4, 0, S * 2.6, -S * 1.1, S * 2.6, S * 1.1);
+      g.fillStyle(0x2b2533, 1).fillCircle(-S * 0.9, -S * 0.2, S * 0.25);
+      fish.add(g);
+      fish.setSize(S * 6, S * 5).setInteractive({ useHandCursor: true, draggable: true });
+      this.tweens.add({
+        targets: fish,
+        angle: { from: -8, to: 8 },
+        yoyo: true,
+        repeat: -1,
+        duration: 500,
+      });
+      let lx = home.x;
+      let ly = home.y;
+      let lt = this.time.now;
+      fish.on('dragstart', (p: Phaser.Input.Pointer) => {
+        lx = p.x;
+        ly = p.y;
+        lt = this.time.now;
+      });
+      fish.on('drag', (p: Phaser.Input.Pointer) => {
+        const dt = Math.max(1, this.time.now - lt);
+        const speed = Phaser.Math.Distance.Between(lx, ly, p.x, p.y) / dt;
+        lx = p.x;
+        ly = p.y;
+        lt = this.time.now;
+        fish.setPosition(p.x, p.y);
+        const dist = Phaser.Math.Distance.Between(p.x, p.y, mouth.x, mouth.y);
+        const ratio = Math.min(1, speed / maxSpeed);
+        meter.clear();
+        meter
+          .fillStyle(0x2b2533, 1)
+          .fillRoundedRect(p.x - S * 3, p.y + S * 2.4, S * 6, S * 0.8, S * 0.4);
+        meter.fillStyle(ratio > 0.85 ? 0xe86a6a : ratio > 0.55 ? 0xf2c14e : 0x9ad17b, 1);
+        meter.fillRoundedRect(
+          p.x - S * 3,
+          p.y + S * 2.4,
+          S * 6 * Math.max(0.08, ratio),
+          S * 0.8,
+          S * 0.4,
+        );
+        if (speed > maxSpeed && dist < S * 12) {
+          scares += 1;
+          meter.clear();
+          this.input.setDragState(p, 0);
+          fish.setPosition(home.x, home.y);
+          this.flash(t('MG_TOO_FAST'), mouth.x, mouth.y - S * 5, '#e86a6a');
+          this.sfx('mew', 0.4);
+          this.tweens.add({ targets: this.catSprite, y: cy - S * 2, yoyo: true, duration: 160 });
+          return;
+        }
+        if (dist < S * 2.6) {
+          meter.clear();
+          this.input.setDragState(p, 0);
+          fish.disableInteractive();
+          this.tweens.add({
+            targets: fish,
+            x: mouth.x,
+            y: mouth.y,
+            scale: 0.1,
+            duration: 250,
+            onComplete: () => fish.destroy(),
+          });
+          eaten += 1;
+          this.flash(t('MG_GULP'), mouth.x, mouth.y - S * 5, '#9ad17b');
+          this.sfx('mewFood', 0.5);
+          this.hearts(2);
+          if (eaten >= 3) this.finish(Math.max(1, 3 - scares) as Stars);
+          else this.time.delayedCall(350, spawn);
+        }
+      });
+    };
+    spawn();
+  }
+
+  /** Zohriatie (podchladenie): krúživo rozotierať mačku, kým sa nezohreje. */
+  private warm(): void {
+    this.hintText.setText(t('MG_WARM_HINT'));
+    const S = this.S;
+    const { cx, cy } = this;
+    const flakes = Array.from({ length: 6 }, (_, i) => {
+      const a = (i / 6) * Math.PI * 2;
+      const f = this.add
+        .graphics()
+        .setDepth(5)
+        .setPosition(cx + Math.cos(a) * S * 13, cy + Math.sin(a) * S * 12);
+      f.lineStyle(Math.max(2, S * 0.35), 0xdff1ff, 1);
+      for (let k = 0; k < 3; k++) {
+        const b = (k / 3) * Math.PI;
+        f.lineBetween(
+          -Math.cos(b) * S * 1.4,
+          -Math.sin(b) * S * 1.4,
+          Math.cos(b) * S * 1.4,
+          Math.sin(b) * S * 1.4,
+        );
+      }
+      return f;
+    });
+    const bar = this.add.graphics().setDepth(9);
+    let warmth = 0;
+    const tint = () => {
+      const lerp = (a: number, b: number) => Math.round(a + (b - a) * warmth);
+      this.catSprite.setTint(
+        Phaser.Display.Color.GetColor(lerp(0x9f, 0xff), lerp(0xc3, 0xff), lerp(0xe8, 0xff)),
+      );
+      const w = S * 18;
+      bar.clear();
+      bar.fillStyle(0x3b2f45, 1).fillRoundedRect(cx - w / 2, cy + S * 16, w, S * 1.4, S * 0.7);
+      bar.fillStyle(warmth > 0.66 ? 0xf2a65a : warmth > 0.33 ? 0xf2c14e : 0x7ec8e3, 1);
+      bar.fillRoundedRect(cx - w / 2, cy + S * 16, Math.max(S, w * warmth), S * 1.4, S * 0.7);
+    };
+    tint();
+    let lx = 0;
+    let ly = 0;
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      lx = p.x;
+      ly = p.y;
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown || this.finished) return;
+      const d = Phaser.Math.Distance.Between(lx, ly, p.x, p.y);
+      lx = p.x;
+      ly = p.y;
+      if (Phaser.Math.Distance.Between(p.x, p.y, cx, cy) > S * 13) return;
+      const before = warmth;
+      warmth = Math.min(1, warmth + d / (S * 110));
+      if (Math.random() < 0.15) this.dust(p.x, p.y, 0xf2c14e);
+      flakes.forEach((f, i) => {
+        if (f.visible && warmth >= (i + 1) / 7) {
+          this.tweens.add({
+            targets: f,
+            alpha: 0,
+            scale: 0.3,
+            duration: 350,
+            onComplete: () => f.setVisible(false),
+          });
+          this.sfx('drop', 0.3);
+        }
+      });
+      if (Math.floor(before * 4) !== Math.floor(warmth * 4)) this.hearts(1);
+      tint();
+      if (warmth >= 1) {
+        const blanket = this.add
+          .rectangle(cx, cy + S * 30, S * 22, S * 10, 0xc9524a)
+          .setDepth(6)
+          .setStrokeStyle(Math.max(2, S * 0.4), 0x8a3a34);
+        this.tweens.add({ targets: blanket, y: cy + S * 9, duration: 400, ease: 'Back.easeOut' });
+        this.flash(t('MG_WARM_DONE'), cx, cy - S * 9, '#f2a65a');
+        this.time.delayedCall(500, () => this.finish(3));
+      }
+    });
   }
 }

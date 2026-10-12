@@ -520,7 +520,45 @@ export class GameState {
         this.bus.emit('postcardArrived', { record: rec });
       }
     }
+    if (count > 0) this.pruneAdoptions();
     return count;
+  }
+
+  /**
+   * Záznamy adopcií rastú donekonečna – nechá sa iba to, čo hra ešte ukáže:
+   * pohľadnice na ceste, pripnuté a posledných `postcard_keep` doručených.
+   * (Počty adopcií sú v `counters`, album má vlastný zoznam.)
+   */
+  private pruneAdoptions(): void {
+    const keep = this.data.balance.rewards.postcard_keep;
+    let delivered = 0;
+    const kept: AdoptionRecord[] = [];
+    for (let i = this.adoptions.length - 1; i >= 0; i--) {
+      const rec = this.adoptions[i]!;
+      const pending = !rec.postcardDelivered && rec.postcardDueAt !== null;
+      const recent = rec.postcardDelivered && !rec.pinned && delivered++ < keep;
+      // posledná adopcia ostane vždy (napr. pre okno rozlúčky)
+      if (pending || rec.pinned || recent || i === this.adoptions.length - 1) kept.push(rec);
+    }
+    this.adoptions = kept.reverse();
+  }
+
+  /** Doručené pohľadnice od najnovšej. */
+  get postcards(): AdoptionRecord[] {
+    return this.adoptions.filter((a) => a.postcardDelivered).reverse();
+  }
+
+  get pinnedCount(): number {
+    return this.adoptions.filter((a) => a.pinned).length;
+  }
+
+  /** Pripne / odopne pohľadnicu na nástenku (max `postcard_pins`). */
+  togglePin(catId: string): boolean {
+    const rec = this.adoptions.find((a) => a.cat.id === catId && a.postcardDelivered);
+    if (!rec) return false;
+    if (!rec.pinned && this.pinnedCount >= this.data.balance.rewards.postcard_pins) return false;
+    rec.pinned = !rec.pinned;
+    return true;
   }
 
   private checkReadiness(): void {
@@ -1252,6 +1290,7 @@ export class GameState {
     this.adopters = this.adopters.filter((v) => v !== visit);
     this.readyIds.delete(cat.id);
     this.adoptions.push(record);
+    this.pruneAdoptions();
     this.counters.adopted += 1;
     if (match.quality === 'perfect') this.counters.perfect += 1;
     if (cat.traits.some((t) => t.id === 'shy')) this.counters.shy_homed += 1;
@@ -1877,6 +1916,7 @@ export class GameState {
     s.reports = save.reports;
     s.adopters = save.adopters;
     s.adoptions = save.adoptions;
+    s.pruneAdoptions();
     s.reportTimer = save.timers.report;
     s.adopterTimer = save.timers.adopter;
     s.counters = { ...emptyCounters(), ...save.counters };

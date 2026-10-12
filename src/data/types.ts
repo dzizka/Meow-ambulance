@@ -109,6 +109,10 @@ export interface BalanceData {
     rep_poor: number;
     postcard_delay_s: [number, number];
     postcard_chance_good: number;
+    /** Koľko doručených pohľadníc sa uchová (staršie nepripnuté sa zahodia). */
+    postcard_keep: number;
+    /** Koľko pohľadníc sa dá pripnúť na nástenku. */
+    postcard_pins: number;
   };
   care: {
     social_base_trust: number;
@@ -379,6 +383,8 @@ export interface AdoptionRecord {
   postcardDueAt: number | null;
   postcardDelivered: boolean;
   postcardSeen: boolean;
+  /** Pripnutá na nástenku – nezahodí sa. */
+  pinned?: boolean;
 }
 
 /** Objednávka hosťa v kaviarni. */

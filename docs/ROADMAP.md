@@ -64,6 +64,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [ ] Zverejniť webové demo na itch.io
 - [x] Prvý Android build cez Capacitor (podpísané APK v GitHub Release `android-latest`, zostavuje sa automaticky)
 - [x] Hlavné menu, pauza, ukončenie hry a tlačidlo Späť na Androide
+- [x] Pošta: nástenka, spomienky, orezávanie starých pohľadníc
+- [x] Minihry pre všetky vyšetrenia (ruka, teplomer, stetoskop, otoskop) a pre česanie, maškrtu z ruky, zohriatie
 - [ ] PC build cez Tauri
 
 ## M3 – Komunitný útulok (Fáza 2)
