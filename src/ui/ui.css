@@ -652,9 +652,19 @@ body.minigame .toast:not(:last-child) {
   padding-right: 2px;
 }
 .menu-tabs {
-  /* 5 záložiek s textom + úzka ⚙️ */
-  grid-template-columns: repeat(5, minmax(0, 1fr)) 32px;
+  /* neaktívne záložky iba s ikonou, aktívna aj s názvom – zmestí sa 5 aj 6 záložiek */
+  display: flex;
   gap: 2px;
+}
+.menu-tabs .tab {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.menu-tabs .tab.active {
+  flex: 2.2 1 0;
+}
+.menu-tabs .tab:not(.active) .tab-txt {
+  display: none;
 }
 .menu-tabs .tab {
   font-size: 12px;
@@ -935,7 +945,7 @@ body.minigame .toast:not(:last-child) {
   display: none;
 }
 @media (max-width: 520px) {
-  .menu-tabs .tab .tab-txt,
+  .menu-tabs .tab:not(.active) .tab-txt,
   .shop-tabs .tab .tab-txt {
     display: none;
   }
@@ -1300,4 +1310,36 @@ body.minigame .toast:not(:last-child) {
 }
 .prestige .hint {
   margin: 0;
+}
+
+/* ---------- Obchod → Dekorácie: výber miestnosti a útulnosť ---------- */
+.room-chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.room-chip {
+  text-align: center;
+  padding: 6px 4px;
+  font-size: 13px;
+}
+.room-chip small {
+  display: block;
+  font-size: 11px;
+}
+.room-chip.primary small {
+  color: var(--ui-bg-deep);
+}
+.cozy-card {
+  background: var(--ui-bg-deep);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.cozy-card .hint {
+  margin: 2px 0 0;
+}
+@media (max-width: 520px) {
+  .room-chips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

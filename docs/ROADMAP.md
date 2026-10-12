@@ -69,6 +69,7 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Živé prostredie: postavičky dýchajú a obzerajú sa, ťuknutie na postavičku = rada, hodnotenie kaviarne
 - [x] Kastračné kampane – nekonečný sink peňazí (Mesto → Okolie → Kraj)
 - [x] Prestíž kampaní (nový program, 🏅), Deň adopcií a želania stálic za ❤
+- [x] Dekorácie aj pre kliniku a hotel, jednotný obchod s dekoráciami po miestnostiach
 - [ ] PC build cez Tauri
 
 ## M3 – Komunitný útulok (Fáza 2)

@@ -10,6 +10,7 @@ import type {
   ClinicRoomId,
   CatStats,
   DecorDef,
+  DecorRoom,
   DiagnosticTool,
   SocialActivity,
 } from '../data/types';
@@ -250,6 +251,8 @@ export class UI {
   private openPostcard: string | null = null;
   private postcardBatch = 0;
   private confirmPrestige = false;
+  /** Miestnosť vybraná v Obchode → Dekorácie. */
+  private decorRoom: DecorRoom = 'garage';
   private heartBatch = 0;
   /** Prístroj kliniky, pri ktorom hráč vyberá pacienta. */
   private stationRoom: ClinicRoomId = 'lab';
@@ -1400,6 +1403,133 @@ export class UI {
     return [...this.wishBlock(cat), care];
   }
 
+  /**
+   * Obchod → Dekorácie (GDD §6.1.3): rovnaký postup pre každú miestnosť – výber miestnosti,
+   * útulnosť a čo prináša, dekorácie od najlacnejšej, farba stien (kúpené za ❤).
+   */
+  private decorContent(): HTMLElement[] {
+    const s = this.state;
+    const cz = s.data.balance.coziness;
+    const rooms: { id: DecorRoom; icon: string; name: string }[] = [
+      { id: 'garage', icon: '🚑', name: t('UI_ROOM_GARAGE') },
+      { id: 'cafe', icon: '☕', name: t('UI_ROOM_CAFE') },
+      { id: 'clinic', icon: '🩺', name: t('UI_ROOM_CLINIC') },
+      { id: 'hotel', icon: '🏨', name: t('UI_ROOM_HOTEL') },
+    ];
+    const room = this.decorRoom;
+    const chips = el('div', { class: 'room-chips' });
+    for (const r of rooms) {
+      const open = s.decorRoomOpen(r.id);
+      const b = el(
+        'button',
+        { class: `btn room-chip${r.id === room ? ' primary' : ''}`, type: 'button' },
+        `${r.icon} ${r.name}`,
+        el('small', {}, open ? `🛋️ ${s.coziness(r.id)}` : '🔒'),
+      );
+      b.addEventListener('click', () => {
+        this.decorRoom = r.id;
+        this.renderModal();
+      });
+      chips.append(b);
+    }
+    const cozy = s.coziness(room);
+    const effect =
+      room === 'garage'
+        ? t('UI_COZY_GARAGE', { p: Math.round(cozy * cz.garage_trust_per_point * 100) })
+        : room === 'cafe'
+          ? t('UI_COZY_CAFE', { p: Math.round(cozy * cz.cafe_tip_per_point * 100) })
+          : room === 'clinic'
+            ? t('UI_COZY_CLINIC', { p: Math.round(cozy * cz.clinic_heal_per_point * 100) })
+            : t('UI_COZY_HOTEL', { p: Math.round(cozy * cz.hotel_fee_per_point * 100) });
+    const out: HTMLElement[] = [chips];
+    if (!s.decorRoomOpen(room)) {
+      out.push(
+        el(
+          'p',
+          { class: 'warning' },
+          t('UI_DECOR_ROOM_LOCKED', { room: rooms.find((r) => r.id === room)?.name ?? '' }),
+        ),
+      );
+      return out;
+    }
+    const defs = s.data.decor.filter((d) => d.room === room).sort((a, b) => a.price - b.price);
+    const owned = defs.filter((d) => s.decor.includes(d.id)).length;
+    out.push(
+      el(
+        'div',
+        { class: 'cozy-card' },
+        el('strong', {}, `🛋️ ${t('UI_COZY_TITLE', { n: cozy })}`),
+        el(
+          'p',
+          { class: 'hint' },
+          `${effect} · ${t('UI_DECOR_OWNED', { n: owned, total: defs.length })}`,
+        ),
+      ),
+    );
+    for (const def of defs) {
+      const has = s.decor.includes(def.id);
+      const locked = def.unlock !== undefined && !s.hasUnlock(def.unlock);
+      out.push(
+        el(
+          'div',
+          { class: `shop-item${has ? ' owned' : ''}` },
+          el('span', { class: 'shop-icon' }, decorPreview(def)),
+          el(
+            'div',
+            { class: 'grow' },
+            el('strong', {}, t(def.name_key)),
+            el('p', { class: 'hint' }, `🛋️ +${def.cozy}`),
+          ),
+          has
+            ? el('span', { class: 'chip good' }, '✓')
+            : locked
+              ? el(
+                  'span',
+                  { class: 'chip lock' },
+                  t('UI_LOCKED', { rep: (def.unlock ? s.unlockRep(def.unlock) : null) ?? '?' }),
+                )
+              : button(
+                  `${def.price} €`,
+                  () => {
+                    if (s.buyDecor(def.id)) this.renderModal();
+                  },
+                  { class: 'btn primary', disabled: s.money < def.price },
+                ),
+        ),
+      );
+    }
+    // farba stien – iba garáž a kaviareň (ostatné miestnosti majú obklady)
+    if (room === 'garage' || room === 'cafe') out.push(...this.wallPicker(room));
+    return out;
+  }
+
+  /** Výber farby stien miestnosti (farby sa kupujú za ❤ v záložke Srdiečka). */
+  private wallPicker(room: 'garage' | 'cafe'): HTMLElement[] {
+    const s = this.state;
+    const c = s.data.cosmetics;
+    if (!c) return [];
+    const owned = c.walls.filter((w) => s.cosmetics.owned.includes(w.id));
+    const head = el('h3', {}, `🎨 ${t('UI_WALLS_TITLE')}`);
+    if (!owned.length) return [head, el('p', { class: 'hint' }, t('UI_WALLS_BUY_HINT'))];
+    const cur = s.cosmetics.walls[room] ?? null;
+    const set = (id: string | null) => () => {
+      if (s.setWall(room, id)) this.renderModal();
+    };
+    return [
+      head,
+      el(
+        'div',
+        { class: 'actions' },
+        button(t('UI_WALL_DEFAULT'), set(null), { class: cur ? 'btn' : 'btn primary' }),
+        ...owned.map((w) =>
+          button(`${w.icon} ${t(`WALL_${w.id.toUpperCase()}`)}`, set(w.id), {
+            class: cur === w.id ? 'btn primary' : 'btn',
+          }),
+        ),
+      ),
+    ];
+  }
+
   /** Obchod → Ozdoby: srdiečka a farby stien (GDD §7.6). */
   private cosmeticsContent(): HTMLElement[] {
     const s = this.state;
@@ -1421,30 +1551,6 @@ export class UI {
               { class: 'btn primary', disabled: s.hearts < price },
             ),
       );
-    const wallRow = (room: 'garage' | 'cafe'): HTMLDivElement | '' => {
-      if (room === 'cafe' && !s.cafe.open) return '';
-      const owned = c.walls.filter((w) => s.cosmetics.owned.includes(w.id));
-      if (!owned.length) return '';
-      const set = (id: string | null) => () => {
-        if (s.setWall(room, id)) this.renderModal();
-      };
-      const cur = s.cosmetics.walls[room] ?? null;
-      return el(
-        'div',
-        {},
-        el('strong', {}, t(room === 'garage' ? 'UI_ROOM_GARAGE' : 'UI_ROOM_CAFE')),
-        el(
-          'div',
-          { class: 'actions' },
-          button(t('UI_WALL_DEFAULT'), set(null), { class: cur ? 'btn' : 'btn primary' }),
-          ...owned.map((w) =>
-            button(`${w.icon} ${t(`WALL_${w.id.toUpperCase()}`)}`, set(w.id), {
-              class: cur === w.id ? 'btn primary' : 'btn',
-            }),
-          ),
-        ),
-      );
-    };
     return [
       el('p', { class: 'hearts-line' }, t('UI_HEARTS_LINE', { n: s.hearts })),
       el('p', { class: 'hint' }, t('UI_HEARTS_HINT')),
@@ -1452,9 +1558,8 @@ export class UI {
       this.adoptionDayBlock(),
       el('p', { class: 'hint' }, `💭 ${t('UI_WISH_SHOP_HINT')}`),
       el('h3', {}, t('UI_WALLS_TITLE')),
+      el('p', { class: 'hint' }, t('UI_WALLS_APPLY_HINT')),
       ...c.walls.map((w) => item(w.id, w.icon, t(`WALL_${w.id.toUpperCase()}`), w.price)),
-      wallRow('garage'),
-      wallRow('cafe'),
     ].filter((x): x is HTMLElement => typeof x !== 'string');
   }
 
@@ -3107,38 +3212,6 @@ export class UI {
       );
     });
 
-    // Dekorácie
-    const gc = s.coziness('garage');
-    const cc = s.coziness('cafe');
-    const cz = s.data.balance.coziness;
-    const decor = (['garage', 'cafe'] as const).flatMap((room) => [
-      el('h3', {}, t(room === 'garage' ? 'UI_DECOR_GARAGE' : 'UI_DECOR_CAFE')),
-      ...s.data.decor
-        .filter((d) => d.room === room)
-        .map((def) => {
-          const owned = s.decor.includes(def.id);
-          const locked = def.unlock !== undefined && !s.hasUnlock(def.unlock);
-          return el(
-            'div',
-            { class: 'shop-item' },
-            el('span', { class: 'shop-icon' }, decorPreview(def)),
-            el(
-              'div',
-              { class: 'grow' },
-              el('strong', {}, t(def.name_key)),
-              el('p', { class: 'hint' }, `❤ +${def.cozy}`),
-            ),
-            owned
-              ? el('span', { class: 'chip good' }, '✓')
-              : locked
-                ? lockChip(def.unlock ? s.unlockRep(def.unlock) : null)
-                : room === 'cafe' && !s.cafe.open
-                  ? el('span', { class: 'chip lock' }, t('UI_CAFE_NEEDED'))
-                  : buy(`${def.price} €`, def.price, () => s.buyDecor(def.id)),
-          );
-        }),
-    ]);
-
     const tabs: { id: ShopTab; icon: string; label: string }[] = [
       { id: 'build', icon: '🏗️', label: t('UI_SHOP_BUILD') },
       { id: 'equipment', icon: '🧰', label: t('UI_SHOP_EQUIP') },
@@ -3176,21 +3249,7 @@ export class UI {
     if (this.shopTab === 'equipment') return [levelCard, bar, ...equipment];
     if (this.shopTab === 'staff') return [levelCard, bar, ...this.staffSection().slice(1)];
     if (this.shopTab === 'cosmetics') return [levelCard, bar, ...this.cosmeticsContent()];
-    return [
-      levelCard,
-      bar,
-      el(
-        'p',
-        { class: 'hint' },
-        t('UI_COZY_LINE', {
-          g: gc,
-          gp: Math.round(gc * cz.garage_trust_per_point * 100),
-          c: cc,
-          cp: Math.round(cc * cz.cafe_tip_per_point * 100),
-        }),
-      ),
-      ...decor,
-    ];
+    return [levelCard, bar, ...this.decorContent()];
   }
 
   /** Personál: najať raz, potom zapínať a vypínať (GDD §6.4). */

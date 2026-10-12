@@ -8,6 +8,7 @@ import type {
   CafeGuest,
   CafeReview,
   CampaignState,
+  DecorRoom,
   WishDef,
   CafeState,
   ChallengeDef,
@@ -410,7 +411,10 @@ export class GameState {
 
     const mods = {
       satisfactionDecay: this.equipmentEffect('scratcher'),
-      healthRecovery: this.equipmentEffect('medicine'),
+      // lekárnička × útulná klinika (rýchlejšie zotavenie)
+      healthRecovery:
+        this.equipmentEffect('medicine') *
+        (1 + this.coziness('clinic') * this.data.balance.coziness.clinic_heal_per_point),
     };
     // Stálice s výbehom sa nudia pomalšie (GDD §6.6)
     const outside = {
@@ -844,7 +848,9 @@ export class GameState {
   /** Koľko by majiteľ zaplatil, keby prišiel teraz. */
   hotelFee(cat: CatData): number {
     const h = this.data.balance.hotel;
-    return Math.round((h.fee * (0.5 + this.hotelHappiness(cat) / 100)) / 5) * 5;
+    // útulná hala = vyšší poplatok (GDD §6.1.3)
+    const cozy = 1 + this.coziness('hotel') * this.data.balance.coziness.hotel_fee_per_point;
+    return Math.round((h.fee * (0.5 + this.hotelHappiness(cat) / 100) * cozy) / 5) * 5;
   }
 
   /** Hostia: starnutie potrieb, odchody (platba) a príchody cez deň. */
@@ -1627,15 +1633,26 @@ export class GameState {
     const def = this.decorDef(id);
     if (!def || this.decor.includes(id) || this.money < def.price) return false;
     if (def.unlock && !this.hasUnlock(def.unlock)) return false;
-    if (def.room === 'cafe' && !this.cafe.open) return false;
+    if (!this.decorRoomOpen(def.room)) return false;
     this.addMoney(-def.price, true);
     this.decor.push(id);
     this.bus.emit('decorBought', { def });
     return true;
   }
 
+  /** Dá sa miestnosť zariaďovať? (musí byť postavená) */
+  decorRoomOpen(room: DecorRoom): boolean {
+    return room === 'garage'
+      ? true
+      : room === 'cafe'
+        ? this.cafe.open
+        : room === 'clinic'
+          ? this.clinic.open
+          : this.hotel.open;
+  }
+
   /** Body útulnosti miestnosti zo zakúpených dekorácií. */
-  coziness(room: 'garage' | 'cafe'): number {
+  coziness(room: DecorRoom): number {
     return this.decor.reduce((sum, id) => {
       const d = this.decorDef(id);
       return d && d.room === room ? sum + d.cozy : sum;

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { GameState } from '../core/GameState';
 import type { DecorDef } from '../data/types';
 import { CLINIC_FRAMES, INTERIOR_FRAMES } from '../data/frames';
-import { CAFE_X, FLOOR_TOP } from './layout';
+import { CAFE_X, FLOOR_TOP, roomX } from './layout';
 import { addProp, type WorldGeom } from './world';
 
 const WALL_BASE = FLOOR_TOP + 22;
@@ -94,7 +94,7 @@ export class Furnishings {
   private showDecor(def: DecorDef, animate: boolean): void {
     if (this.decorShown.has(def.id)) return;
     this.decorShown.add(def.id);
-    const ox = def.room === 'cafe' ? CAFE_X : 0;
+    const ox = roomX(def.room);
     let img: Phaser.GameObjects.Image;
     if (def.layer === 'prop') {
       img = this.scene.add

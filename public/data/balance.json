@@ -149,7 +149,9 @@
   ],
   "coziness": {
     "garage_trust_per_point": 0.01,
-    "cafe_tip_per_point": 0.02
+    "cafe_tip_per_point": 0.02,
+    "clinic_heal_per_point": 0.01,
+    "hotel_fee_per_point": 0.01
   },
   "shelter": {
     "price": 1500,

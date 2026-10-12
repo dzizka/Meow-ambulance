@@ -39,6 +39,7 @@ export const INTERIOR_FRAMES = {
   photo: [338, 271, 8, 10],
   wall_shelf: [293, 264, 23, 13],
   mirror: [7, 256, 18, 20],
+  carpet: [63, 32, 98, 61],
 } as const satisfies Record<string, FrameRect>;
 
 export const CLINIC_FRAMES = {
@@ -62,4 +63,17 @@ export const CLINIC_FRAMES = {
   pc: [198, 264, 22, 24],
   monitor_bank: [32, 32, 96, 32],
   curtain: [193, 36, 28, 59],
+  // dekorácie kliniky a hotela (GDD §6.1.3)
+  sofa_brown: [228, 104, 56, 24],
+  armchair_blue: [260, 168, 24, 24],
+  armchair_brown: [260, 135, 24, 25],
+  lamp_pink: [356, 162, 24, 30],
+  lamp_blue: [388, 162, 24, 30],
+  table_wood: [451, 167, 26, 25],
+  bonsai: [228, 203, 26, 21],
+  pot_white: [329, 210, 13, 14],
+  flowers_pink: [360, 209, 15, 15],
+  bench_red: [265, 239, 46, 17],
+  tv_beach: [160, 262, 32, 26],
+  shelf_books: [320, 160, 32, 32],
 } as const satisfies Record<string, FrameRect>;
