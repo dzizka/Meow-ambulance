@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { MUSIC_DAY, MUSIC_NIGHT } from '../assets';
+import { MUSIC_DAY, MUSIC_NIGHT, ZUZKA_SHEET } from '../assets';
 import type { GameState } from '../core/GameState';
 import { SaveManager, browserStorage } from '../core/SaveManager';
 import type { OfflineSummary } from '../core/EventBus';
@@ -8,6 +8,9 @@ import type { Stars } from '../core/systems/Care';
 import type { CatData, ClinicRoomId } from '../data/types';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { CatSprite, type CatWorld } from '../objects/CatSprite';
+import { IdleLife, tappablePerson } from './idleLife';
+import { Ambient } from './ambient';
+import { ensurePersonAnims, personIdleFrame, personKey } from './personAnims';
 import { UI, type GameBridge, type MinigameRequest } from '../ui/UI';
 import type { MinigameInit, MinigameScene } from './MinigameScene';
 import {
@@ -122,6 +125,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   private staff: StaffSprites | null = null;
   private sinceStaff = 0;
   private ui!: UI;
+  private ambient: Ambient | null = null;
 
   constructor() {
     super('Garage');
@@ -147,6 +151,8 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (this.state.hotel.open) this.openHotelRoom();
     if (this.state.education.open) this.openEducationRoom();
     new Furnishings(this, this.state, this.geom);
+    this.ambient = new Ambient(this, this.state);
+    this.ambient.swayPlants();
 
     this.staff = new StaffSprites(this, this.state, (id) => this.sprites.get(id));
 
@@ -182,6 +188,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     window.addEventListener('pagehide', saveNow);
 
     this.ui = new UI(this.state, this);
+    this.events.on('personTap', (role: string) => this.ui.personTapped(role));
     if (offline) this.state.bus.emit('welcomeBack', { summary: offline });
     this.saves.save(this.state);
   }
@@ -689,6 +696,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     });
     bus.on('clinicVisit', ({ cat, room, recover }) => this.clinicVisit(cat, room, recover));
     bus.on('upgradeBought', ({ kind }) => {
+      this.time.delayedCall(50, () => this.ambient?.swayPlants()); // rastliny v novej miestnosti
       if (kind === 'cage') this.drawCages(true);
       if (kind === 'shelter') {
         this.openShelterRoom();
@@ -1051,14 +1059,21 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
 
   private createZuzka(): void {
     const y = FLOOR_TOP + 168;
-    this.zuzka = this.add.sprite(176, y, 'zuzka', 1).setOrigin(0.5, 1).setDepth(y);
-    this.add.ellipse(176, y, 14, 5, 0x000000, 0.22).setDepth(y - 1);
+    ensurePersonAnims(this.anims, ZUZKA_SHEET);
+    this.zuzka = this.add
+      .sprite(176, y, personKey(ZUZKA_SHEET), personIdleFrame('down'))
+      .setOrigin(0.5, 1)
+      .setDepth(y);
+    const shadow = this.add.ellipse(176, y, 14, 5, 0x000000, 0.22).setDepth(y - 1);
     addProp(this.geom, 176, y + 2, 16, 32, 10);
-    // Občas sa pozrie iným smerom: idle snímky dole/vľavo/vpravo/hore = 1, 4, 7, 10
-    this.time.addEvent({
-      delay: 3500,
-      loop: true,
-      callback: () => this.zuzka.setFrame(Phaser.Utils.Array.GetRandom([1, 1, 4, 7, 10])),
+    // Dýcha, obzerá sa, občas prešľapne a teší sa z mačiek (GDD §9.3)
+    new IdleLife(this, this.zuzka, {
+      sheet: ZUZKA_SHEET,
+      looks: ['down', 'down', 'left', 'right', 'up'],
+      wander: 18,
+      shadow,
+      emotes: ['badge_ready'],
     });
+    tappablePerson(this, this.zuzka, 'zuzka');
   }
 }

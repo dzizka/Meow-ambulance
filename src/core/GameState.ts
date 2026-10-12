@@ -6,6 +6,7 @@ import type {
   AdoptionRecord,
   AlbumEntry,
   CafeGuest,
+  CafeReview,
   CafeState,
   ChallengeDef,
   DecorDef,
@@ -1790,6 +1791,52 @@ export class GameState {
     return Math.round(tip * 10) / 10;
   }
 
+  /**
+   * Hodnotenie hosťa pri odchode (GDD §5.5): obsluha, spokojnosť jeho mačky a útulnosť.
+   * Odkaz povie, čo hosťa najviac potešilo alebo mrzelo – hráč vie, čo zlepšiť.
+   */
+  private reviewFor(g: CafeGuest, cat: CatData | undefined): CafeReview {
+    const happy = cat ? cat.stats.satisfaction : 50;
+    const cozy = this.coziness('cafe');
+    let stars = 3;
+    stars += g.served ? (g.servedByStaff ? 0.5 : 1) : -1;
+    stars += happy >= 70 ? 1 : happy < 40 ? -1 : 0;
+    stars += cozy >= 25 ? 1 : cozy >= 10 ? 0.5 : 0;
+    stars = Math.max(1, Math.min(5, Math.round(stars)));
+    const key = !g.served
+      ? 'REVIEW_NOT_SERVED'
+      : happy < 40
+        ? 'REVIEW_CAT_SAD'
+        : stars >= 5
+          ? 'REVIEW_PERFECT'
+          : happy >= 70
+            ? 'REVIEW_CAT_HAPPY'
+            : cozy < 10
+              ? 'REVIEW_PLAIN'
+              : 'REVIEW_COZY';
+    const review: CafeReview = { stars, key, cat: cat?.name ?? '', sprite: g.sprite };
+    const list = (this.cafe.reviews ??= []);
+    list.push(review);
+    const keep = this.data.balance.cafe.reviews_keep;
+    if (list.length > keep) list.splice(0, list.length - keep);
+    return review;
+  }
+
+  /** Priemerné hodnotenie kaviarne (null = zatiaľ nikto nehodnotil). */
+  get cafeRating(): number | null {
+    const list = this.cafe.reviews ?? [];
+    if (!list.length) return null;
+    return list.reduce((s, r) => s + r.stars, 0) / list.length;
+  }
+
+  /** Dobré hodnotenie privedie hostí častejšie, zlé zriedkavejšie. */
+  get ratingMult(): number {
+    const c = this.data.balance.cafe;
+    const r = this.cafeRating;
+    if (r === null || (this.cafe.reviews?.length ?? 0) < 5) return 1;
+    return r >= c.rating_good ? 1 - c.rating_effect : r <= c.rating_bad ? 1 + c.rating_effect : 1;
+  }
+
   private advanceGuests(deltaMs: number): void {
     if (!this.cafe.open) return;
     const c = this.data.balance.cafe;
@@ -1800,16 +1847,18 @@ export class GameState {
       const amount = this.guestTip(g.served, g.servedByStaff);
       this.addMoney(amount, true);
       const cat = g.catId ? this.getCat(g.catId) : undefined;
+      const review = this.reviewFor(g, cat);
       if (cat?.resident) {
         Care.addStats(cat, { satisfaction: c.pet_satisfaction });
         this.bus.emit('catChanged', { cat });
       }
-      this.bus.emit('guestLeft', { guest: g, amount });
+      this.bus.emit('guestLeft', { guest: g, amount, review });
     }
     // Príchody – iba cez deň, keď je na koho sa prísť pozrieť a je voľný stôl
     const residents = this.residents;
     if (residents.length === 0 || !this.cafeOpenNow) return;
-    const interval = c.guest_interval_s * 1000 * (this.eventActive('openday') ? 0.4 : 1);
+    const interval =
+      c.guest_interval_s * 1000 * (this.eventActive('openday') ? 0.4 : 1) * this.ratingMult;
     this.cafe.timer += deltaMs;
     if (this.cafe.timer < interval) return;
     const taken = new Set(this.cafe.guests.map((g) => g.table));

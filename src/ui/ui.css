@@ -1204,3 +1204,27 @@ body.minigame .toast:not(:last-child) {
 .chips .chip {
   margin-top: 0;
 }
+
+/* ---------- Hodnotenie kaviarne ---------- */
+.rating {
+  font-size: 15px;
+}
+.rating-stars {
+  color: var(--ui-warn);
+  letter-spacing: 1px;
+}
+.review {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--ui-bg-deep);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.review p {
+  margin: 0;
+  font-size: 13px;
+}
+.review .sprite {
+  position: static;
+}
