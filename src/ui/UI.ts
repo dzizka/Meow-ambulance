@@ -2664,7 +2664,7 @@ export class UI {
           'aria-selected': this.menuTab === tb.id ? 'true' : 'false',
         },
         el('span', { class: 'tab-ico' }, tb.icon),
-        tb.label ? el('span', { class: 'tab-txt' }, ` ${tb.label}`) : '',
+        tb.label ? el('span', { class: 'tab-txt' }, tb.label) : '',
         tb.badge > 0 && this.menuTab !== tb.id ? el('span', { class: 'dot' }) : '',
       );
       b.addEventListener('click', () => {
@@ -3234,7 +3234,7 @@ export class UI {
           'aria-selected': this.shopTab === tb.id ? 'true' : 'false',
         },
         el('span', { class: 'tab-ico' }, tb.icon),
-        el('span', { class: 'tab-txt' }, ` ${tb.label}`),
+        el('span', { class: 'tab-txt' }, tb.label),
       );
       b.addEventListener('click', () => {
         this.shopTab = tb.id;
@@ -3242,11 +3242,6 @@ export class UI {
       });
       bar.append(b);
     }
-    // na úzkom displeji sú v záložkách iba ikony – názov aktuálnej časti pod nimi
-    const current = tabs.find((x) => x.id === this.shopTab);
-    bar.append(
-      el('div', { class: 'shop-tab-name' }, current ? `${current.icon} ${current.label}` : ''),
-    );
     if (this.shopTab === 'build') return [levelCard, bar, ...expand];
     if (this.shopTab === 'equipment') return [levelCard, bar, ...equipment];
     if (this.shopTab === 'staff') return [levelCard, bar, ...this.staffSection().slice(1)];

@@ -634,8 +634,6 @@ body.minigame .toast:not(:last-child) {
 
 /* ---------- Menu ---------- */
 .shop-tabs {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 2px;
   position: sticky;
   top: -16px;
   z-index: 2;
@@ -643,36 +641,56 @@ body.minigame .toast:not(:last-child) {
   margin: -4px 0 0;
   padding-top: 4px;
 }
-.shop-tabs .tab {
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-left: 2px;
-  padding-right: 2px;
-}
-.menu-tabs {
-  /* neaktívne záložky iba s ikonou, aktívna aj s názvom – zmestí sa 5 aj 6 záložiek */
+/* Záložky menu ☰ a obchodu: dlaždice s ikonou a názvom pod ňou – čitateľné na mobile aj PC */
+.menu-tabs,
+.shop-tabs {
   display: flex;
-  gap: 2px;
+  gap: 4px;
+  padding-bottom: 8px;
 }
-.menu-tabs .tab {
+.menu-tabs .tab,
+.shop-tabs .tab {
   flex: 1 1 0;
   min-width: 0;
-}
-.menu-tabs .tab.active {
-  flex: 2.2 1 0;
-}
-.menu-tabs .tab:not(.active) .tab-txt {
-  display: none;
-}
-.menu-tabs .tab {
-  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 2px 6px;
+  border-radius: 10px;
+  border-bottom: 3px solid transparent;
+  color: var(--ui-dim);
   white-space: nowrap;
+}
+.menu-tabs .tab-ico,
+.shop-tabs .tab-ico {
+  font-size: 21px;
+  line-height: 1.1;
+}
+.menu-tabs .tab-txt,
+.shop-tabs .tab-txt {
+  display: block;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-left: 2px;
-  padding-right: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+.menu-tabs .tab:hover,
+.shop-tabs .tab:hover {
+  color: var(--ui-text);
+}
+.menu-tabs .tab.active,
+.shop-tabs .tab.active {
+  background: var(--ui-bg-deep);
+  color: var(--ui-text);
+  border-bottom-color: var(--ui-accent);
+}
+.menu-tabs .tab .dot,
+.shop-tabs .tab .dot {
+  top: 4px;
+  right: calc(50% - 18px);
 }
 .challenge {
   background: var(--ui-bg-deep);
@@ -940,27 +958,24 @@ body.minigame .toast:not(:last-child) {
   gap: 4px;
 }
 
-/* Úzke okno: v záložkách menu iba ikony, text len pri aktívnej */
-.shop-tab-name {
-  display: none;
-}
-@media (max-width: 520px) {
-  .menu-tabs .tab:not(.active) .tab-txt,
-  .shop-tabs .tab .tab-txt {
-    display: none;
+@media (max-width: 400px) {
+  .menu-tabs,
+  .shop-tabs {
+    gap: 2px;
   }
+  .menu-tabs .tab,
   .shop-tabs .tab {
-    font-size: 17px;
+    padding-left: 0;
+    padding-right: 0;
   }
-  .shop-tab-name {
-    display: block;
-    grid-column: 1 / -1;
-    font-weight: 800;
-    color: var(--ui-accent);
-    padding-top: 4px;
+  .menu-tabs .tab-txt,
+  .shop-tabs .tab-txt {
+    font-size: 10.5px;
+    letter-spacing: -0.2px;
   }
-  .menu-tabs .tab {
-    font-size: 17px;
+  .menu-tabs .tab-ico,
+  .shop-tabs .tab-ico {
+    font-size: 19px;
   }
 }
 
