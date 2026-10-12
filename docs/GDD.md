@@ -326,10 +326,14 @@ Každý kus má 3 stupne (2. a 3. stupeň odomyká úroveň ★). Je ho vidieť 
 | 🛏️ Pelechy | priebežné dary stálic +20 % / +40 % / +60 % | 150 / 300 / 500 € |
 
 #### 6.1.3 Dekorácie a útulnosť 🟢
-Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v garáži alebo v kaviarni. Každá pridá **útulnosť** (❤ bodov). Dáta: `decor.json`.
-- **Útulnosť garáže** → mačky rýchlejšie získavajú dôveru (+1 % za bod).
-- **Útulnosť kaviarne** → hostia dávajú väčšie dary (+2 % za bod).
-- Niektoré dekorácie odomyká úroveň ★.
+Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v miestnosti. Každá pridá **útulnosť** (🛋️ bodov – iná ikona ako srdiečka ❤). Dáta: `decor.json` (zoradené podľa miestnosti a ceny).
+- **Obchod → 🪴 Dekorácie** má pre každú miestnosť rovnaký postup: výber miestnosti (Garáž / Kaviareň / Klinika 1.p / Hotel, pri každej útulnosť alebo 🔒), karta s útulnosťou, čo prináša a koľko je kúpené, dekorácie od najlacnejšej, pri garáži a kaviarni ešte **🎨 farba stien** (farby sa kupujú za ❤ v záložke Srdiečka, nastavujú sa tu).
+- **Rovnaký kus = rovnaká cena** vo všetkých miestnostiach: fotka 3 🛋️/25 €, kvety 3/30, polička 4/35, veľká rastlina 5/40, stojacia lampa 5/50, obraz/TV 6/60, zrkadlo/záclony/kreslo/lavička/bonsaj 6/70, koberec 8/90, veľké kreslo/pohovka 10/120.
+- **Garáž** (7) → mačky rýchlejšie získavajú dôveru (+1 % za bod). Koberec v garáži je béžový, aby sa neopakoval červený koberec miestnosti.
+- **Kaviareň** (8) → hostia dávajú väčšie dary (+2 % za bod).
+- **Klinika 1.p** (7, od postavenia kliniky; čakáreň – kvety, lavička, kreslo, lampa, TV s morom, bonsaj) → pacienti sa zotavujú rýchlejšie (+1 % za bod).
+- **Hotel** (7, od postavenia hotela; hala – kvety na recepcii, obraz, koberec, lampa, kreslo, kožená pohovka, bonsaj) → hostia platia viac (+1 % za bod).
+- Niektoré dekorácie garáže a kaviarne odomyká úroveň ★.
 
 #### 6.1.4 Rozšírenie útulku
 - **Fáza 1:** 3. a 4. klietka (120 / 180 €), kútik pre stálice +1 / +2 (150 / 220 €), kaviareň (350 €, od 25 ★), 3. a 4. stôl (180 / 260 €).

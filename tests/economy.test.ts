@@ -126,15 +126,47 @@ describe('Dekorácie a útulnosť (GDD §6.1.3)', () => {
     const tip = s.guestTip(true);
     const trust = s.trustMult;
     for (const d of data.decor) s.buyDecor(d.id);
-    expect(s.decor).toHaveLength(data.decor.length);
+    // klinika a hotel ešte nie sú postavené – tam sa nedá nič kúpiť
+    const builtRooms = data.decor.filter((d) => d.room === 'garage' || d.room === 'cafe');
+    expect(s.decor).toHaveLength(builtRooms.length);
     expect(s.guestTip(true)).toBeGreaterThan(tip);
     expect(s.trustMult).toBeGreaterThan(trust);
+  });
+
+  it('útulná klinika zrýchli zotavenie, útulný hotel zvýši poplatok', () => {
+    const s = new GameState(data, 8);
+    s.money = 1_000_000;
+    s.devOpenClinic();
+    s.devGive(0, levels[6]!.rep);
+    expect(s.buyHotel()).toBe(true);
+    s.devOpenHotel();
+    const guest = s.hotel.guests[0]!;
+    const fee = s.hotelFee(guest);
+    for (const d of data.decor.filter((x) => x.room === 'clinic' || x.room === 'hotel'))
+      expect(s.buyDecor(d.id)).toBe(true);
+    expect(s.hotelFee(guest)).toBeGreaterThan(fee);
+    // zotavenie: rovnaká mačka bez útulnosti a s ňou
+    const heal = (cozy: boolean) => {
+      const g = new GameState(data, 3);
+      g.devOpenClinic();
+      if (cozy) g.decor = data.decor.filter((x) => x.room === 'clinic').map((x) => x.id);
+      g.devSpawnReport();
+      const cat = g.acceptReport(g.reports[0]!.id)!;
+      cat.conditions = [];
+      cat.stats.health = 30;
+      g.tick(60_000);
+      return cat.stats.health;
+    };
+    expect(heal(true)).toBeGreaterThan(heal(false));
   });
 
   it('dekorácie majú jedinečné id a existujúce miesto', () => {
     const ids = data.decor.map((d) => d.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const d of data.decor) expect(['wall', 'floor', 'prop']).toContain(d.layer);
+    for (const d of data.decor) {
+      expect(['wall', 'floor', 'prop']).toContain(d.layer);
+      expect(['garage', 'cafe', 'clinic', 'hotel']).toContain(d.room);
+    }
   });
 });
 

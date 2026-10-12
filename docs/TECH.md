@@ -183,6 +183,11 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - `GameState.adoptionDay { until, readyAt }` (save, voliteľné), `startAdoptionDay`, `adoptionDayActive` (násobí interval a max. čakajúcich v `advanceAdopters`), udalosť `adoptionDay { active }` → girlandy (`setEventFx('openday')`).
 - Želania: `CatData.wish / nextWishAt / bond` (voliteľné), `advanceWishes` v `tick`, `grantWish`, `wishPrice`; puto násobí `donationsPerMinute`. Udalosti `wishAppeared`, `wishGranted`, počítadlo `counters.wishes`. Dáta v `cosmetics.json`.
 
+## Dekorácie
+- `DecorDef.room: DecorRoom` (`garage | cafe | clinic | hotel`), x v súradniciach miestnosti – `Furnishings` pripočíta `roomX(room)`. `GameState.decorRoomOpen`, `coziness(room)`; efekty: dôvera (garáž), dary (kaviareň), `healthRecovery` (klinika), `hotelFee` (hotel).
+- Nové výrezy v `frames.ts` (CLINIC_FRAMES: pohovka, kreslá, bonsaj, kvety, lavička, TV; INTERIOR_FRAMES: `carpet`). Výrezy sa overujú obrázkom hárku s vyznačenými rámčekmi (súradnice z hľadania súvislých nepriehľadných oblastí).
+- UI: `UI.decorContent` (výber miestnosti `decorRoom`), `wallPicker` – nastavenie farby stien je v Dekoráciách, nákup v ❤ Srdiečka.
+
 ## Podmodul s assetmi
 - Klonovanie: `git clone --recurse-submodules …`, aktualizácia: `git submodule update --remote public/assets`.
 - Nové assety sa commitujú **najprv** v podmodule (`public/assets/`), potom sa vo verejnom repozitári commitne posun podmodulu.

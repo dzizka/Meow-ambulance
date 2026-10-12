@@ -131,7 +131,12 @@ export interface BalanceData {
   /** Úrovne útulku podľa ★ (GDD §6.1.1). */
   levels: LevelDef[];
   /** Účinok útulnosti (GDD §6.1.3). */
-  coziness: { garage_trust_per_point: number; cafe_tip_per_point: number };
+  coziness: {
+    garage_trust_per_point: number;
+    cafe_tip_per_point: number;
+    clinic_heal_per_point: number;
+    hotel_fee_per_point: number;
+  };
   /** Personál (GDD §6.4). */
   staff: {
     caretaker: {
@@ -515,10 +520,13 @@ export interface EquipmentDef {
 }
 
 /** Dekorácia na pevnom mieste (GDD §6.1.3). */
+/** Miestnosti, ktoré sa dajú zariaďovať (GDD §6.1.3). */
+export type DecorRoom = 'garage' | 'cafe' | 'clinic' | 'hotel';
+
 export interface DecorDef {
   id: string;
   name_key: string;
-  room: 'garage' | 'cafe';
+  room: DecorRoom;
   sheet: 'interior' | 'clinic';
   frame: string;
   /** wall/floor = ľavý horný roh za všetkým; prop = stred spodnej hrany. */

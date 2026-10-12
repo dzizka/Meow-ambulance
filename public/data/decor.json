@@ -1,5 +1,5 @@
 {
-  "_comment": "Dekorácie (GDD §6.1.3). layer: wall/floor = (x, y) ľavý horný roh, kreslí sa za všetkým; prop = (x, y) stred spodnej hrany, hĺbka podľa y, footprint = pôdorys, cez ktorý mačky nechodia. x je v súradniciach miestnosti. cozy = body útulnosti. unlock = potrebná úroveň ★ (decor_2 / decor_3).",
+  "_comment": "Dekorácie (GDD §6.1.3). layer: wall/floor = (x, y) ľavý horný roh, kreslí sa za všetkým; prop = (x, y) stred spodnej hrany, hĺbka podľa y, footprint = pôdorys, cez ktorý mačky nechodia. x je v súradniciach miestnosti (garage / cafe / clinic = 1. poschodie kliniky / hotel). cozy = body útulnosti. unlock = potrebná úroveň ★ (decor_2 / decor_3).",
   "decor": [
     {
       "id": "g_photo",
@@ -39,6 +39,20 @@
       "footprint": 6
     },
     {
+      "id": "g_lamp",
+      "name_key": "DECOR_G_LAMP",
+      "room": "garage",
+      "sheet": "interior",
+      "frame": "lamp",
+      "layer": "prop",
+      "x": 34,
+      "y": 262,
+      "cozy": 5,
+      "price": 50,
+      "unlock": "decor_2",
+      "footprint": 6
+    },
+    {
       "id": "g_painting",
       "name_key": "DECOR_G_PAINTING",
       "room": "garage",
@@ -49,33 +63,6 @@
       "y": 26,
       "cozy": 6,
       "price": 60
-    },
-    {
-      "id": "g_rug",
-      "name_key": "DECOR_G_RUG",
-      "room": "garage",
-      "sheet": "interior",
-      "frame": "rug",
-      "layer": "floor",
-      "x": 180,
-      "y": 110,
-      "cozy": 8,
-      "price": 90,
-      "unlock": "decor_2"
-    },
-    {
-      "id": "g_lamp",
-      "name_key": "DECOR_G_LAMP",
-      "room": "garage",
-      "sheet": "interior",
-      "frame": "lamp",
-      "layer": "prop",
-      "x": 290,
-      "y": 250,
-      "cozy": 5,
-      "price": 50,
-      "unlock": "decor_2",
-      "footprint": 6
     },
     {
       "id": "g_mirror",
@@ -91,6 +78,19 @@
       "unlock": "decor_3"
     },
     {
+      "id": "g_rug",
+      "name_key": "DECOR_G_RUG",
+      "room": "garage",
+      "sheet": "interior",
+      "frame": "carpet",
+      "layer": "floor",
+      "x": 170,
+      "y": 112,
+      "cozy": 8,
+      "price": 90,
+      "unlock": "decor_2"
+    },
+    {
       "id": "c_photo",
       "name_key": "DECOR_C_PHOTO",
       "room": "cafe",
@@ -101,18 +101,6 @@
       "y": 32,
       "cozy": 3,
       "price": 25
-    },
-    {
-      "id": "c_shelf",
-      "name_key": "DECOR_C_SHELF",
-      "room": "cafe",
-      "sheet": "interior",
-      "frame": "wall_shelf",
-      "layer": "wall",
-      "x": 60,
-      "y": 30,
-      "cozy": 4,
-      "price": 35
     },
     {
       "id": "c_vase",
@@ -128,31 +116,16 @@
       "footprint": 0
     },
     {
-      "id": "c_mirror",
-      "name_key": "DECOR_C_MIRROR",
+      "id": "c_shelf",
+      "name_key": "DECOR_C_SHELF",
       "room": "cafe",
       "sheet": "interior",
-      "frame": "mirror",
+      "frame": "wall_shelf",
       "layer": "wall",
-      "x": 148,
-      "y": 26,
-      "cozy": 6,
-      "price": 70,
-      "unlock": "decor_2"
-    },
-    {
-      "id": "c_armchair",
-      "name_key": "DECOR_C_ARMCHAIR",
-      "room": "cafe",
-      "sheet": "interior",
-      "frame": "armchair",
-      "layer": "prop",
-      "x": 300,
-      "y": 260,
-      "cozy": 10,
-      "price": 120,
-      "unlock": "decor_2",
-      "footprint": 22
+      "x": 60,
+      "y": 30,
+      "cozy": 4,
+      "price": 35
     },
     {
       "id": "c_lamp",
@@ -169,17 +142,17 @@
       "footprint": 6
     },
     {
-      "id": "c_rug",
-      "name_key": "DECOR_C_RUG",
+      "id": "c_mirror",
+      "name_key": "DECOR_C_MIRROR",
       "room": "cafe",
       "sheet": "interior",
-      "frame": "rug",
-      "layer": "floor",
-      "x": 100,
-      "y": 160,
-      "cozy": 8,
-      "price": 90,
-      "unlock": "decor_3"
+      "frame": "mirror",
+      "layer": "wall",
+      "x": 148,
+      "y": 26,
+      "cozy": 6,
+      "price": 70,
+      "unlock": "decor_2"
     },
     {
       "id": "c_curtains",
@@ -193,6 +166,212 @@
       "cozy": 6,
       "price": 70,
       "unlock": "decor_3"
+    },
+    {
+      "id": "c_rug",
+      "name_key": "DECOR_C_RUG",
+      "room": "cafe",
+      "sheet": "interior",
+      "frame": "rug",
+      "layer": "floor",
+      "x": 100,
+      "y": 160,
+      "cozy": 8,
+      "price": 90,
+      "unlock": "decor_3"
+    },
+    {
+      "id": "c_armchair",
+      "name_key": "DECOR_C_ARMCHAIR",
+      "room": "cafe",
+      "sheet": "interior",
+      "frame": "armchair",
+      "layer": "prop",
+      "x": 300,
+      "y": 260,
+      "cozy": 10,
+      "price": 120,
+      "unlock": "decor_2",
+      "footprint": 22
+    },
+    {
+      "id": "k_pot",
+      "name_key": "DECOR_K_POT",
+      "room": "clinic",
+      "sheet": "clinic",
+      "frame": "pot_white",
+      "layer": "prop",
+      "x": 22,
+      "y": 260,
+      "cozy": 3,
+      "price": 30,
+      "footprint": 0
+    },
+    {
+      "id": "k_flowers",
+      "name_key": "DECOR_K_FLOWERS",
+      "room": "clinic",
+      "sheet": "clinic",
+      "frame": "flowers_pink",
+      "layer": "prop",
+      "x": 128,
+      "y": 220,
+      "cozy": 3,
+      "price": 30,
+      "footprint": 0
+    },
+    {
+      "id": "k_lamp",
+      "name_key": "DECOR_K_LAMP",
+      "room": "clinic",
+      "sheet": "interior",
+      "frame": "lamp",
+      "layer": "prop",
+      "x": 258,
+      "y": 260,
+      "cozy": 5,
+      "price": 50,
+      "footprint": 4
+    },
+    {
+      "id": "k_tv",
+      "name_key": "DECOR_K_TV",
+      "room": "clinic",
+      "sheet": "clinic",
+      "frame": "tv_beach",
+      "layer": "wall",
+      "x": 262,
+      "y": 22,
+      "cozy": 5,
+      "price": 60
+    },
+    {
+      "id": "k_bench",
+      "name_key": "DECOR_K_BENCH",
+      "room": "clinic",
+      "sheet": "clinic",
+      "frame": "bench_red",
+      "layer": "prop",
+      "x": 92,
+      "y": 262,
+      "cozy": 6,
+      "price": 70,
+      "footprint": 8
+    },
+    {
+      "id": "k_armchair",
+      "name_key": "DECOR_K_ARMCHAIR",
+      "room": "clinic",
+      "sheet": "clinic",
+      "frame": "armchair_blue",
+      "layer": "prop",
+      "x": 292,
+      "y": 260,
+      "cozy": 6,
+      "price": 70,
+      "footprint": 10
+    },
+    {
+      "id": "k_bonsai",
+      "name_key": "DECOR_K_BONSAI",
+      "room": "clinic",
+      "sheet": "clinic",
+      "frame": "bonsai",
+      "layer": "prop",
+      "x": 298,
+      "y": 110,
+      "cozy": 6,
+      "price": 70,
+      "footprint": 10
+    },
+    {
+      "id": "h_flowers",
+      "name_key": "DECOR_H_FLOWERS",
+      "room": "hotel",
+      "sheet": "clinic",
+      "frame": "flowers_pink",
+      "layer": "prop",
+      "x": 118,
+      "y": 144,
+      "cozy": 3,
+      "price": 30,
+      "footprint": 0
+    },
+    {
+      "id": "h_lamp",
+      "name_key": "DECOR_H_LAMP",
+      "room": "hotel",
+      "sheet": "interior",
+      "frame": "lamp",
+      "layer": "prop",
+      "x": 290,
+      "y": 260,
+      "cozy": 5,
+      "price": 50,
+      "footprint": 4
+    },
+    {
+      "id": "h_painting",
+      "name_key": "DECOR_H_PAINTING",
+      "room": "hotel",
+      "sheet": "interior",
+      "frame": "painting",
+      "layer": "wall",
+      "x": 92,
+      "y": 18,
+      "cozy": 6,
+      "price": 60
+    },
+    {
+      "id": "h_armchair",
+      "name_key": "DECOR_H_ARMCHAIR",
+      "room": "hotel",
+      "sheet": "clinic",
+      "frame": "armchair_brown",
+      "layer": "prop",
+      "x": 330,
+      "y": 260,
+      "cozy": 6,
+      "price": 70,
+      "footprint": 10
+    },
+    {
+      "id": "h_bonsai",
+      "name_key": "DECOR_H_BONSAI",
+      "room": "hotel",
+      "sheet": "clinic",
+      "frame": "bonsai",
+      "layer": "prop",
+      "x": 446,
+      "y": 260,
+      "cozy": 6,
+      "price": 70,
+      "footprint": 10
+    },
+    {
+      "id": "h_carpet",
+      "name_key": "DECOR_H_CARPET",
+      "room": "hotel",
+      "sheet": "interior",
+      "frame": "carpet",
+      "layer": "floor",
+      "x": 200,
+      "y": 140,
+      "cozy": 8,
+      "price": 90
+    },
+    {
+      "id": "h_sofa",
+      "name_key": "DECOR_H_SOFA",
+      "room": "hotel",
+      "sheet": "clinic",
+      "frame": "sofa_brown",
+      "layer": "prop",
+      "x": 240,
+      "y": 260,
+      "cozy": 10,
+      "price": 120,
+      "footprint": 16
     }
   ]
 }
