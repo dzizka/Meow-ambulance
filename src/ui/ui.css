@@ -1107,3 +1107,66 @@ body.minigame .toast:not(:last-child) {
 .portrait.hud-2row {
   --hud-h: 86px;
 }
+
+/* ---------- Pošta: nástenka, najnovšie, spomienky ---------- */
+.pc-head {
+  margin: 4px 0 -4px;
+  font-size: 15px;
+  color: var(--ui-dim);
+}
+.postcard.pinned {
+  box-shadow:
+    0 4px 0 #c9a98a,
+    0 0 0 2px var(--ui-accent);
+}
+.pc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.postcard .pc-pin {
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-height: 30px;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #e9d6bd;
+  color: #3b2f45;
+  border-color: #c9a98a;
+}
+.postcard .pc-pin.primary {
+  background: var(--ui-accent);
+}
+.pc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 8px;
+}
+.pc-grid .postcard {
+  grid-column: 1 / -1;
+}
+.pc-thumb {
+  background: #f4e6d0;
+  color: #3b2f45;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: 0 3px 0 #c9a98a;
+  padding: 6px 4px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.pc-thumb span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pc-thumb .sprite {
+  position: static;
+}

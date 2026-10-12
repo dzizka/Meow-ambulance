@@ -65,7 +65,14 @@ export type MinigameKind =
   | 'quiz'
   | 'feather'
   | 'hold'
-  | 'quiet';
+  | 'quiet'
+  | 'exam_hand'
+  | 'exam_thermo'
+  | 'exam_steth'
+  | 'exam_oto'
+  | 'brush'
+  | 'treat'
+  | 'warm';
 export interface MinigameRequest {
   kind: MinigameKind;
   cat: CatData;
@@ -74,6 +81,8 @@ export interface MinigameRequest {
   xray?: 'fracture' | 'swallowed' | null;
   /** Operácia je kastrácia (bez kroku s pinzetou). */
   neuter?: boolean;
+  /** Vyšetrenie: čo sa ním nájde (id + názov). */
+  exam?: { id: string; name: string }[];
 }
 
 /** Druh minihry podľa ošetrenia alebo aktivity (GDD §4.2, §4.3). */
@@ -82,7 +91,7 @@ const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> 
   bandage: { kind: 'bandage', titleKey: 'HOLD_BANDAGE' },
   ear_cleaning: { kind: 'ears', titleKey: 'HOLD_EAR' },
   syrup: { kind: 'syrup', titleKey: 'HOLD_SYRUP' },
-  hold_brush: { kind: 'hold', titleKey: 'HOLD_BRUSH' },
+  hold_brush: { kind: 'brush', titleKey: 'HOLD_BRUSH' },
   inhalation: { kind: 'breath', titleKey: 'MG_BREATH_TITLE' },
   bath: { kind: 'bath', titleKey: 'MG_BATH_TITLE' },
   nail_trim: { kind: 'claws', titleKey: 'MG_CLAWS_TITLE' },
@@ -90,8 +99,15 @@ const TREATMENT_GAMES: Record<string, { kind: MinigameKind; titleKey: string }> 
   insulin: { kind: 'vaccine', titleKey: 'MG_INSULIN_TITLE' },
   splint: { kind: 'splint', titleKey: 'MG_SPLINT_TITLE' },
   swim: { kind: 'swim', titleKey: 'MG_SWIM_TITLE' },
-  warm: { kind: 'hold', titleKey: 'MG_WARM_TITLE' },
+  warm: { kind: 'warm', titleKey: 'MG_WARM_TITLE' },
   surgery: { kind: 'surgery', titleKey: 'MG_SURGERY_TITLE' },
+};
+/** Základné vyšetrenia ako minihry (krvný test, röntgen a CT majú vlastné). */
+const EXAM_GAMES: Partial<Record<DiagnosticTool, { kind: MinigameKind; titleKey: string }>> = {
+  hand: { kind: 'exam_hand', titleKey: 'MG_HAND_TITLE' },
+  thermometer: { kind: 'exam_thermo', titleKey: 'MG_THERMO_TITLE' },
+  stethoscope: { kind: 'exam_steth', titleKey: 'MG_STETH_TITLE' },
+  otoscope: { kind: 'exam_oto', titleKey: 'MG_OTO_TITLE' },
 };
 const SOCIAL: {
   id: SocialActivity;
@@ -101,8 +117,8 @@ const SOCIAL: {
   title: string;
 }[] = [
   { id: 'feather', icon: '🪶', key: 'ACT_FEATHER', kind: 'feather', title: 'MG_FEATHER_TITLE' },
-  { id: 'brush', icon: '🪮', key: 'ACT_BRUSH', kind: 'hold', title: 'HOLD_BRUSH' },
-  { id: 'hand_feed', icon: '🐟', key: 'ACT_HAND_FEED', kind: 'hold', title: 'HOLD_TREAT' },
+  { id: 'brush', icon: '🪮', key: 'ACT_BRUSH', kind: 'brush', title: 'HOLD_BRUSH' },
+  { id: 'hand_feed', icon: '🐟', key: 'ACT_HAND_FEED', kind: 'treat', title: 'HOLD_TREAT' },
   {
     id: 'sit_quietly',
     icon: '🤫',
@@ -226,6 +242,10 @@ export class UI {
   /** Po prvom „Hrať" už hlavné menu ponúka Pokračovať a Novú hru. */
   private started = false;
   private confirmExit = false;
+  /** Rozbalená stará pohľadnica v Pošte. */
+  private openPostcard: string | null = null;
+  private postcardBatch = 0;
+  private heartBatch = 0;
   /** Prístroj kliniky, pri ktorom hráč vyberá pacienta. */
   private stationRoom: ClinicRoomId = 'lab';
   private shopTab: ShopTab = 'build';
@@ -725,9 +745,16 @@ export class UI {
       this.toast(t('TOAST_READY', { cat: cat.name }));
       this.game.playSound('mewPurr', 0.5);
     });
+    // viac pohľadníc naraz (napr. po offline čase) = jedno oznámenie
     bus.on('postcardArrived', () => {
-      this.toast(t('TOAST_POSTCARD'));
-      this.game.playSound('camera', 0.5, 'notify');
+      this.postcardBatch += 1;
+      if (this.postcardBatch > 1) return;
+      window.setTimeout(() => {
+        const n = this.postcardBatch;
+        this.postcardBatch = 0;
+        this.toast(n > 1 ? t('TOAST_POSTCARDS', { n }) : t('TOAST_POSTCARD'));
+        this.game.playSound('camera', 0.5, 'notify');
+      }, 50);
     });
     bus.on('catAdopted', ({ record }) => {
       if (this.selectedId === record.cat.id) this.game.select(null);
@@ -761,7 +788,15 @@ export class UI {
     });
     bus.on('hotelCheckIn', ({ cat }) => this.toast(t('TOAST_HOTEL_IN', { cat: cat.name })));
     bus.on('heartsChanged', ({ delta }) => {
-      if (delta > 0) this.toast(t('TOAST_HEARTS', { n: delta }));
+      // viac srdiečok naraz (napr. kopa pohľadníc) = jedno oznámenie
+      if (delta > 0) {
+        if (this.heartBatch === 0)
+          window.setTimeout(() => {
+            this.toast(t('TOAST_HEARTS', { n: this.heartBatch }));
+            this.heartBatch = 0;
+          }, 50);
+        this.heartBatch += delta;
+      }
       if (this.modalKind === 'menu' && this.menuTab === 'shop') this.renderModal();
     });
     bus.on('eventOffered', ({ def }) => {
@@ -1738,6 +1773,23 @@ export class UI {
         xray: hidden ? (hidden.id as 'fracture' | 'swallowed') : null,
       });
       if (stars === null) return;
+    } else {
+      // Základné vyšetrenia: krátka hmatová minihra, ktorá ukáže, čo sa nájde
+      const kind = EXAM_GAMES[tool];
+      if (kind) {
+        const exam = cat.conditions
+          .filter((c) => !c.revealed)
+          .map((c) => this.state.data.conditions.find((d) => d.id === c.id))
+          .filter((d) => d?.reveal_tool === tool)
+          .map((d) => ({ id: d!.id, name: t(d!.name_key) }));
+        const stars = await this.runMinigame({
+          kind: kind.kind,
+          cat,
+          title: t(kind.titleKey),
+          exam,
+        });
+        if (stars === null) return;
+      }
     }
     const found = this.state.examine(cat.id, tool);
     this.game.playSound(found.length ? 'found' : 'nothing', 0.5);
@@ -1819,6 +1871,13 @@ export class UI {
       ct: 'MG_CT_TITLE',
       swim: 'MG_SWIM_TITLE',
       quiz: 'MG_QUIZ_TITLE',
+      exam_hand: 'MG_HAND_TITLE',
+      exam_thermo: 'MG_THERMO_TITLE',
+      exam_steth: 'MG_STETH_TITLE',
+      exam_oto: 'MG_OTO_TITLE',
+      brush: 'HOLD_BRUSH',
+      treat: 'HOLD_TREAT',
+      warm: 'MG_WARM_TITLE',
     };
     const title = t(titles[kind] ?? kind);
     const stars = await this.runMinigame({ kind, cat, title, ...extra });
@@ -3064,32 +3123,99 @@ export class UI {
     );
   }
 
+  /**
+   * Pošta: pripnuté na nástenke, najnovšie naplno, staršie ako malé náhľady
+   * (ťuknutím sa rozbalia). Pri stovkách adopcií sa okno nezahltí.
+   */
   private postcardsContent(): HTMLElement[] {
-    const cards = this.state.adoptions.filter((a) => a.postcardDelivered).reverse();
-    const out: HTMLElement[] = [];
-    if (cards.length === 0) out.push(el('p', { class: 'muted' }, t('UI_NO_POSTCARDS')));
-    for (const rec of cards) {
-      out.push(this.postcard(rec));
-      this.state.markPostcardSeen(rec);
+    const s = this.state;
+    const cards = s.postcards;
+    if (cards.length === 0) return [el('p', { class: 'muted' }, t('UI_NO_POSTCARDS'))];
+    const max = s.data.balance.rewards.postcard_pins;
+    const out: HTMLElement[] = [
+      el('p', { class: 'hint' }, t('UI_PC_SUMMARY', { n: cards.length, p: s.pinnedCount, max })),
+    ];
+    const pinned = cards.filter((c) => c.pinned);
+    const rest = cards.filter((c) => !c.pinned);
+    // nové (nevidené) vždy naplno, inak aspoň posledných 6
+    const fresh = Math.max(6, rest.filter((c) => !c.postcardSeen).length);
+    const recent = rest.slice(0, fresh);
+    const older = rest.slice(fresh);
+    if (pinned.length) {
+      out.push(el('h3', { class: 'pc-head' }, t('UI_PC_PINNED')));
+      out.push(...pinned.map((r) => this.postcard(r)));
     }
+    out.push(el('h3', { class: 'pc-head' }, t('UI_PC_RECENT')));
+    out.push(...recent.map((r) => this.postcard(r)));
+    if (older.length) {
+      out.push(el('h3', { class: 'pc-head' }, t('UI_PC_OLDER')));
+      const grid = el('div', { class: 'pc-grid' });
+      for (const rec of older) {
+        if (this.openPostcard === rec.cat.id) {
+          const big = this.postcard(rec);
+          big.classList.add('pc-open');
+          grid.append(big);
+          continue;
+        }
+        const thumb = el(
+          'button',
+          { class: 'pc-thumb', type: 'button', 'aria-label': rec.cat.name },
+          catPortrait(rec.cat, 2),
+          el('span', {}, rec.cat.name),
+        );
+        thumb.addEventListener('click', () => {
+          this.openPostcard = rec.cat.id;
+          this.renderModal();
+        });
+        grid.append(thumb);
+      }
+      out.push(grid);
+    }
+    out.push(
+      el('p', { class: 'hint' }, t('UI_PC_KEEP_HINT', { n: s.data.balance.rewards.postcard_keep })),
+    );
+    for (const rec of cards) s.markPostcardSeen(rec);
     return out;
   }
 
   private postcard(rec: AdoptionRecord): HTMLElement {
-    const def = this.state.data.adopters.find((d) => d.id === rec.adopterDefId);
+    const s = this.state;
+    const def = s.data.adopters.find((d) => d.id === rec.adopterDefId);
     const person = personPortrait(rec.adopterSprite, 3);
     person.style.left = '30%';
     const cat = catPortrait(rec.cat, 3);
     cat.style.left = '48%';
     cat.style.filter = '';
-    const key =
-      rec.score >= this.state.data.balance.match.perfect ? 'POSTCARD_PERFECT' : 'POSTCARD_GOOD';
+    const base = rec.score >= s.data.balance.match.perfect ? 'POSTCARD_PERFECT' : 'POSTCARD_GOOD';
+    // text sa vyberie podľa mačky – tá istá pohľadnica má vždy ten istý text
+    let h = 2166136261; // FNV-1a
+    for (const ch of `${rec.cat.id}:${rec.adoptedAt}`)
+      h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+    const n = (h >>> 0) % 4;
+    const key = n === 0 ? base : `${base}_${n + 1}`;
+    const full = !rec.pinned && s.pinnedCount >= s.data.balance.rewards.postcard_pins;
+    const pin = button(
+      rec.pinned ? t('UI_PC_UNPIN') : t('UI_PC_PIN'),
+      () => {
+        if (s.togglePin(rec.cat.id)) this.renderModal();
+      },
+      {
+        class: `btn pc-pin${rec.pinned ? ' primary' : ''}`,
+        disabled: full,
+        title: full ? t('UI_PC_PINS_FULL') : '',
+      },
+    );
     return el(
       'div',
-      { class: 'postcard' },
+      { class: `postcard${rec.pinned ? ' pinned' : ''}` },
       el('div', { class: 'scene' }, person, cat),
       el('p', {}, t(key, { cat: rec.cat.name })),
-      el('p', { class: 'from' }, t('UI_POSTCARD_FROM', { who: t(def?.name_key ?? '') })),
+      el(
+        'div',
+        { class: 'pc-foot' },
+        el('p', { class: 'from' }, t('UI_POSTCARD_FROM', { who: t(def?.name_key ?? '') })),
+        pin,
+      ),
     );
   }
 }

@@ -160,6 +160,11 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Lokálne zostavenie (s Android SDK): `npm run build && npx cap sync android && cd android && ./gradlew assembleRelease` alebo `npx cap open android` (Android Studio).
 - **Inštalácia v telefóne:** na telefóne otvoriť https://github.com/dzizka/Meow-ambulance/releases/tag/android-latest, stiahnuť `meow-ambulance.apk`, otvoriť ho a povoliť prehliadaču „Inštalovať neznáme aplikácie“. Novšia verzia sa nainštaluje cez staršiu a save zostane.
 
+## Pošta a minihry vyšetrení
+- `GameState.pruneAdoptions` drží iba pohľadnice na ceste, pripnuté (`AdoptionRecord.pinned`) a posledných `postcard_keep` doručených (+ poslednú adopciu) – volá sa po adopcii, doručení a pri načítaní. Počty sú v `counters`, album má vlastný zoznam. `togglePin` (max `postcard_pins`).
+- Vyšetrenia `hand/thermometer/stethoscope/otoscope` spúšťajú minihry `exam_*` (`EXAM_GAMES` v `UI.ts`); `MinigameRequest.exam` nesie skryté diagnózy, ktoré nástroj odhalí (id + názov), minihra ich ukáže a skončí textom „Vyšetrené" namiesto hviezdičiek. Stav mení až `GameState.examine` po minihre.
+- Nové minihry starostlivosti: `brush` (zlepená srsť + česanie), `treat` (kŕmenie z ruky), `warm` (podchladenie). `hold` zostal ako záloha.
+
 ## Podmodul s assetmi
 - Klonovanie: `git clone --recurse-submodules …`, aktualizácia: `git submodule update --remote public/assets`.
 - Nové assety sa commitujú **najprv** v podmodule (`public/assets/`), potom sa vo verejnom repozitári commitne posun podmodulu.

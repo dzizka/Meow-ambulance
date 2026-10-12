@@ -155,6 +155,13 @@ Diagnózy sú pri príchode **skryté** (zobrazené ako „?"). Hráč ich odha�
 | Röntgen | Zlomeniny, prehltnuté predmety | Fáza 3 |
 | CT | Vzácne stavy (zberateľské diagnózy) | Fáza 4 |
 
+**Každé vyšetrenie je krátka hmatová minihra (3–6 s, bez hviezdičiek)** – na konci ukáže, čo sa našlo (✓ v poriadku / ! nález s názvom):
+- **Ruka** – prejsť prstom po hlavičke, tele a oboch labkách; nález sa ukáže na mieste (kliešte na hlave, blchy/špina na tele, zranenie a pazúriky na labkách).
+- **Teplomer** – striasť (potiahnuť hore-dole), priložiť do zeleného krúžku, počkať na pípnutie; ukáže °C (38,6 norma, 39,6 infekcia ucha, 40,3 horúčka, 36,1 podchladenie).
+- **Stetoskop** – priložiť na srdce a obe pľúca a chvíľu podržať (vlnky); pri nádche pľúca „chrčia".
+- **Otoskop** – posvietiť do veľkého ucha a nájsť 3 miesta; pri roztočoch sa ukážu roztoče.
+- Krvný test, röntgen a CT majú vlastné minihry (§6.5). Veterinárka z personálu vyšetruje bez minihier.
+
 ### 4.2 Liečebné minihry
 Každá minihra: **5–20 sekúnd**, ovládanie myšou/dotykom, hodnotenie 1–3 hviezdičky (vplýva na rýchlosť liečby, nikdy neznemožní vyliečenie).
 
@@ -169,6 +176,10 @@ Každá minihra: **5–20 sekúnd**, ovládanie myšou/dotykom, hodnotenie 1–3
 | **Očkovanie** | Nájdi správne miesto, odvráť pozornosť maškrtou | 🟡 v1.0 |
 | **Strihanie pazúrikov** | Čiarka sa posúva po pazúriku – ťukni na bielej špičke, nie na ružovej dreni | 🟢 MVP |
 | **Rehabilitácia v bazéne** | Veď mačku vo veste pomedzi bóje | 🔵 Neskôr |
+| **Česanie** (zlepená srsť) | Ťahy hrebeňom zľava doprava; proti srsti mačka mňaukne; špinavá srsť sa postupne vyčistí | 🟢 |
+| **Zohriatie** (podchladenie, zima) | Krúživo rozotierať mačku – vločky sa topia, modrastá farba mizne, na konci deka | 🟢 |
+
+Žiadna liečba ani starostlivosť už nie je iba „podrž prst" – pôvodná všeobecná minihra s kruhom ostala len ako záloha v kóde.
 
 ### 4.3 Socializácia 🟢 MVP
 Zvyšuje **Dôveru**. Účinnosť závisí od povahy:
@@ -176,8 +187,8 @@ Zvyšuje **Dôveru**. Účinnosť závisí od povahy:
 | Aktivita | Minihra | Plachá | Maznavá | Divoká | Maškrtná | Hravá |
 |---|---|---|---|---|---|---|
 | Hra s perom | Kývaj prútikom, mačka loví | ×0.5 | ×1 | ×1.5 | ×1 | ×2 |
-| Česanie | Ťahaj kefou v smere srsti | ×1 | ×2 | ×0.5 | ×1 | ×1 |
-| Kŕmenie z ruky | Podrž maškrtu, nehýb sa | ×1.5 | ×1 | ×1 | ×2 | ×1 |
+| Česanie | Ťahaj hrebeňom v smere srsti (zľava doprava) | ×1 | ×2 | ×0.5 | ×1 | ×1 |
+| Kŕmenie z ruky | Pomaly podaj rybičku k papuľke (3×), rýchly pohyb mačku vyľaká | ×1.5 | ×1 | ×1 | ×2 | ×1 |
 | Tiché sedenie | Nerob nič 10 s (pasívne) | ×2 | ×0.5 | ×1.5 | ×0.5 | ×0.5 |
 
 > Hráč spoznáva povahu skúšaním – ✨ pri úspechu, 💢 pri nevhodnej aktivite. Odhalená povaha sa zapíše do karty mačky.
@@ -240,7 +251,7 @@ zhoda = základ 50
 |---|---|
 | **Adopčný príspevok** | Peniaze (napr. 50–150 € podľa zhody a fázy) |
 | **Reputácia** | Odomyká granty, väčšie hlásenia, lepších adoptérov |
-| **Pohľadnica** 🟢 MVP | 2–5 minút po adopcii príde ilustrovaná pohľadnica: mačka v novom domove + krátky odkaz od majiteľa. Ukladá sa do albumu. |
+| **Pohľadnica** 🟢 MVP | 2–5 minút po adopcii príde ilustrovaná pohľadnica: mačka v novom domove + krátky odkaz od majiteľa (4 texty pre dokonalú a 4 pre dobrú zhodu). V menu ☰ → Pošta: **📌 nástenka** (max. 6 pripnutých, ostanú navždy), **najnovšie** naplno (všetky nevidené, aspoň 6), staršie ako **spomienky** – malé náhľady, ťuknutím sa rozbalia. Uchováva sa posledných 60 pohľadníc (`balance.rewards.postcard_keep`). Viac pohľadníc naraz = jedno oznámenie. |
 | **Zápis do albumu** | Odomknutie plemena/farby/príbehu |
 
 ### 5.4 Stálice – mačky, ktoré si hráč nechá 🟢 MVP
