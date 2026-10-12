@@ -100,6 +100,8 @@ export interface BalanceData {
     age_any: number;
     perfect: number;
     good: number;
+    /** Lesklá mačka (čistá a spokojná) – zhoda navyše (GDD §5.2). */
+    glow_bonus: number;
   };
   rewards: {
     adoption_fee_min: number;
@@ -113,6 +115,18 @@ export interface BalanceData {
     postcard_keep: number;
     /** Koľko pohľadníc sa dá pripnúť na nástenku. */
     postcard_pins: number;
+    /** Slabá adopcia (GDD §5.2): mačka sa po chvíli vráti smutnejšia a s nižšou dôverou. */
+    return_delay_s: [number, number];
+    return_trust_loss: number;
+    return_satisfaction: number;
+    /** O koľko ★ príde útulok pri vrátení (nikdy nie pod aktuálnu úroveň). */
+    return_rep_loss: number;
+  };
+  /** Lesk (GDD §3.3): čistá a spokojná mačka sa pri adopcii lepšie uplatní. */
+  glow: {
+    min_cleanliness: number;
+    min_satisfaction: number;
+    fee_bonus: number;
   };
   care: {
     social_base_trust: number;
@@ -122,8 +136,19 @@ export interface BalanceData {
     feed_cooldown_s: number;
     brush_cleanliness: number;
     treat_satisfaction_per_star: number;
+    /** Hviezdičky liečby: zdravie × (1 + x · (★ − 2)) (GDD §4.2). */
+    treat_health_per_star: number;
   };
-  residents: { slots: number; donation_per_min: number; offline_cap_h: number };
+  residents: {
+    slots: number;
+    donation_per_min: number;
+    offline_cap_h: number;
+    /** Pomocníčka (GDD §5.4): stálica s takýmto rysom upokojí nedôverčivých pacientov. */
+    helper_traits: string[];
+    /** Rysy pacientov, ktorým pomocníčka pomáha. */
+    helper_for: string[];
+    helper_trust_bonus: number;
+  };
   phase_1: { starting_money: number; cages: number };
   /** Ceny ďalších klietok a miest v kútiku – dĺžka poľa = koľko sa dá dokúpiť. */
   upgrades: { cage_prices: number[]; slot_prices: number[] };
@@ -427,6 +452,9 @@ export interface AdoptionRecord {
   postcardSeen: boolean;
   /** Pripnutá na nástenku – nezahodí sa. */
   pinned?: boolean;
+  /** Slabá zhoda (GDD §5.2): kedy sa mačka vráti (ms simulácie); po návrate `returned`. */
+  returnDueAt?: number | null;
+  returned?: boolean;
 }
 
 /** Objednávka hosťa v kaviarni. */

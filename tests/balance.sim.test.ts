@@ -22,7 +22,18 @@ interface SimLog {
   campaigns: number;
 }
 
-export function simulate(hours: number, seed = 1, stars: 1 | 2 | 3 = 2): SimLog {
+/**
+ * `adopter` = adoptuje (slabé zhody vynechá, mačka by sa vrátila – GDD §5.2);
+ * `keeper` = najprv plní miesta pre stálice, adoptuje až keď sú plné (GDD §6.1 – dva štýly hrania).
+ */
+export type SimProfile = 'adopter' | 'keeper';
+
+export function simulate(
+  hours: number,
+  seed = 1,
+  stars: 1 | 2 | 3 = 2,
+  profile: SimProfile = 'adopter',
+): SimLog {
   const s = new GameState(data, seed);
   s.dismissTutorial();
   const log: SimLog = {
@@ -69,11 +80,15 @@ export function simulate(hours: number, seed = 1, stars: 1 | 2 | 3 = 2): SimLog 
       if (s.socialCooldownLeft(cat.id) === 0)
         s.socialize(cat.id, ACTIVITIES[Math.floor(Math.random() * 4)]!, stars);
     }
-    // adopcie: najlepší záujemca; inak nechať si stálicu
+    // adopcie: najlepší záujemca (nie slabá zhoda); inak nechať si stálicu
     for (const cat of s.cats.filter((c) => s.isReady(c) && !c.resident)) {
+      if (profile === 'keeper' && s.freeResidentSlots > 0) {
+        s.makeResident(cat.id);
+        continue;
+      }
       const best = s.adopters
-        .map((v) => ({ v, m: s.matchFor(cat.id, v.id, false) }))
-        .filter((x) => x.m && x.m.quality !== 'blocked')
+        .map((v) => ({ v, m: s.matchFor(cat.id, v.id) }))
+        .filter((x) => x.m && x.m.quality !== 'blocked' && x.m.quality !== 'poor')
         .sort((a, b) => (b.m?.score ?? 0) - (a.m?.score ?? 0))[0];
       if (best) s.adopt(cat.id, best.v.id);
       else if (s.freeResidentSlots > 0) s.makeResident(cat.id);
@@ -121,21 +136,23 @@ export function simulate(hours: number, seed = 1, stars: 1 | 2 | 3 = 2): SimLog 
 describe.skipIf(!process.env.SIM)('Simulácia balansu', () => {
   it('aktívny hráč – časy úrovní a stavieb (minúty)', () => {
     const hours = Number(process.env.SIM_HOURS ?? 8);
-    for (const seed of [1, 2, 3]) {
-      const log = simulate(hours, seed);
-      console.log(`\n=== seed ${seed}: ${hours} h ===`);
-      console.log('úrovne (min):', log.levels.join(' | '));
-      console.log('stavby (min):', JSON.stringify(log.built));
-      console.log(
-        'príjmy (€):',
-        Object.entries(log.income)
-          .map(([k, v]) => `${k} ${Math.round(v)}`)
-          .join(', '),
-      );
-      console.log(
-        `adopcie ${log.adoptions}, ★ ${log.rep}, peniaze ${log.money}, kampane ${log.campaigns}`,
-      );
-    }
+    const profiles = (process.env.SIM_PROFILE ?? 'adopter,keeper').split(',') as SimProfile[];
+    for (const profile of profiles)
+      for (const seed of [1, 2, 3]) {
+        const log = simulate(hours, seed, 2, profile);
+        console.log(`\n=== ${profile}, seed ${seed}: ${hours} h ===`);
+        console.log('úrovne (min):', log.levels.join(' | '));
+        console.log('stavby (min):', JSON.stringify(log.built));
+        console.log(
+          'príjmy (€):',
+          Object.entries(log.income)
+            .map(([k, v]) => `${k} ${Math.round(v)}`)
+            .join(', '),
+        );
+        console.log(
+          `adopcie ${log.adoptions}, ★ ${log.rep}, peniaze ${log.money}, kampane ${log.campaigns}`,
+        );
+      }
     expect(true).toBe(true);
   }, 600_000);
 });

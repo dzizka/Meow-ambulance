@@ -31,10 +31,12 @@ export function treat(cat: CatData, conditionId: string, stars: Stars, data: Gam
   const def = data.conditions.find((d) => d.id === conditionId);
   if (!c || !def || !c.revealed || c.treated) return false;
   c.treated = true;
+  // Lepšia minihra = rýchlejšia liečba (★★ = základ), nikdy však nie neúspech
+  const care = data.balance.care;
   addStats(cat, {
-    health: def.health_gain,
+    health: Math.round(def.health_gain * (1 + (care.treat_health_per_star ?? 0) * (stars - 2))),
     cleanliness: def.cleanliness_gain ?? 0,
-    satisfaction: stars * data.balance.care.treat_satisfaction_per_star,
+    satisfaction: stars * care.treat_satisfaction_per_star,
   });
   return true;
 }
@@ -118,6 +120,16 @@ export const allTreated = (cat: CatData): boolean => cat.conditions.every((c) =>
 export function isReady(cat: CatData, data: GameData): boolean {
   const r = data.balance.adoption_ready;
   return allTreated(cat) && cat.stats.health >= r.min_health && cat.stats.trust >= r.min_trust;
+}
+
+/** Lesk (GDD §3.3): čistá a spokojná mačka – lepšia zhoda aj príspevok pri adopcii. */
+export function isGlowing(cat: CatData, data: GameData): boolean {
+  const g = data.balance.glow;
+  return (
+    !!g &&
+    cat.stats.cleanliness >= g.min_cleanliness &&
+    cat.stats.satisfaction >= g.min_satisfaction
+  );
 }
 
 /** Značka nad mačkou v garáži – čo práve potrebuje (GDD §7.4). */

@@ -116,7 +116,7 @@
   "UI_MATCH_UNCERTAIN": "iba odhad – nepoznáš celú povahu",
   "UI_ADOPT": "Adoptovať",
   "UI_NOT_NOW": "Teraz nie",
-  "UI_POOR_WARNING": "Nie som si istá, či sa k sebe hodia…",
+  "UI_POOR_WARNING": "Nie som si istá, či sa k sebe hodia… Ak to nevyjde, mačka sa o pár minút vráti smutnejšia.",
   "UI_ADOPTED": "{cat} má nový domov! +{fee} €",
   "UI_POSTCARD_FROM": "Pohľadnica od: {who}",
   "POSTCARD_PERFECT": "Mačička {cat} je u nás úplne šťastná. Ďakujeme, že ste nás spojili!",
@@ -828,5 +828,10 @@
   "UI_RATING_HOW": "Priemer z posledných {n} hostí – staré hodnotenia postupne vypadnú. Na 5 ★: obslúž hosťa, jeho stálica nech je spokojná (aspoň 70 %) a kaviareň útulná.",
   "UI_RATING_TIP_SERVE": "🍰 Neobslúžení hostia: {n} – ťukni na bublinu nad hosťom alebo najmi baristku.",
   "UI_RATING_TIP_SAD": "😿 Smutná stálica: {n}× – nakŕm ju a venuj sa jej, splň jej želanie.",
-  "UI_RATING_TIP_COZY": "🛋️ Málo útulné: {n}× – kúp dekorácie do kaviarne (Obchod → Dekorácie)."
+  "UI_RATING_TIP_COZY": "🛋️ Málo útulné: {n}× – kúp dekorácie do kaviarne (Obchod → Dekorácie).",
+  "TOAST_RETURNED": "{cat} sa vrátila – v novom domove to nevyšlo. Potrebuje trochu lásky a lepší domov.",
+  "UI_GLOW_ON": "Lesklá – čistá a spokojná. Záujemcovi sa bude páčiť viac (lepšia zhoda, príspevok +{p} %, pri dobrej zhode istá pohľadnica).",
+  "UI_GLOW_TIP": "Tip: keď bude čistá a spokojná (✨ lesk), urobí na záujemcu lepší dojem.",
+  "UI_MATCH_GLOW": "lesk",
+  "UI_HELPER": "{cat} ju upokojuje – dôvera rastie rýchlejšie."
 }

@@ -116,7 +116,7 @@
   "UI_MATCH_UNCERTAIN": "estimate only – you don’t know her whole personality",
   "UI_ADOPT": "Adopt",
   "UI_NOT_NOW": "Not now",
-  "UI_POOR_WARNING": "I’m not sure they’re a good fit…",
+  "UI_POOR_WARNING": "I’m not sure they’re a good fit… If it doesn’t work out, she’ll come back in a few minutes, a bit sadder.",
   "UI_ADOPTED": "{cat} has a new home! +€{fee}",
   "UI_POSTCARD_FROM": "Postcard from: {who}",
   "POSTCARD_PERFECT": "{cat} is perfectly happy with us. Thank you for bringing us together!",
@@ -828,5 +828,10 @@
   "UI_RATING_HOW": "Average of the last {n} guests – old reviews drop out over time. For 5 ★: serve the guest, keep their resident happy (70 % or more) and the café cozy.",
   "UI_RATING_TIP_SERVE": "🍰 Guests not served: {n} – tap the bubble above them or hire the barista.",
   "UI_RATING_TIP_SAD": "😿 Sad resident: {n}× – feed and care for them, grant their wish.",
-  "UI_RATING_TIP_COZY": "🛋️ Not cozy enough: {n}× – buy café decorations (Shop → Decorations)."
+  "UI_RATING_TIP_COZY": "🛋️ Not cozy enough: {n}× – buy café decorations (Shop → Decorations).",
+  "TOAST_RETURNED": "{cat} came back – the new home didn’t work out. She needs some love and a better match.",
+  "UI_GLOW_ON": "Glowing – clean and content. Adopters will like her more (better match, +{p} % fee, a sure postcard on a good match).",
+  "UI_GLOW_TIP": "Tip: once she’s clean and content (✨ glow), she’ll make a better first impression.",
+  "UI_MATCH_GLOW": "glow",
+  "UI_HELPER": "{cat} keeps her calm – trust grows faster."
 }

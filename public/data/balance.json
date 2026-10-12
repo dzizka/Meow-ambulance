@@ -32,7 +32,8 @@
     "age_match": 10,
     "age_any": 5,
     "perfect": 80,
-    "good": 50
+    "good": 50,
+    "glow_bonus": 5
   },
   "rewards": {
     "adoption_fee_min": 50,
@@ -43,7 +44,16 @@
     "postcard_delay_s": [120, 300],
     "postcard_chance_good": 0.5,
     "postcard_keep": 60,
-    "postcard_pins": 6
+    "postcard_pins": 6,
+    "return_delay_s": [180, 360],
+    "return_trust_loss": 30,
+    "return_satisfaction": 30,
+    "return_rep_loss": 3
+  },
+  "glow": {
+    "min_cleanliness": 80,
+    "min_satisfaction": 80,
+    "fee_bonus": 0.1
   },
   "care": {
     "social_base_trust": 12,
@@ -52,12 +62,16 @@
     "feed_health": 3,
     "feed_cooldown_s": 60,
     "brush_cleanliness": 30,
-    "treat_satisfaction_per_star": 3
+    "treat_satisfaction_per_star": 3,
+    "treat_health_per_star": 0.15
   },
   "residents": {
     "slots": 2,
-    "donation_per_min": 0.8,
-    "offline_cap_h": 8
+    "donation_per_min": 1.2,
+    "offline_cap_h": 8,
+    "helper_traits": ["cuddly", "gentle", "social"],
+    "helper_for": ["shy", "wild", "grumpy"],
+    "helper_trust_bonus": 0.3
   },
   "phase_1": {
     "starting_money": 200,
@@ -213,7 +227,7 @@
     "first_delay_s": 15,
     "arrival_interval_s": 70,
     "stay_s": [240, 420],
-    "fee": 140,
+    "fee": 90,
     "decay_mult": 1.5,
     "happy_at": 75,
     "rep_happy": 1,

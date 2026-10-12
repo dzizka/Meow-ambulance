@@ -62,9 +62,21 @@ describe('Starostlivosť', () => {
     const cat = makeCat();
     expect(Care.treat(cat, 'ticks', 3, data)).toBe(false);
     Care.examine(cat, 'hand', data);
-    expect(Care.treat(cat, 'ticks', 1, data)).toBe(true);
+    expect(Care.treat(cat, 'ticks', 2, data)).toBe(true);
     expect(cat.stats.health).toBe(40 + 25);
     expect(Care.treat(cat, 'ticks', 3, data)).toBe(false);
+  });
+
+  it('lepšia minihra = rýchlejšia liečba (★ ovplyvní pridané zdravie)', () => {
+    const gain = (stars: Care.Stars) => {
+      const cat = makeCat();
+      Care.examine(cat, 'hand', data);
+      Care.treat(cat, 'ticks', stars, data);
+      return cat.stats.health - 40;
+    };
+    expect(gain(1)).toBeLessThan(gain(2));
+    expect(gain(2)).toBe(25);
+    expect(gain(3)).toBeGreaterThan(gain(2));
   });
 
   it('tiché sedenie plachú mačku teší a prezradí jej povahu; potom si oddýchne', () => {
