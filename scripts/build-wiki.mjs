@@ -61,7 +61,7 @@ const TEXT = {
       '<b>Vyšetrenie</b> 🔍 – nástrojmi (ruka, teplomer, stetoskop, otoskop, neskôr krvný test, röntgen, CT) odhalíš skryté diagnózy. Každé vyšetrenie je krátka minihra.',
       '<b>Liečba</b> 💊 – každá diagnóza má minihru, hodnotí sa 1–3 ★ (vyliečiš vždy, hviezdičky dajú viac zdravia).',
       '<b>Opatera</b> ❤️ – kŕm, česaj, hraj sa; dôvera rastie podľa povahy mačky.',
-      '<b>Adopcia</b> 🚪 – keď je mačka zdravá a dôverčivá, príde záujemca. Čím lepšia zhoda s jeho domovom, tým väčší príspevok, viac ★ a pohľadnica z nového domova.',
+      '<b>Adopcia</b> 🚪 – keď je mačka zdravá a dôverčivá, príde záujemca. Čím lepšia zhoda s jeho domovom, tým väčší príspevok, viac ★ a pohľadnica z nového domova. Čistá a spokojná mačka ✨ (lesk) urobí lepší dojem. Pri slabej zhode sa mačka o pár minút vráti – smutnejšia a s nižšou dôverou.',
       '<b>Rast</b> ★ – hviezdičky zvyšujú úroveň útulku a odomykajú budovy, vybavenie a personál.',
     ],
     tips: [
@@ -122,7 +122,7 @@ const TEXT = {
       '<b>Examination</b> 🔍 – tools (hand, thermometer, stethoscope, otoscope, later blood test, X-ray, CT) reveal hidden conditions. Each exam is a short minigame.',
       '<b>Treatment</b> 💊 – every condition has a minigame rated 1–3 ★ (you always cure it; stars give more health).',
       '<b>Care</b> ❤️ – feed, brush, play; trust grows depending on the cat’s personality.',
-      '<b>Adoption</b> 🚪 – when a cat is healthy and trusting, an adopter arrives. The better the match with their home, the bigger the fee, more ★ and a postcard from the new home.',
+      '<b>Adoption</b> 🚪 – when a cat is healthy and trusting, an adopter arrives. The better the match with their home, the bigger the fee, more ★ and a postcard from the new home. A clean, content cat ✨ (glow) makes a better impression. After a weak match the cat comes back a few minutes later, sadder and less trusting.',
       '<b>Growth</b> ★ – stars raise your shelter level and unlock buildings, equipment and staff.',
     ],
     tips: [

@@ -138,6 +138,8 @@ Všetky na škále **0–100**:
 - Keď má mačka vyliečené všetky diagnózy, zdravie samo rastie o 2 za minútu (zotavovanie).
 - Zdravie ani dôvera samy neklesajú.
 
+**Lesk ✨** 🟢 – mačka s čistotou aj spokojnosťou ≥ 80 je „lesklá": pri adopcii zhoda **+5**, príspevok **+10 %** a pri dobrej zhode istá pohľadnica. Česanie a kŕmenie tak majú zmysel aj u pacienta, nielen u stálice (`balance.json → glow`, `match.glow_bonus`). Karta mačky ukazuje, či je lesklá; v okne záujemcu je pri mačke „✨ lesk".
+
 ---
 
 ## 4. Fáza 2 – Liečba a rehabilitácia (Care)
@@ -163,7 +165,7 @@ Diagnózy sú pri príchode **skryté** (zobrazené ako „?"). Hráč ich odha�
 - Krvný test, röntgen a CT majú vlastné minihry (§6.5). Veterinárka z personálu vyšetruje bez minihier.
 
 ### 4.2 Liečebné minihry
-Každá minihra: **5–20 sekúnd**, ovládanie myšou/dotykom, hodnotenie 1–3 hviezdičky (vplýva na rýchlosť liečby, nikdy neznemožní vyliečenie).
+Každá minihra: **5–20 sekúnd**, ovládanie myšou/dotykom, hodnotenie 1–3 hviezdičky (vplýva na rýchlosť liečby, nikdy neznemožní vyliečenie): zdravie z ošetrenia × 0,85 / 1 / 1,15 pri ★ / ★★ / ★★★ (`care.treat_health_per_star`), plus spokojnosť +3 za hviezdičku.
 
 | Minihra | Mechanika | Rozsah |
 |---|---|---|
@@ -247,7 +249,8 @@ zhoda = základ 50
 ```
 - **≥ 80 %** – Dokonalá zhoda: plná odmena + zaručená pohľadnica
 - **50–79 %** – Dobrá zhoda: čiastočná odmena, pohľadnica s 50 % šancou
-- **< 50 %** – Hráč dostane upozornenie („Nie som si istý/á…") a môže si to rozmyslieť. Zlá adopcia = mačka sa po pár dňoch **vráti** (smutnejšia, nižšia dôvera), mierna strata reputácie. Nikdy nie trest smrťou alebo stratou mačky.
+- **< 50 %** – Hráč dostane upozornenie („Nie som si istá… ak to nevyjde, mačka sa vráti") a môže si to rozmyslieť. Zlá adopcia 🟢 = mačka sa po **3–6 minútach vráti** do voľnej klietky (dôvera −30, spokojnosť najviac 30 → musí sa znova socializovať) a útulok príde o **3 ★** – nikdy však pod prah aktuálnej úrovne, takže sa nič nezamkne. Príspevok ostáva, pohľadnica nepríde. Ak nie je voľná klietka, mačka počká, kým sa uvoľní; návrat beží iba keď hra beží. Nikdy nie trest smrťou alebo stratou mačky (`balance.json → rewards.return_*`).
+- Rozhoduje **skutočná** zhoda so všetkými rysmi, nie odhad z odhalených – oplatí sa mačku spoznať (socializáciou) skôr, než ju hráč dá preč.
 
 > Pohovor (🟡 v1.0): hráč môže adoptérovi položiť 1–2 otázky a odhaliť skryté preferencie.
 
@@ -264,8 +267,8 @@ Adopcia **nie je povinná**. Vyliečenú mačku si hráč môže nechať ako **s
 
 - Stálica sa presťahuje z klietky do **mačacieho kútika** (Fáza 1) / **mačacej kaviarne** (od Fázy 2) a **uvoľní klietku** pre ďalšiu záchranu.
 - **Úžitok stálic:**
-  - **Dary od návštevníkov** – každá stálica prináša priebežný príjem (Fáza 1: 0,5 €/min, kaviareň ho násobí). Spokojnejšia stálica = viac darov.
-  - 🟡 **Pomocníčka** – stálica s rysom „maznavá" upokojuje nové plaché mačky (rýchlejšia dôvera).
+  - **Dary od návštevníkov** – každá stálica prináša priebežný príjem (Fáza 1: 1,2 €/min, kaviareň ho násobí). Spokojnejšia stálica = viac darov.
+  - 🟢 **Pomocníčka** – stálica s rysom maznavá, nežná alebo spoločenská upokojuje nedôverčivých pacientov (plachá, divoká, mrzutá): ich dôvera zo socializácie rastie o **30 %** rýchlejšie. Karta pacienta to ukáže („🤝 Mica ju upokojuje"). `balance.json → residents.helper_*`.
   - 🟡 Obliekanie, fotky, mená v kaviarni.
 - **Obmedzenie je iba miesto** – kútik má 2 miesta, kaviareň +3 (§5.5); rozširuje sa za peniaze. Žiadny trest za nechanie si mačky.
 - Stálicu je možné **kedykoľvek neskôr dať na adopciu** (napr. keď príde ideálny záujemca).
@@ -404,7 +407,7 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 ### 6.7 Mačací hotel 🟢 (úroveň 6, 450 ★)
 - Šiesta miestnosť (🏨), kúpa v Obchode → Stavby za **2 500 €**; na začiatok 2 apartmány, dokúpiť ďalšie 3 (900 / 1 400 / 2 000 €).
 - Cez deň, keď je voľný apartmán, príde majiteľ s mačkou (~každých 70 s) a nechá ju u nás na 4–7 minút. Hosť nie je naša mačka – nedá sa adoptovať ani liečiť, iba sa oň staráme (kŕmenie, česanie, hra). Ošetrovateľ Peťo pomáha aj v hoteli.
-- Hosťom klesá spokojnosť 1,5× rýchlejšie (chýba im domov). Majiteľ zaplatí **140 € × (0,5 + priemerná spokojnosť/100)**; pri priemere aspoň 75 % pridá **+1 ★**.
+- Hosťom klesá spokojnosť 1,5× rýchlejšie (chýba im domov). Majiteľ zaplatí **90 € × (0,5 + priemerná spokojnosť/100)**; pri priemere aspoň 75 % pridá **+1 ★**.
 - Hostia si občas ľahnú do apartmánu, v noci tam spia. Prehľad hotela ukazuje, kedy kto odchádza a ako je spokojný; karta hosťa má záložku Pobyt.
 
 
@@ -630,18 +633,34 @@ Cieľ: **15–20 minút hrania**, ktoré dokážu, že slučka je zábavná.
 ---
 
 ## 12a. Balans (simulácia aktívneho hráča)
-Bot v `tests/balance.sim.test.ts` hrá aktívne (každých 5 s urobí, čo sa dá, minihry na ★★, najlepší záujemca, šetrí na odomknutú budovu). Spustenie: `SIM=1 npx vitest run tests/balance.sim.test.ts --silent=false`. Skutočný hráč bude zhruba 1,5–2× pomalší.
+Bot v `tests/balance.sim.test.ts` hrá aktívne (každých 5 s urobí, čo sa dá, minihry na ★★, šetrí na odomknutú budovu). Dva profily (dva štýly hrania, §6.1):
+- **adopter** – dá mačku najlepšiemu záujemcovi, slabú zhodu vynechá (mačka by sa vrátila); keď nikto vhodný nečaká, nechá si ju ako stálicu.
+- **keeper** – najprv plní miesta pre stálice, adoptuje až keď sú plné.
 
-| | bot (min) | | bot (min) |
-|---|---|---|---|
-| úroveň 2 – kaviareň | 6–13 → 9–21 | úroveň 6 | 104–128 |
-| úroveň 3 | 24–33 | catio | 161–191 |
-| úroveň 4 – útulok | 36–55 → 60–69 | hotel | 222–244 |
-| úroveň 5 – personál | 66–85 | úroveň 7 | 185–196 |
-| klinika | 100–121 | 2. poschodie, CT, bazén | 267–307 |
-| | | edukačné centrum | 304–317 |
+Spustenie: `SIM=1 npx vitest run tests/balance.sim.test.ts --silent=false` (iba jeden profil: `SIM_PROFILE=keeper`). Skutočný hráč bude zhruba 1,5–2× pomalší.
 
-Úpravy v tomto kole: ★ na úrovne 5–7 zvýšené (220 / 450 / 800 – ★ predbiehali peniaze), lacnejšie neskoré budovy (klinika 1 200 €, miestnosti 1 500–3 000 €, catio 2 000 €, hotel 2 500 €, edukácia 3 000 €), silnejšia kaviareň (dar hosťa 4 € + 2 € za stálicu, dary stálic 0,8 €/min). Hlavné príjmy po 8 h: adopcie ~29 000 €, hotel ~30 000 €, kaviareň ~7 000 €, dary stálic ~3 000 €.
+| (min) | adopter | keeper | | adopter | keeper |
+|---|---|---|---|---|---|
+| úroveň 2 – kaviareň | 7–12 | 11–16 | klinika | 84–89 | 81–101 |
+| úroveň 3 | 13–23 | 29–33 | catio | 132–166 | 120–141 |
+| úroveň 4 – útulok | 28–32 → 38–48 | 40–44 → 50–53 | hotel | 165–207 | 144–174 |
+| úroveň 5 – personál | 52–56 | 57–76 | 2. poschodie | 211–249 | 175–207 |
+| úroveň 6 | 84–112 | 98–132 | edukačné centrum | 250–285 | 207–239 |
+| úroveň 7 | 161–205 | 162–201 | | | |
+
+**Príjmy po 8 h (€):**
+
+| | adopcie | hotel | kaviareň (hostia) | dary stálic | výlety |
+|---|---|---|---|---|---|
+| adopter | 32–38 tis. | 22–25 tis. | 10–14 tis. | 8–12 tis. | ~2,6 tis. |
+| keeper | 30–36 tis. | 24–27 tis. | 17–22 tis. | ~17 tis. | ~3 tis. |
+
+Úpravy v tomto kole (zmysluplné rozhodnutia, dva štýly hrania):
+- Slabá adopcia sa vracia (§5.2), lesk ✨ pri adopcii (§3.3), hviezdičky zrýchľujú liečbu (§4.2), stálica-pomocníčka (§5.4).
+- Dary stálic **0,8 → 1,2 €/min** – predtým stálice zarobili za 8 h iba ~1,5 tis. € oproti ~30 tis. € z adopcií; teraz kaviareň + dary vyrovnajú adopcie a keeper dostavia budovy skôr, ale ★ (úrovne) zbiera pomalšie.
+- Hotel **140 → 90 €** za pobyt – predtým zarobil toľko ako všetky adopcie (~30 tis. €), hoci je to iba vedľajšia údržba cudzích mačiek; teraz je druhý.
+
+Predchádzajúce kolo: ★ na úrovne 5–7 zvýšené (220 / 450 / 800), lacnejšie neskoré budovy (klinika 1 200 €, miestnosti 1 500–3 000 €, catio 2 000 €, hotel 2 500 €, edukácia 3 000 €), silnejšia kaviareň (dar hosťa 4 € + 2 € za stálicu).
 
 ## 13. Metriky úspechu (pre testovanie)
 - Testeri hrajú MVP bez vyzvania ďalej ako 15 minút.

@@ -23,7 +23,8 @@ export interface OfflineSummary {
 
 /** Všetky globálne udalosti hry a ich dáta (GDD §10.2). */
 export interface GameEvents {
-  catAdmitted: { cat: CatData };
+  /** `returned` = mačka sa vrátila po slabej adopcii (GDD §5.2). */
+  catAdmitted: { cat: CatData; returned?: boolean };
   catChanged: { cat: CatData };
   catSelected: { catId: string | null };
   catAdopted: { record: AdoptionRecord };

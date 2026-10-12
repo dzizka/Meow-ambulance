@@ -2,6 +2,7 @@ import './ui.css';
 import { IMAGES, ZUZKA_SHEET, catSheetPath, personSheetPath } from '../assets';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { GameState } from '../core/GameState';
+import * as Care from '../core/systems/Care';
 import type { Stars } from '../core/systems/Care';
 import type { MatchResult } from '../core/systems/Match';
 import type {
@@ -841,8 +842,9 @@ export class UI {
     bus.on('catChanged', ({ cat }) => {
       if (cat.id === this.selectedId) this.renderSheet();
     });
-    bus.on('catAdmitted', ({ cat }) => {
-      this.toast(t('TOAST_ADMITTED', { cat: cat.name }));
+    bus.on('catAdmitted', ({ cat, returned }) => {
+      this.toast(t(returned ? 'TOAST_RETURNED' : 'TOAST_ADMITTED', { cat: cat.name }));
+      if (returned) this.game.playSound('mew', 0.5);
       this.renderSheet();
     });
     bus.on('reportAdded', () => {
@@ -1201,6 +1203,13 @@ export class UI {
       out.push(
         el('p', { class: 'hint' }, t('UI_READY_HINT')),
         el(
+          'p',
+          { class: 'hint' },
+          Care.isGlowing(cat, data)
+            ? `✨ ${t('UI_GLOW_ON', { p: Math.round((data.balance.glow?.fee_bonus ?? 0) * 100) })}`
+            : t('UI_GLOW_TIP'),
+        ),
+        el(
           'div',
           { class: 'actions' },
           button(`🏠 ${t('UI_KEEP')}`, () => this.doKeep(cat), {
@@ -1402,7 +1411,11 @@ export class UI {
     });
     if (feedLeft > 0) feedBtn.append(el('small', {}, t('UI_RESTING', { s: feedLeft })));
     care.append(feedBtn);
-    return [...this.wishBlock(cat), care];
+    const out = [...this.wishBlock(cat), care];
+    // Stálica-pomocníčka upokojuje nedôverčivých pacientov (GDD §5.4)
+    const helper = s.helperMult(cat) > 1 ? s.helper : undefined;
+    if (helper) out.push(el('p', { class: 'hint' }, `🤝 ${t('UI_HELPER', { cat: helper.name })}`));
+    return out;
   }
 
   /**
@@ -2605,7 +2618,13 @@ export class UI {
           { style: 'flex:1' },
           cat.name,
           el('br'),
-          el('small', {}, m.uncertain ? t('UI_MATCH_UNCERTAIN') : ''),
+          el(
+            'small',
+            {},
+            [m.uncertain ? t('UI_MATCH_UNCERTAIN') : '', m.glow ? `✨ ${t('UI_MATCH_GLOW')}` : '']
+              .filter(Boolean)
+              .join(' · '),
+          ),
         ),
         el(
           'span',

@@ -432,6 +432,7 @@ export class GameState {
     this.advanceGuests(deltaMs);
     this.advanceStaff(deltaMs);
     this.deliverPostcards();
+    this.advanceReturns();
     this.advanceCampaign();
     this.advanceWishes();
     if (this.adDayWasActive && !this.adoptionDayActive)
@@ -557,6 +558,37 @@ export class GameState {
   }
 
   /**
+   * Slabá adopcia (GDD §5.2): mačka sa vráti do voľnej klietky – smutnejšia, s nižšou dôverou.
+   * Nikdy sa nestratí: ak nie je voľná klietka, počká, kým sa uvoľní. Iba keď hra beží.
+   */
+  private advanceReturns(): void {
+    const r = this.data.balance.rewards;
+    for (const rec of this.adoptions) {
+      if (rec.returned || rec.returnDueAt == null || rec.returnDueAt > this.now) continue;
+      if (this.freeCages <= 0) return;
+      rec.returned = true;
+      const cat: CatData = structuredClone(rec.cat);
+      cat.id = this.newId('cat');
+      cat.resident = false;
+      cat.wish = null;
+      cat.ward = this.freeIn('garage') > 0 ? 'garage' : 'quarantine';
+      cat.stats.trust = Math.max(0, cat.stats.trust - r.return_trust_loss);
+      cat.stats.satisfaction = Math.min(cat.stats.satisfaction, r.return_satisfaction);
+      cat.admittedAt = this.now;
+      // meno už medzičasom môže nosiť iná mačka
+      const used = new Set(this.cats.map((x) => x.name));
+      if (used.has(cat.name)) {
+        const names = [...(this.data.names.by_coat[cat.coatId] ?? []), ...this.data.names.generic];
+        const free = names.filter((n) => !used.has(n));
+        if (free.length) cat.name = this.rng.pick(free);
+      }
+      this.cats.push(cat);
+      this.loseRep(r.return_rep_loss);
+      this.bus.emit('catAdmitted', { cat, returned: true });
+    }
+  }
+
+  /**
    * Záznamy adopcií rastú donekonečna – nechá sa iba to, čo hra ešte ukáže:
    * pohľadnice na ceste, pripnuté a posledných `postcard_keep` doručených.
    * (Počty adopcií sú v `counters`, album má vlastný zoznam.)
@@ -567,7 +599,9 @@ export class GameState {
     const kept: AdoptionRecord[] = [];
     for (let i = this.adoptions.length - 1; i >= 0; i--) {
       const rec = this.adoptions[i]!;
-      const pending = !rec.postcardDelivered && rec.postcardDueAt !== null;
+      const pending =
+        (!rec.postcardDelivered && rec.postcardDueAt !== null) ||
+        (rec.returnDueAt != null && !rec.returned);
       const recent = rec.postcardDelivered && !rec.pinned && delivered++ < keep;
       // posledná adopcia ostane vždy (napr. pre okno rozlúčky)
       if (pending || rec.pinned || recent || i === this.adoptions.length - 1) kept.push(rec);
@@ -1231,12 +1265,33 @@ export class GameState {
   socialize(catId: string, activity: SocialActivity, stars: Care.Stars): Care.SocialResult | null {
     const cat = this.getCat(catId);
     if (!cat) return null;
-    const result = Care.socialize(cat, activity, stars, this.now, this.data, this.trustMult);
+    const result = Care.socialize(
+      cat,
+      activity,
+      stars,
+      this.now,
+      this.data,
+      this.trustMult * this.helperMult(cat),
+    );
     if (result) {
       this.counters.social += 1;
       this.changed(cat);
     }
     return result;
+  }
+
+  /** Stálica-pomocníčka (maznavá, nežná, spoločenská) upokojí nedôverčivého pacienta (GDD §5.4). */
+  get helper(): CatData | undefined {
+    const b = this.data.balance.residents;
+    if (!b.helper_traits) return undefined;
+    return this.residents.find((c) => c.traits.some((t) => b.helper_traits.includes(t.id)));
+  }
+
+  helperMult(cat: CatData): number {
+    const b = this.data.balance.residents;
+    if (cat.resident || cat.hotel || !b.helper_for) return 1;
+    const wary = cat.traits.some((t) => b.helper_for.includes(t.id));
+    return wary && this.helper ? 1 + b.helper_trust_bonus : 1;
   }
 
   socialCooldownLeft(catId: string): number {
@@ -1306,6 +1361,8 @@ export class GameState {
           (cat.rehabbed ? 1 + this.data.balance.clinic.rehab_fee_bonus : 1) *
           // vzácna mačka (GDD §7.2)
           (cat.special ? 1 + this.data.balance.rare.fee_bonus : 1) *
+          // lesk – čistá a spokojná mačka (GDD §3.3)
+          (Care.isGlowing(cat, this.data) ? 1 + (this.data.balance.glow?.fee_bonus ?? 0) : 1) *
           // prestíž kastračných kampaní (GDD §7.7)
           this.prestigeFeeMult) /
           5,
@@ -1320,10 +1377,17 @@ export class GameState {
       (cat.neutered ? this.data.balance.clinic.neuter_rep_bonus : 0) +
       (cat.clinicCase ? this.data.balance.clinic.case_rep_bonus : 0) +
       (cat.special ? this.data.balance.rare.rep_bonus : 0);
+    // Lesklá mačka (čistá a spokojná) – istá pohľadnica pri dobrej zhode (GDD §3.3)
+    const glow = Care.isGlowing(cat, this.data);
     const postcard =
       match.quality === 'perfect' ||
-      (match.quality === 'good' && this.rng.chance(r.postcard_chance_good));
+      (match.quality === 'good' && (glow || this.rng.chance(r.postcard_chance_good)));
     const delay = this.rng.int(r.postcard_delay_s[0], r.postcard_delay_s[1]) * 1000;
+    // Slabá zhoda: nový domov nevyjde, mačka sa po chvíli vráti (GDD §5.2)
+    const returnDueAt =
+      match.quality === 'poor' && r.return_delay_s
+        ? this.now + this.rng.int(r.return_delay_s[0], r.return_delay_s[1]) * 1000
+        : null;
 
     for (const t of cat.traits) t.revealed = true; // nový majiteľ prezradí, aká naozaj je
     const record: AdoptionRecord = {
@@ -1336,6 +1400,7 @@ export class GameState {
       postcardDueAt: postcard ? this.now + delay : null,
       postcardDelivered: false,
       postcardSeen: false,
+      ...(returnDueAt !== null ? { returnDueAt } : {}),
     };
     this.cats = this.cats.filter((c) => c !== cat);
     this.adopters = this.adopters.filter((v) => v !== visit);
@@ -1593,6 +1658,15 @@ export class GameState {
   /** Od koľkých ★ je odomknutie dostupné (pre zámky v obchode). */
   unlockRep(u: Unlock): number | null {
     return this.data.balance.levels.find((l) => l.unlocks.includes(u))?.rep ?? null;
+  }
+
+  /** Mierna strata ★ – nikdy nie pod prah aktuálnej úrovne (nič sa nezamkne). */
+  private loseRep(n: number): void {
+    const floor = this.data.balance.levels[this.level]?.rep ?? 0;
+    const next = Math.max(floor, this.reputation - n);
+    if (next === this.reputation) return;
+    this.reputation = next;
+    this.bus.emit('reputationChanged', { reputation: this.reputation });
   }
 
   private gainRep(n: number): void {

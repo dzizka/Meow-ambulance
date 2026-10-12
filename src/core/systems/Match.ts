@@ -1,4 +1,5 @@
 import type { AdopterDef, CatData, GameData } from '../../data/types';
+import { isGlowing } from './Care';
 
 export type MatchQuality = 'perfect' | 'good' | 'poor' | 'blocked';
 
@@ -10,6 +11,8 @@ export interface MatchResult {
   bad: string[];
   /** Hráč ešte nepozná všetky rysy – skóre je iba odhad. */
   uncertain: boolean;
+  /** Mačka je čistá a spokojná – v skóre je bonus za lesk. */
+  glow: boolean;
 }
 
 /**
@@ -30,7 +33,7 @@ export function computeMatch(
     adopter.dealbreakers.includes(cat.age) ||
     (adopter.dealbreakers.includes('senior_cat') && cat.age === 'senior') ||
     traits.some((t) => adopter.dealbreakers.includes(t.id));
-  if (blockedBy) return { score: 0, quality: 'blocked', good: [], bad: [], uncertain };
+  if (blockedBy) return { score: 0, quality: 'blocked', good: [], bad: [], uncertain, glow: false };
 
   let score = m.base;
   const good: string[] = [];
@@ -48,8 +51,10 @@ export function computeMatch(
   else if (adopter.age_pref === 'any') score += m.age_any;
   // Kastrovaná mačka – adoptéri sú pokojnejší (GDD §6.5)
   if (cat.neutered) score += data.balance.clinic?.neuter_match_bonus ?? 0;
+  // Lesklá mačka urobí lepší prvý dojem (GDD §3.3)
+  if (isGlowing(cat, data)) score += m.glow_bonus ?? 0;
 
   score = Math.max(0, Math.min(100, Math.round(score)));
   const quality: MatchQuality = score >= m.perfect ? 'perfect' : score >= m.good ? 'good' : 'poor';
-  return { score, quality, good, bad, uncertain };
+  return { score, quality, good, bad, uncertain, glow: isGlowing(cat, data) };
 }
