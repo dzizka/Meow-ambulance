@@ -84,7 +84,11 @@
     "served_multiplier": 1.5,
     "pet_satisfaction": 8,
     "guest_sprites": ["005", "006", "007", "027", "029", "032", "033", "000", "003", "010", "015"],
-    "barista_sprite": "023"
+    "barista_sprite": "023",
+    "reviews_keep": 20,
+    "rating_good": 4.3,
+    "rating_bad": 2.7,
+    "rating_effect": 0.1
   },
   "levels": [
     {

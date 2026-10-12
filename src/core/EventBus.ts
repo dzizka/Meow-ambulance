@@ -4,6 +4,7 @@ import type {
   AdopterVisit,
   AdoptionRecord,
   CafeGuest,
+  CafeReview,
   CatData,
   DecorDef,
   LevelDef,
@@ -80,7 +81,7 @@ export interface GameEvents {
   };
   guestArrived: { guest: CafeGuest };
   guestServed: { guest: CafeGuest };
-  guestLeft: { guest: CafeGuest; amount: number };
+  guestLeft: { guest: CafeGuest; amount: number; review: CafeReview };
   levelUp: { level: number; def: LevelDef };
   equipmentBought: { id: string; level: number };
   decorBought: { def: DecorDef };

@@ -1,5 +1,5 @@
 import './ui.css';
-import { IMAGES, catSheetPath, personSheetPath } from '../assets';
+import { IMAGES, ZUZKA_SHEET, catSheetPath, personSheetPath } from '../assets';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { GameState } from '../core/GameState';
 import type { Stars } from '../core/systems/Care';
@@ -227,6 +227,9 @@ export class UI {
   private roomMenu = el('div', { class: 'room-menu', role: 'menu' });
   private zuzka = el('div', { class: 'zuzka', hidden: true, role: 'status' });
   private zuzkaKey: string | null = null;
+  /** Bublina, keď hráč ťukne na postavičku (Zuzka, personál). */
+  private speech = el('div', { class: 'zuzka speech', hidden: true, role: 'status' });
+  private speechTimer = 0;
   private sheet = el('aside', { class: 'sheet empty', 'aria-live': 'polite' });
   private modal = el('div', { class: 'modal', hidden: true, role: 'dialog', 'aria-modal': 'true' });
   private toasts = el('div', { class: 'toasts' });
@@ -286,7 +289,15 @@ export class UI {
     this.repPill.style.cursor = 'pointer';
     this.clockPill.style.touchAction = 'manipulation';
     this.buildHud();
-    this.root.append(this.hud, this.sheet, this.zuzka, this.modal, this.toasts, this.title);
+    this.root.append(
+      this.hud,
+      this.sheet,
+      this.zuzka,
+      this.speech,
+      this.modal,
+      this.toasts,
+      this.title,
+    );
     document.body.append(this.root);
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.closeModal();
@@ -661,10 +672,96 @@ export class UI {
     return this.state.adoptions.filter((a) => a.postcardDelivered && !a.postcardSeen).length;
   }
 
+  // ---------- Postavičky: ťuknutie = čo práve robia (GDD §6.4) ----------
+
+  /** Hráč ťukol na postavičku vo svete – povie, čo sa deje a čo by pomohlo. */
+  personTapped(role: string): void {
+    const s = this.state;
+    const staff = s.data.staff.find((d) => d.id === role);
+    const sheet =
+      role === 'zuzka'
+        ? ZUZKA_SHEET
+        : role === 'barista'
+          ? s.data.balance.cafe.barista_sprite
+          : role === 'receptionist'
+            ? s.data.balance.hotel.receptionist_sprite
+            : (staff?.sprite ?? ZUZKA_SHEET);
+    const name =
+      role === 'zuzka'
+        ? 'Zuzka'
+        : role === 'receptionist'
+          ? t('SAY_RECEPTIONIST')
+          : t(staff?.name_key ?? role);
+    this.say(sheet, name, this.personLine(role));
+    this.game.playSound('click', 0.3);
+  }
+
+  private personLine(role: string): string {
+    const s = this.state;
+    const patients = s.cats.filter((c) => !c.resident);
+    switch (role) {
+      case 'vet': {
+        const n = patients.filter(
+          (c) =>
+            c.examined.length < s.tools.length ||
+            c.conditions.some((x) => x.revealed && !x.treated),
+        ).length;
+        return n ? t('SAY_VET_BUSY', { n }) : t('SAY_VET_IDLE');
+      }
+      case 'caretaker': {
+        const n = [...s.cats, ...s.hotel.guests].filter((c) => c.stats.satisfaction < 40).length;
+        return n ? t('SAY_CARE_BUSY', { n }) : t('SAY_CARE_IDLE');
+      }
+      case 'social': {
+        const ready = patients.filter((c) => s.isReady(c)).length;
+        if (s.adopters.length) return t('SAY_SOCIAL_ADOPTERS', { n: s.adopters.length });
+        return ready ? t('SAY_SOCIAL_READY', { n: ready }) : t('SAY_SOCIAL_IDLE');
+      }
+      case 'barista': {
+        const waiting = s.cafe.guests.filter((g) => !g.served).length;
+        if (waiting) return t('SAY_BARISTA_BUSY', { n: waiting });
+        const r = s.cafeRating;
+        return r !== null ? t('SAY_BARISTA_RATING', { r: round1(r) }) : t('SAY_BARISTA_IDLE');
+      }
+      case 'receptionist':
+        return s.hotel.guests.length
+          ? t('SAY_HOTEL', { n: s.hotel.guests.length, max: s.suiteCount })
+          : t('SAY_HOTEL_EMPTY');
+      default: {
+        const hint = s.tutorialHint;
+        if (hint) return t(hint);
+        if (s.claimableChallenges > 0) return t('SAY_ZUZKA_CHALLENGE');
+        if (s.reports.length) return t('SAY_ZUZKA_REPORTS', { n: s.reports.length });
+        const sick = patients.filter((c) => c.conditions.some((x) => !x.treated)).length;
+        if (sick) return t('SAY_ZUZKA_TREAT', { n: sick });
+        if (s.adopters.length && patients.some((c) => s.isReady(c))) return t('SAY_ZUZKA_ADOPT');
+        return t(`SAY_ZUZKA_IDLE_${1 + Math.floor(Math.random() * 4)}`);
+      }
+    }
+  }
+
+  /** Bublina s portrétom na pár sekúnd (ťuknutím zmizne). */
+  private say(sheet: string, name: string, text: string): void {
+    window.clearTimeout(this.speechTimer);
+    this.speech.replaceChildren(
+      personPortrait(sheet, 1.5),
+      el('p', {}, el('strong', {}, name), el('br'), text),
+    );
+    this.speech.hidden = false;
+    this.zuzka.hidden = true;
+    this.speech.onclick = () => this.hideSpeech();
+    this.speechTimer = window.setTimeout(() => this.hideSpeech(), 5000);
+  }
+
+  private hideSpeech(): void {
+    this.speech.hidden = true;
+    this.updateZuzka();
+  }
+
   /** Bublina s radou od Zuzky (tutoriál) – mení sa podľa postupu hráča. */
   private updateZuzka(): void {
     const key = this.state.tutorialHint;
-    const hide = key === null || this.modalKind !== null;
+    const hide = key === null || this.modalKind !== null || !this.speech.hidden;
     this.zuzka.hidden = hide;
     if (hide || key === this.zuzkaKey) return;
     this.zuzkaKey = key;
@@ -682,7 +779,7 @@ export class UI {
       this.state.dismissTutorial();
       this.updateZuzka();
     });
-    this.zuzka.replaceChildren(personPortrait('012', 1.5), el('p', {}, t(key)), skip);
+    this.zuzka.replaceChildren(personPortrait(ZUZKA_SHEET, 1.5), el('p', {}, t(key)), skip);
   }
 
   private setBadge(b: HTMLElement, n: number): void {
@@ -895,8 +992,8 @@ export class UI {
       this.game.playSound('success', 0.4);
       refreshCafe();
     });
-    bus.on('guestLeft', ({ amount }) => {
-      this.toast(t('TOAST_GUEST_TIP', { n: round1(amount) }));
+    bus.on('guestLeft', ({ amount, review }) => {
+      this.toast(`${t('TOAST_GUEST_TIP', { n: round1(amount) })} · ${'★'.repeat(review.stars)}`);
       this.game.playSound('coins', 0.5, 'drop');
       refreshCafe();
     });
@@ -1691,6 +1788,7 @@ export class UI {
           d: round1(s.donationsPerMinute),
         }),
       ),
+      ...this.cafeReviews(),
       s.residents.length === 0
         ? el('p', { class: 'warning' }, t('UI_CAFE_NO_RESIDENTS'))
         : rows.length === 0
@@ -1700,6 +1798,50 @@ export class UI {
       this.staffHere('cafe'),
       this.panelButtons(),
     );
+  }
+
+  /** Hodnotenie kaviarne: priemer, vplyv na hostí a posledné odkazy (GDD §5.5). */
+  private cafeReviews(): HTMLElement[] {
+    const s = this.state;
+    const r = s.cafeRating;
+    const list = s.cafe.reviews ?? [];
+    if (r === null) return [];
+    const c = s.data.balance.cafe;
+    const effect =
+      list.length < 5
+        ? ''
+        : r >= c.rating_good
+          ? t('UI_RATING_GOOD', { p: Math.round(c.rating_effect * 100) })
+          : r <= c.rating_bad
+            ? t('UI_RATING_BAD', { p: Math.round(c.rating_effect * 100) })
+            : '';
+    const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
+    return [
+      el(
+        'div',
+        { class: 'rating' },
+        el('span', { class: 'rating-stars' }, stars(Math.round(r))),
+        el('strong', {}, ` ${round1(r)}`),
+        el('span', { class: 'muted' }, ` · ${t('UI_RATING_COUNT', { n: list.length })}`),
+      ),
+      effect ? el('p', { class: 'hint' }, effect) : el('span'),
+      ...list
+        .slice(-3)
+        .reverse()
+        .map((rv) =>
+          el(
+            'div',
+            { class: 'review' },
+            personPortrait(rv.sprite, 1),
+            el(
+              'div',
+              { class: 'grow' },
+              el('span', { class: 'rating-stars' }, stars(rv.stars)),
+              el('p', {}, t(rv.key, { cat: rv.cat })),
+            ),
+          ),
+        ),
+    ];
   }
 
   private catTile(cat: CatData): HTMLButtonElement {

@@ -3,6 +3,7 @@ import type { GameState, SchoolTrip } from '../core/GameState';
 import { INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { DPR } from './dpr';
 import { EDUCATION_X, FLOOR_TOP, ROOM, WORLD_H, WORLD_W } from './layout';
+import { IdleLife } from './idleLife';
 import {
   ensurePersonAnims,
   personIdleFrame,
@@ -113,6 +114,11 @@ export class EducationRoom {
         .setScale(kid ? KID_SCALE : 1)
         .setDepth(start.y);
       this.group.push(p);
+      // sedia a obzerajú sa (deti hlavne dopredu k učiteľke)
+      new IdleLife(this.scene, p, {
+        sheet,
+        looks: kid ? ['up', 'up', 'up', 'left', 'right'] : ['down', 'down', 'left', 'right'],
+      });
       if (!animate) return;
       p.setAlpha(0);
       this.scene.time.delayedCall(i * 300, () => {

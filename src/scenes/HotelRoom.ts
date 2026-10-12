@@ -3,6 +3,7 @@ import type { GameState } from '../core/GameState';
 import { INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { FLOOR_TOP, HOTEL_X, ROOM, WORLD_H, WORLD_W } from './layout';
 import { ensurePersonAnims, personIdleFrame, personKey, personWalkKey } from './personAnims';
+import { IdleLife, tappablePerson } from './idleLife';
 import { addProp, type WorldGeom } from './world';
 
 /** Kde sa prechádzajú hostia hotela. */
@@ -193,10 +194,17 @@ export class HotelRoom {
     this.prop('ht-desk', undefined, DESK.x, DESK.y, 14);
     // recepčná za pultom
     const rec = this.state.data.balance.hotel.receptionist_sprite;
-    this.scene.add
+    ensurePersonAnims(this.scene.anims, rec);
+    const receptionist = this.scene.add
       .sprite(HOTEL_X + DESK.x - 8, DESK.y - 12, personKey(rec), personIdleFrame('down'))
       .setOrigin(0.5, 1)
       .setDepth(DESK.y - 12);
+    new IdleLife(this.scene, receptionist, {
+      sheet: rec,
+      wander: 8,
+      emotes: ['icon_phone'],
+    });
+    tappablePerson(this.scene, receptionist, 'receptionist');
     this.prop('ht-luggage', undefined, 120, FT + 112, 8);
     this.prop('interior', 'couch', 70, FT + 190, 16);
     this.prop('interior', 'plant', 132, FT + 186, 8);

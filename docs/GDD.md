@@ -286,6 +286,8 @@ Druhá miestnosť vedľa garáže. Kúpi sa v menu ☰ → Obchod (**350 €**).
 
 ## 6. Fáza 4 – Rozširovanie (Progression)
 
+
+**Hodnotenie hostí** 🟢 – pri odchode hosť dá 1–5 ★ (nad hlavou sa ukážu hviezdičky) a krátky odkaz: základ 3, +1 obslúžený hráčom (+0,5 baristkou, −1 neobslúžený), ±1 podľa spokojnosti jeho mačky, +0,5/+1 za útulnosť kaviarne. Odkaz povie, čo hosťa najviac potešilo alebo mrzelo („na kávu som sa nedočkal", „{mačka} vyzerala smutne", „mohlo by tu byť útulnejšie"). Panel kaviarne ukazuje priemer z posledných 20 a 3 posledné odkazy. Priemer ≥ 4,3 → hostia chodia o 10 % častejšie, ≤ 2,7 → o 10 % zriedkavejšie (`balance.cafe.rating_*`).
 ### 6.1 Ekonomika 🟢 MVP
 | Mena | Ako ju získať | Na čo ju míňať |
 |---|---|---|
@@ -363,6 +365,8 @@ Personál sa najíma **raz** v Obchode (bez mzdy) a dá sa kedykoľvek poslať n
 | 📱 Správca sietí Tomáš | 700 € | Záujemcovia chodia častejšie (×0,6), čaká ich o 1 viac a častejšie prídu tí, čo sa k mačke hodia najlepšie |
 
 Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde pracuje, a pri práci ukáže ikonku nad mačkou.
+
+**Ťuknutie na postavičku** 🟢 (Zuzka, personál, baristka, recepčná) ukáže bublinu s tým, čo sa práve deje a čo by pomohlo – veterinárka povie, koľko pacientov čaká, ošetrovateľ koľko mačiek je hladných, správca sietí koho môže ponúknuť na adopciu, baristka hodnotenie kaviarne, recepčná obsadenosť hotela. Zuzka po tutoriáli radí ďalší krok (výzva na vyzdvihnutie, hlásenia, liečba, adopcia) alebo povie útulnú radu. Je to nenápadný systém rád – nič nenúti.
 
 > Kľúčové pravidlo: **automatizácia nikdy nezoberie hráčovi zábavné časti**. Personál robí rutinu, hráč môže vždy zasiahnuť sám (a dostať lepší výsledok).
 
@@ -514,6 +518,7 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 - **Pauza** 🟢 – tlačidlo ⏸ v hornom paneli (na PC aj Escape, na Androide tlačidlo Späť): Pokračovať, zvuk, jazyk, štatistiky, 🏠 Hlavné menu, 🚪 Ukončiť hru (Android, s potvrdením). Čas v hre stojí.
 - **Tlačidlo Späť (Android)** zavrie to, čo je navrchu: minihru, okno, výber mačky; inak otvorí pauzu. V hlavnom menu hru ukončí. Hra sa ukladá sama, ukončenie nič nestratí.
 - Menu ☰ obsahuje herný obsah: Výzvy, Úspechy, Album, Pohľadnice, Obchod.
+- **Živé prostredie** 🟢: postavičky dýchajú, obzerajú sa, prešľapujú (Zuzka, baristka, recepčná) a občas im nad hlavou vyskočí ikonka (telefón, šálka, srdiečko); hostia v kaviarni a deti na prednáške sa obzerajú. Para z hrnčekov v kaviarni, rastliny sa jemne hojdajú, cez deň prach v svetle garáže a motýle vo výbehu.
 - **Písmo:** všade čitateľné Nunito (nadpisy hrubším rezom). Pixelové písmo sa pri malých veľkostiach rozmazávalo.
 - Prístupnosť: veľkosť písma, režim pre farboslepých (ikony + farby, nie len farby), možnosť vypnúť časový tlak („Pokojný režim").
 

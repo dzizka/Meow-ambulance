@@ -167,6 +167,13 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 
 - `CatData.reactions` (voliteľné, bez migrácie): posledná reakcia mačky na každú socializačnú aktivitu, zapisuje `Care.socialize`; ukazuje `UI.likesSection` a tlačidlá v Opatere.
 
+## Živé prostredie a postavičky
+- `src/scenes/idleLife.ts`: `IdleLife` (dýchanie cez `scaleY` relatívne k mierke, obzeranie, prešľapovanie `wander`, ikonky `emotes`; nič nerobí, kým beží animácia chôdze alebo `busy()`), `tappablePerson` → udalosť scény `personTap` s rolou → `UI.personTapped` (bublina `.speech`, texty `SAY_*`).
+- Personál: chôdzu drží `Member.move` (nie `killTweensOf`, aby sa nezastavilo dýchanie).
+- `src/scenes/ambient.ts`: `Ambient` (prach v garáži, motýle vo výbehu, `swayPlants` po otvorení miestnosti) a `steam()` pre hrnčeky.
+- Zuzka sa načítava ako bežný hárok `personKey(ZUZKA_SHEET)` (má chôdzu).
+- Hodnotenie kaviarne: `CafeState.reviews` (voliteľné, bez migrácie), `GameState.reviewFor`, `cafeRating`, `ratingMult` (interval príchodov); udalosť `guestLeft` nesie `review`.
+
 ## Podmodul s assetmi
 - Klonovanie: `git clone --recurse-submodules …`, aktualizácia: `git submodule update --remote public/assets`.
 - Nové assety sa commitujú **najprv** v podmodule (`public/assets/`), potom sa vo verejnom repozitári commitne posun podmodulu.

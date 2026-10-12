@@ -5,6 +5,7 @@ import type { CatSprite } from '../objects/CatSprite';
 import { FLOOR_TOP, SHELTER_X, roomAt } from './layout';
 import { CLINIC_WALK } from './ClinicRoom';
 import { ensurePixelIcons } from './pixelIcons';
+import { IdleLife, tappablePerson } from './idleLife';
 import {
   ensurePersonAnims,
   personIdleFrame,
@@ -22,7 +23,15 @@ interface Member {
   sheet: string;
   nextMoveAt: number;
   busy: boolean;
+  move?: Phaser.Tweens.Tween;
 }
+
+/** Čo si člen tímu občas „pomyslí" (ikonka nad hlavou). */
+const EMOTES: Partial<Record<StaffId, string[]>> = {
+  social: ['icon_phone'],
+  vet: ['icon_steth'],
+  caretaker: ['icon_food', 'icon_brush'],
+};
 
 /**
  * Personál ako postavičky vo svete (GDD §6.4): ošetrovateľ a veterinárka sa prechádzajú
@@ -111,13 +120,22 @@ export class StaffSprites {
       .setAlpha(0);
     const shadow = this.scene.add.ellipse(h.x, h.y, 14, 5, 0x000000, 0.25).setDepth(h.y - 1);
     this.scene.tweens.add({ targets: sprite, alpha: 1, duration: 400 });
-    this.members.set(id, {
+    const m: Member = {
       sprite,
       shadow,
       sheet,
       nextMoveAt: this.scene.time.now + 3000,
       busy: false,
+    };
+    this.members.set(id, m);
+    // za stolom sedí – iba sa obzerá; ostatní medzi pochôdzkami dýchajú a obzerajú sa
+    new IdleLife(this.scene, sprite, {
+      sheet,
+      looks: id === 'social' ? ['down', 'down', 'left', 'right'] : undefined,
+      emotes: EMOTES[id],
+      busy: () => m.busy,
     });
+    tappablePerson(this.scene, sprite, id);
   }
 
   /** Člen tímu príde k pacientovi (napr. veterinárka k stolu na klinike). */
@@ -141,8 +159,8 @@ export class StaffSprites {
       Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down';
     m.busy = true;
     m.sprite.play(personWalkKey(m.sheet, dir), true);
-    this.scene.tweens.killTweensOf(m.sprite);
-    this.scene.tweens.add({
+    m.move?.stop();
+    m.move = this.scene.tweens.add({
       targets: m.sprite,
       x,
       y,

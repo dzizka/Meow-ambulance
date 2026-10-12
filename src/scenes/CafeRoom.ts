@@ -6,6 +6,8 @@ import type { CatSprite } from '../objects/CatSprite';
 import { CAFE_X, FLOOR_TOP, ROOM, WORLD_H, WORLD_W, roomAt } from './layout';
 import { ensurePixelIcons } from './pixelIcons';
 import { addProp, type WorldGeom } from './world';
+import { IdleLife, tappablePerson } from './idleLife';
+import { steam } from './ambient';
 import {
   ensurePersonAnims,
   personIdleFrame,
@@ -68,7 +70,11 @@ export class CafeRoom {
     const bus = state.bus;
     bus.on('guestArrived', ({ guest }) => this.addGuest(guest, true));
     bus.on('guestServed', ({ guest }) => this.served(guest));
-    bus.on('guestLeft', ({ guest }) => this.removeGuest(guest));
+    bus.on('guestLeft', ({ guest, review }) => {
+      const view = this.guests.get(guest.id);
+      if (view) this.showStars(view.sprite.x, view.sprite.y - 36, review.stars);
+      this.removeGuest(guest);
+    });
     bus.on('upgradeBought', ({ kind }) => {
       if (kind === 'table') this.drawTables(true);
     });
@@ -140,11 +146,20 @@ export class CafeRoom {
     // Pult so šálkami a baristka za ním
     const baristaSheet = this.state.data.balance.cafe.barista_sprite;
     const counterY = FLOOR_TOP + 30;
-    this.scene.add
+    ensurePersonAnims(this.scene.anims, baristaSheet);
+    const barista = this.scene.add
       .sprite(CAFE_X + 84, counterY - 8, personKey(baristaSheet), personIdleFrame('down'))
       .setOrigin(0.5, 1)
       .setDepth(counterY - 8);
-    this.prop('counter_cups', 80, counterY, 12);
+    // za pultom prešľapuje a občas pripraví kávu
+    new IdleLife(this.scene, barista, {
+      sheet: baristaSheet,
+      looks: ['down', 'down', 'left', 'right', 'up'],
+      wander: 12,
+      emotes: ['item_coffee', 'item_tea'],
+    });
+    tappablePerson(this.scene, barista, 'barista');
+    steam(this.scene, this.prop('counter_cups', 80, counterY, 12), -6);
     this.prop('fridge', 130, wallBase + 2, 8);
     this.prop('plant', 38, wallBase + 4, 6);
     this.prop('bookshelf', 436, wallBase, 6);
@@ -217,6 +232,12 @@ export class CafeRoom {
     bubble.on('pointerdown', () => this.onServe(g));
     const view: GuestView = { sprite, shadow, bubble, item: null, seated: false };
     this.guests.set(g.id, view);
+    // pri stole sa obzerá po kaviarni a po mačkách
+    new IdleLife(scene, sprite, {
+      sheet: g.sprite,
+      looks: ['down', 'down', 'left', 'right'],
+      busy: () => !view.seated,
+    });
 
     const sitDown = () => {
       view.seated = true;
@@ -274,6 +295,7 @@ export class CafeRoom {
       .image(CAFE_X + t.x, t.y - 13, `item_${g.order}`)
       .setOrigin(0.5, 1)
       .setDepth(t.y + 1);
+    if (g.order !== 'cake') steam(this.scene, view.item);
   }
 
   private removeGuest(g: CafeGuest): void {
@@ -367,6 +389,31 @@ export class CafeRoom {
       options.push(...free);
     }
     return options.length ? Phaser.Utils.Array.GetRandom(options) : null;
+  }
+
+  /** Hodnotenie hosťa – päť hviezdičiek nad hlavou, plné podľa počtu. */
+  private showStars(x: number, y: number, n: number): void {
+    const g = this.scene.add.graphics().setDepth(4600).setPosition(x, y);
+    const star = (cx: number, filled: boolean) => {
+      const pts: Phaser.Math.Vector2[] = [];
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 === 0 ? 3.2 : 1.4;
+        const a = -Math.PI / 2 + (i * Math.PI) / 5;
+        pts.push(new Phaser.Math.Vector2(cx + Math.cos(a) * r, Math.sin(a) * r));
+      }
+      g.fillStyle(filled ? 0xf2c14e : 0x5a4a63, 1).fillPoints(pts, true);
+    };
+    for (let i = 0; i < 5; i++) star((i - 2) * 7.5, i < n);
+    g.setScale(0.3);
+    this.scene.tweens.add({ targets: g, scale: 1, ease: 'Back.easeOut', duration: 250 });
+    this.scene.tweens.add({
+      targets: g,
+      y: y - 10,
+      alpha: 0,
+      delay: 1600,
+      duration: 500,
+      onComplete: () => g.destroy(),
+    });
   }
 
   /** Srdiečka nad mačkou, ktorá prišla k hosťovi. */

@@ -220,6 +220,13 @@ export interface BalanceData {
     served_multiplier: number;
     pet_satisfaction: number;
     guest_sprites: string[];
+    /** Koľko hodnotení sa pamätá a z koľkých sa ráta priemer. */
+    reviews_keep: number;
+    /** Priemer ≥ rating_good → hostia chodia častejšie, ≤ rating_bad → zriedkavejšie. */
+    rating_good: number;
+    rating_bad: number;
+    /** O koľko sa zmení interval príchodov (0,1 = o 10 %). */
+    rating_effect: number;
     /** Postavička za pultom. */
     barista_sprite: string;
   };
@@ -416,6 +423,19 @@ export interface CafeState {
   guests: CafeGuest[];
   /** Odpočet do ďalšieho hosťa (ms). */
   timer: number;
+  /** Posledné hodnotenia hostí (najnovšie na konci). */
+  reviews?: CafeReview[];
+}
+
+/** Hodnotenie hosťa kaviarne pri odchode (1–5 ★) s krátkym odkazom. */
+export interface CafeReview {
+  stars: number;
+  /** Kľúč textu REVIEW_*. */
+  key: string;
+  /** Meno mačky, ktorú si hosť hladkal (do textu). */
+  cat: string;
+  /** Hárok postavičky hosťa (portrét). */
+  sprite: string;
 }
 
 /** Čo odomyká úroveň útulku (GDD §6.1.1). */

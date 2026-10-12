@@ -48,7 +48,7 @@ export class BootScene extends Phaser.Scene {
 
     for (const [key, path] of Object.entries(DATA_FILES)) this.load.json(key, path);
     for (const [key, path] of Object.entries(IMAGES)) this.load.image(key, path);
-    this.load.spritesheet('zuzka', personSheetPath(ZUZKA_SHEET), {
+    this.load.spritesheet(personKey(ZUZKA_SHEET), personSheetPath(ZUZKA_SHEET), {
       frameWidth: 20,
       frameHeight: 32,
     });
