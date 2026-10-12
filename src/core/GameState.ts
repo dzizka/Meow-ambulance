@@ -605,14 +605,24 @@ export class GameState {
 
   // ---------- Akcie hráča ----------
 
+  /** Mená mačiek v útulku, hoteli a posledných adoptovaných – aby sa neopakovali. */
+  private namesInUse(): Set<string> {
+    return new Set(
+      [...this.cats, ...this.hotel.guests, ...this.adoptions.slice(-20).map((a) => a.cat)].map(
+        (c) => c.name,
+      ),
+    );
+  }
+
   /** Prijme hlásenie – mačka príde do voľnej klietky. */
   acceptReport(reportId: string): CatData | null {
     const report = this.reports.find((r) => r.id === reportId);
     const def = report && this.data.reports.find((d) => d.id === report.defId);
     if (!report || !def || this.freeCages < this.cagesNeeded(reportId)) return null;
     this.reports = this.reports.filter((r) => r !== report);
-    const make = (age: CatData['age'] | null, conditions: number) =>
-      generateCat(this.data, this.rng, {
+    const usedNames = this.namesInUse();
+    const make = (age: CatData['age'] | null, conditions: number) => {
+      const c = generateCat(this.data, this.rng, {
         id: this.newId('cat'),
         age,
         conditionCount: conditions,
@@ -622,9 +632,13 @@ export class GameState {
         tools: this.tools,
         surgery: this.hasClinicRoom('or'),
         pool: this.hasClinicRoom('pool'),
+        usedNames,
         clinicCase: !!def.clinic_case && age !== 'kitten',
         event: this.events.active?.id,
       });
+      usedNames.add(c.name); // súrodenci z rodinky sa nevolajú rovnako
+      return c;
+    };
     const cat = make(def.age, def.difficulty);
     const family = [cat];
     // Mačacia rodinka: mačiatka po mame (rovnaké plemeno a farba)
@@ -896,6 +910,7 @@ export class GameState {
       id: this.newId('hotel'),
       conditionCount: 0,
       now: this.now,
+      usedNames: this.namesInUse(),
     });
     // majiteľ o nej všetko povie – rysy sú známe
     for (const t of cat.traits) t.revealed = true;

@@ -6,6 +6,10 @@ https://dzizka.github.io/Meow-ambulance/
 
 > Stav: **predprodukcia** – pozri [ROADMAP](docs/ROADMAP.md)
 
+## Pre hráčov
+- Hrať: https://dzizka.github.io/Meow-ambulance/
+- Príručka hráča (wiki): https://dzizka.github.io/Meow-ambulance/wiki/
+
 ## Dokumentácia
 | Dokument | Obsah |
 |---|---|

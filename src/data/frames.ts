@@ -74,6 +74,5 @@ export const CLINIC_FRAMES = {
   pot_white: [329, 210, 13, 14],
   flowers_pink: [360, 209, 15, 15],
   bench_red: [265, 239, 46, 17],
-  tv_beach: [160, 262, 32, 26],
   shelf_books: [320, 160, 32, 32],
 } as const satisfies Record<string, FrameRect>;

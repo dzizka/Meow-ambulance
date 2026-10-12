@@ -9,9 +9,31 @@ import { loadTestData } from './loadData';
 const data = loadTestData();
 
 describe('Plemená a farby (GDD §4.4)', () => {
-  it('je 12 plemien a 15 povách', () => {
-    expect(data.breeds).toHaveLength(12);
+  it('je 23 plemien a 15 povách', () => {
+    expect(data.breeds).toHaveLength(23);
     expect(data.traits).toHaveLength(15);
+  });
+
+  it('domáce plemená ostávajú najčastejšie', () => {
+    const rng = new Rng(5);
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < 3000; i++) {
+      const b = generateCat(data, rng, { id: `c${i}` }).breedId;
+      counts[b] = (counts[b] ?? 0) + 1;
+    }
+    const domestic = (counts.domestic_short ?? 0) + (counts.domestic_long ?? 0);
+    expect(domestic / 3000).toBeGreaterThan(0.3);
+    for (const b of data.breeds) expect(counts[b.id] ?? 0).toBeGreaterThan(0);
+  });
+
+  it('meno sa neopakuje s mačkami v útulku', () => {
+    const rng = new Rng(9);
+    const used = new Set<string>();
+    for (let i = 0; i < 60; i++) {
+      const cat = generateCat(data, rng, { id: `n${i}`, usedNames: used });
+      expect(used.has(cat.name)).toBe(false);
+      used.add(cat.name);
+    }
   });
 
   it('plemeno s pevnou farbou má vždy svoju farbu, špeciálne farby inak nepadnú', () => {

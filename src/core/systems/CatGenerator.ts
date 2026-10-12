@@ -28,6 +28,8 @@ export interface CatOptions {
   clinicCase?: boolean;
   /** Práve prebiehajúca udalosť – iba vtedy padnú jej diagnózy. */
   event?: string;
+  /** Mená mačiek, ktoré sú práve v útulku – nové meno sa neopakuje. */
+  usedNames?: ReadonlySet<string>;
 }
 
 /** Vzácny znak: trojfarebný kocúr iba z trojfarebných, inak rôznofarebné oči alebo palčiaky. */
@@ -58,9 +60,14 @@ export function generateCat(data: GameData, rng: Rng, opts: CatOptions): CatData
   const age =
     opts.age ?? rng.weighted(Object.keys(AGE_WEIGHTS) as AgeGroup[], (a) => AGE_WEIGHTS[a]);
 
-  const coatNames = data.names.by_coat[coat.id] ?? [];
+  const used = opts.usedNames;
+  const fresh = (list: string[]) => (used ? list.filter((n) => !used.has(n)) : list);
+  const coatNames = fresh(data.names.by_coat[coat.id] ?? []);
+  const generic = fresh(data.names.generic);
   const name =
-    coatNames.length > 0 && rng.chance(0.3) ? rng.pick(coatNames) : rng.pick(data.names.generic);
+    coatNames.length > 0 && rng.chance(0.3)
+      ? rng.pick(coatNames)
+      : rng.pick(generic.length ? generic : data.names.generic);
 
   const traitCount = rng.chance(0.4) ? 2 : 1;
   const traits = rng.sample(data.traits, traitCount).map((t) => ({ id: t.id, revealed: false }));

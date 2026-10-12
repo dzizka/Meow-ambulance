@@ -194,7 +194,11 @@ Zvyšuje **Dôveru**. Účinnosť závisí od povahy:
 > Hráč spoznáva povahu skúšaním – ✨ pri úspechu, 💢 pri nevhodnej aktivite. Odhalená povaha sa zapíše do karty mačky.
 > Karta mačky → **O mačke → Čo má rada**: pri každej aktivite je zapísaná posledná reakcia (✨ má rada / 🙂 ide to / 💢 nebaví ju / ❔ ešte neskúšané); rovnaká značka je aj na tlačidlách v Opatere.
 
-### 4.4 Povahové rysy a plemená 🟢 MVP (15 rysov, 12 plemien)
+### 4.4 Povahové rysy a plemená 🟢 MVP (15 rysov, 23 plemien)
+**Plemená:** 12 pôvodných + 11 nových (sibírska – akákoľvek farba; s pevnou farbou: bombajská, kartuziánska, burmská, habešská, turecká angora, posvätná barmská, bengálska, egyptská mau, devon rex, turecká van). Nové sú vzácne (★4–5), takže domáce mačky ostávajú najčastejšie (~1/3). Grafika mačky sa riadi farbou, plemeno je v karte a v albume.
+
+**Mená:** 143 bežných + 99 podľa farby (6–9 pre každú farbu). Meno, ktoré už nosí mačka v útulku, v hoteli alebo medzi poslednými 20 adoptovanými, sa nepoužije znova; súrodenci z rodinky sa nevolajú rovnako.
+
 Mačka má 1–2 rysy, odhaľujú sa pri socializácii (aktivita, ktorá jej sedí / nesedí) alebo pri adopcii. Socializačné násobky sú v `traits.json`.
 
 | Rys | Účinok na hru | Hodí sa (adoptéri) | Nehodí sa |
@@ -328,10 +332,10 @@ Každý kus má 3 stupne (2. a 3. stupeň odomyká úroveň ★). Je ho vidieť 
 #### 6.1.3 Dekorácie a útulnosť 🟢
 Dekorácie sa kupujú jednotlivo a objavia sa na pevnom mieste v miestnosti. Každá pridá **útulnosť** (🛋️ bodov – iná ikona ako srdiečka ❤). Dáta: `decor.json` (zoradené podľa miestnosti a ceny).
 - **Obchod → 🪴 Dekorácie** má pre každú miestnosť rovnaký postup: výber miestnosti (Garáž / Kaviareň / Klinika 1.p / Hotel, pri každej útulnosť alebo 🔒), karta s útulnosťou, čo prináša a koľko je kúpené, dekorácie od najlacnejšej, pri garáži a kaviarni ešte **🎨 farba stien** (farby sa kupujú za ❤ v záložke Srdiečka, nastavujú sa tu).
-- **Rovnaký kus = rovnaká cena** vo všetkých miestnostiach: fotka 3 🛋️/25 €, kvety 3/30, polička 4/35, veľká rastlina 5/40, stojacia lampa 5/50, obraz/TV 6/60, zrkadlo/záclony/kreslo/lavička/bonsaj 6/70, koberec 8/90, veľké kreslo/pohovka 10/120.
+- **Rovnaký kus = rovnaká cena** vo všetkých miestnostiach: fotka 3 🛋️/25 €, kvety 3/30, polička 4/35, veľká rastlina 5/40, stojacia lampa 5/50, obraz 6/60, zrkadlo/záclony/kreslo/lavička/bonsaj 6/70, koberec 8/90, veľké kreslo/pohovka 10/120.
 - **Garáž** (7) → mačky rýchlejšie získavajú dôveru (+1 % za bod). Koberec v garáži je béžový, aby sa neopakoval červený koberec miestnosti.
 - **Kaviareň** (8) → hostia dávajú väčšie dary (+2 % za bod).
-- **Klinika 1.p** (7, od postavenia kliniky; čakáreň – kvety, lavička, kreslo, lampa, TV s morom, bonsaj) → pacienti sa zotavujú rýchlejšie (+1 % za bod).
+- **Klinika 1.p** (6, od postavenia kliniky; čakáreň – kvety, lavička, kreslo, lampa, bonsaj; televízor s morom bol odstránený – stojan na stene pôsobil zle) → pacienti sa zotavujú rýchlejšie (+1 % za bod).
 - **Hotel** (7, od postavenia hotela; hala – kvety na recepcii, obraz, koberec, lampa, kreslo, kožená pohovka, bonsaj) → hostia platia viac (+1 % za bod).
 - Niektoré dekorácie garáže a kaviarne odomyká úroveň ★.
 
@@ -425,7 +429,7 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 - Mriežka slotov: **plemená × farby/vzory** + špeciálne strany (vzácne diagnózy, udalosti, seniori).
 - Každá adoptovaná mačka = stránka: portrét pred/po, meno, povaha, príbeh, pohľadnice.
 - Percentá dokončenia a odmeny za dokončené strany (dekorácie, nové typy hlásení).
-- **84 políčok** (menu ☰ → Album): 8 bežných plemien × 10 farieb + 4 plemená s vlastnou farbou. Zapisuje sa prvá mačka každého políčka, ďalšie zvyšujú počítadlo ×N.
+- **104 políčok** (menu ☰ → Album): 9 plemien s akoukoľvek farbou × 10 farieb + 14 plemien s vlastnou farbou. Zapisuje sa prvá mačka každého políčka, ďalšie zvyšujú počítadlo ×N.
 
 ### 7.2 Vzácne mačky 🟢
 - Vzácne znaky (`balance.json → rare`): **rôznofarebné oči** (2 %), **palčiaky** – 6 prstov (2,5 %), **trojfarebný kocúr** (12 % trojfarebných mačiek). Od úrovne 4 (vzácne plemená) 2× častejšie.
