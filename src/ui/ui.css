@@ -1194,3 +1194,13 @@ body.minigame .toast:not(:last-child) {
 .like-row.unknown .like-val {
   color: var(--ui-dim);
 }
+
+/* Štítky hotových zákrokov v karte mačky (očkovaná, kastrovaná…) */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chips .chip {
+  margin-top: 0;
+}

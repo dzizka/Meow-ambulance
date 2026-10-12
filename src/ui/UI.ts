@@ -1086,7 +1086,7 @@ export class UI {
         out.push(
           el('p', { class: 'hint' }, t('UI_KEEP_FULL', { max: data.balance.residents.slots })),
         );
-      out.push(...this.shelterActions(cat), ...this.clinicActions(cat));
+      out.push(...this.statusChips(cat), ...this.shelterActions(cat), ...this.clinicActions(cat));
       return out;
     }
 
@@ -1151,8 +1151,18 @@ export class UI {
         ),
       );
     }
-    out.push(...this.shelterActions(cat), ...this.clinicActions(cat));
+    out.push(...this.statusChips(cat), ...this.shelterActions(cat), ...this.clinicActions(cat));
     return out;
+  }
+
+  /** Hotové zákroky ako štítky v jednom riadku: očkovaná, kastrovaná, po rehabilitácii. */
+  private statusChips(cat: CatData): HTMLElement[] {
+    if (cat.resident || cat.hotel) return [];
+    const chips: HTMLElement[] = [];
+    if (cat.vaccinated) chips.push(el('span', { class: 'chip good' }, `💉 ${t('UI_VACCINATED')}`));
+    if (cat.neutered) chips.push(el('span', { class: 'chip good' }, `✂️ ${t('UI_NEUTERED')}`));
+    if (cat.rehabbed) chips.push(el('span', { class: 'chip good' }, `🏊 ${t('UI_REHABBED')}`));
+    return chips.length ? [el('div', { class: 'chips' }, ...chips)] : [];
   }
 
   /** Klinika: kastrácia pred adopciou (GDD §6.5). */
@@ -1160,10 +1170,6 @@ export class UI {
     const s = this.state;
     if (cat.resident || cat.hotel) return [];
     const out: HTMLElement[] = [];
-    const chips: HTMLElement[] = [];
-    if (cat.neutered) chips.push(el('span', { class: 'chip good' }, `✂️ ${t('UI_NEUTERED')}`));
-    if (cat.rehabbed) chips.push(el('span', { class: 'chip good' }, `🏊 ${t('UI_REHABBED')}`));
-    if (chips.length) out.push(el('div', { class: 'chips' }, ...chips));
     const buttons: HTMLElement[] = [];
     if (s.canNeuter(cat)) {
       out.push(el('p', { class: 'hint' }, t('UI_NEUTER_HINT')));
@@ -1209,9 +1215,7 @@ export class UI {
     const s = this.state;
     if (!s.shelter.open || cat.resident) return [];
     const buttons: HTMLElement[] = [];
-    if (cat.vaccinated)
-      buttons.push(el('span', { class: 'chip good' }, `💉 ${t('UI_VACCINATED')}`));
-    else if (cat.conditions.every((c) => c.treated))
+    if (!cat.vaccinated && cat.conditions.every((c) => c.treated))
       buttons.push(
         button(`💉 ${t('UI_VACCINATE')}`, () => void this.doVaccinate(cat), {
           disabled: this.busy,
