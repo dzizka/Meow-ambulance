@@ -792,7 +792,6 @@
   "ACHD_WISHES": "Splň {n} želaní stálic",
   "DECOR_K_POT": "Črepník s kvetom",
   "DECOR_K_FLOWERS": "Kvety v kvetináči",
-  "DECOR_K_TV": "Televízor s morom",
   "DECOR_K_LAMP": "Stojacia lampa",
   "DECOR_K_BENCH": "Lavička do čakárne",
   "DECOR_K_ARMCHAIR": "Modré kreslo",
@@ -812,5 +811,17 @@
   "UI_DECOR_OWNED": "kúpené {n}/{total}",
   "UI_DECOR_ROOM_LOCKED": "Miestnosť „{room}“ ešte nemáš postavenú – zariadiť ju môžeš, keď ju postavíš (Obchod → Stavby).",
   "UI_WALLS_BUY_HINT": "Farby stien kúpiš za ❤ v záložke Srdiečka.",
-  "UI_WALLS_APPLY_HINT": "Kúpenú farbu nastavíš v Dekoráciách pri garáži alebo kaviarni."
+  "UI_WALLS_APPLY_HINT": "Kúpenú farbu nastavíš v Dekoráciách pri garáži alebo kaviarni.",
+  "BREED_SIBERIAN": "sibírska",
+  "BREED_BOMBAY": "bombajská",
+  "BREED_CHARTREUX": "kartuziánska",
+  "BREED_BURMESE": "burmská",
+  "BREED_ABYSSINIAN": "habešská",
+  "BREED_TURKISH_ANGORA": "turecká angora",
+  "BREED_BIRMAN": "posvätná barmská",
+  "BREED_BENGAL": "bengálska",
+  "BREED_EGYPTIAN_MAU": "egyptská mau",
+  "BREED_DEVON_REX": "devon rex",
+  "BREED_TURKISH_VAN": "turecká van",
+  "TITLE_WIKI": "Príručka hráča"
 }

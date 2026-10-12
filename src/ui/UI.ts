@@ -19,7 +19,7 @@ import { Rng } from '../core/Rng';
 import { lang, setLang, t } from '../i18n/t';
 import { button, el } from './dom';
 import { DevMenu } from './DevMenu';
-import { exitApp, isNative, onBackButton } from '../platform';
+import { exitApp, isNative, onBackButton, openWiki } from '../platform';
 import { computeLayout, type Room } from '../scenes/layout';
 
 /** Čo rozhranie potrebuje od hernej scény. */
@@ -381,6 +381,7 @@ export class UI {
           class: 'btn primary big',
         }),
         button(`⚙️ ${t('TITLE_SETTINGS')}`, () => this.setTitleView('settings')),
+        button(`📖 ${t('TITLE_WIKI')}`, () => openWiki(lang)),
         ...(this.started ? [button(`↺ ${t('UI_NEW_GAME')}`, () => this.setTitleView('new'))] : []),
         ...(isNative ? [button(`🚪 ${t('TITLE_EXIT')}`, () => this.quit())] : []),
         el('p', { class: 'hint' }, t('TITLE_SAVED')),
@@ -427,6 +428,7 @@ export class UI {
         { class: 'hint' },
         t('UI_STATS_LINE', { r: s.counters.rescued, a: s.counters.adopted }),
       ),
+      button(`📖 ${t('TITLE_WIKI')}`, () => openWiki(lang)),
       button(`🏠 ${t('UI_MAIN_MENU')}`, () => {
         this.game.saveNow();
         this.closeModal();

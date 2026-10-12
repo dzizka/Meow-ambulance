@@ -234,18 +234,6 @@
       "footprint": 4
     },
     {
-      "id": "k_tv",
-      "name_key": "DECOR_K_TV",
-      "room": "clinic",
-      "sheet": "clinic",
-      "frame": "tv_beach",
-      "layer": "wall",
-      "x": 262,
-      "y": 22,
-      "cozy": 5,
-      "price": 60
-    },
-    {
       "id": "k_bench",
       "name_key": "DECOR_K_BENCH",
       "room": "clinic",

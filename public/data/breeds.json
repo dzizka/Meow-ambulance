@@ -70,6 +70,75 @@
       "rarity": 4,
       "coat": "hairless",
       "coat_care": "none"
+    },
+    {
+      "id": "siberian",
+      "name_key": "BREED_SIBERIAN",
+      "rarity": 3,
+      "coat_care": "long"
+    },
+    {
+      "id": "bombay",
+      "name_key": "BREED_BOMBAY",
+      "rarity": 4,
+      "coat": "black"
+    },
+    {
+      "id": "chartreux",
+      "name_key": "BREED_CHARTREUX",
+      "rarity": 4,
+      "coat": "blue"
+    },
+    {
+      "id": "burmese",
+      "name_key": "BREED_BURMESE",
+      "rarity": 4,
+      "coat": "chocolate"
+    },
+    {
+      "id": "abyssinian",
+      "name_key": "BREED_ABYSSINIAN",
+      "rarity": 4,
+      "coat": "orange"
+    },
+    {
+      "id": "turkish_angora",
+      "name_key": "BREED_TURKISH_ANGORA",
+      "rarity": 4,
+      "coat": "white",
+      "coat_care": "long"
+    },
+    {
+      "id": "birman",
+      "name_key": "BREED_BIRMAN",
+      "rarity": 5,
+      "coat": "colorpoint",
+      "coat_care": "long"
+    },
+    {
+      "id": "bengal",
+      "name_key": "BREED_BENGAL",
+      "rarity": 5,
+      "coat": "tabby"
+    },
+    {
+      "id": "egyptian_mau",
+      "name_key": "BREED_EGYPTIAN_MAU",
+      "rarity": 5,
+      "coat": "grey"
+    },
+    {
+      "id": "devon_rex",
+      "name_key": "BREED_DEVON_REX",
+      "rarity": 5,
+      "coat": "cream"
+    },
+    {
+      "id": "turkish_van",
+      "name_key": "BREED_TURKISH_VAN",
+      "rarity": 5,
+      "coat": "white",
+      "coat_care": "long"
     }
   ],
   "coats": [
@@ -77,82 +146,125 @@
       "id": "black",
       "name_key": "COAT_BLACK",
       "rarity": 1,
-      "sprites": ["black_0", "black_1", "black_2", "black_3"]
+      "sprites": [
+        "black_0",
+        "black_1",
+        "black_2",
+        "black_3"
+      ]
     },
     {
       "id": "orange",
       "name_key": "COAT_ORANGE",
       "rarity": 1,
-      "sprites": ["orange_0", "orange_2", "gold_0"]
+      "sprites": [
+        "orange_0",
+        "orange_2",
+        "gold_0"
+      ]
     },
     {
       "id": "tabby",
       "name_key": "COAT_TABBY",
       "rarity": 1,
-      "sprites": ["brown_7", "grey_2", "orange_3"]
+      "sprites": [
+        "brown_7",
+        "grey_2",
+        "orange_3"
+      ]
     },
     {
       "id": "grey",
       "name_key": "COAT_GREY",
       "rarity": 2,
-      "sprites": ["grey_0", "grey_1"]
+      "sprites": [
+        "grey_0",
+        "grey_1"
+      ]
     },
     {
       "id": "tuxedo",
       "name_key": "COAT_TUXEDO",
       "rarity": 2,
-      "sprites": ["black_4"]
+      "sprites": [
+        "black_4"
+      ]
     },
     {
       "id": "calico",
       "name_key": "COAT_CALICO",
       "rarity": 2,
-      "sprites": ["calico_0"]
+      "sprites": [
+        "calico_0"
+      ]
     },
     {
       "id": "cream",
       "name_key": "COAT_CREAM",
       "rarity": 2,
-      "sprites": ["creme_0", "brown_8"]
+      "sprites": [
+        "creme_0",
+        "brown_8"
+      ]
     },
     {
       "id": "white",
       "name_key": "COAT_WHITE",
       "rarity": 3,
-      "sprites": ["white_0", "white_grey_0"]
+      "sprites": [
+        "white_0",
+        "white_grey_0"
+      ]
     },
     {
       "id": "chocolate",
       "name_key": "COAT_CHOCOLATE",
       "rarity": 3,
-      "sprites": ["brown_0", "brown_1", "brown_3", "brown_6"]
+      "sprites": [
+        "brown_0",
+        "brown_1",
+        "brown_3",
+        "brown_6"
+      ]
     },
     {
       "id": "blue",
       "name_key": "COAT_BLUE",
       "rarity": 3,
-      "sprites": ["blue_0", "blue_1", "blue_2", "blue_3"]
+      "sprites": [
+        "blue_0",
+        "blue_1",
+        "blue_2",
+        "blue_3"
+      ]
     },
     {
       "id": "seal_point",
       "name_key": "COAT_SEAL_POINT",
       "rarity": 4,
       "special": true,
-      "sprites": ["seal_point_0"]
+      "sprites": [
+        "seal_point_0"
+      ]
     },
     {
       "id": "colorpoint",
       "name_key": "COAT_COLORPOINT",
       "rarity": 4,
       "special": true,
-      "sprites": ["creme_1"]
+      "sprites": [
+        "creme_1"
+      ]
     },
     {
       "id": "hairless",
       "name_key": "COAT_HAIRLESS",
       "rarity": 4,
       "special": true,
-      "sprites": ["hairless_0", "hairless_1"]
+      "sprites": [
+        "hairless_0",
+        "hairless_1"
+      ]
     }
   ]
 }

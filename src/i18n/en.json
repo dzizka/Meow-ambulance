@@ -792,7 +792,6 @@
   "ACHD_WISHES": "Grant {n} resident wishes",
   "DECOR_K_POT": "Potted flower",
   "DECOR_K_FLOWERS": "Flower pot",
-  "DECOR_K_TV": "Seaside TV",
   "DECOR_K_LAMP": "Floor lamp",
   "DECOR_K_BENCH": "Waiting-room bench",
   "DECOR_K_ARMCHAIR": "Blue armchair",
@@ -812,5 +811,17 @@
   "UI_DECOR_OWNED": "owned {n}/{total}",
   "UI_DECOR_ROOM_LOCKED": "You haven't built “{room}” yet – you can furnish it once it's built (Shop → Build).",
   "UI_WALLS_BUY_HINT": "Wall colours are bought with ❤ in the Hearts tab.",
-  "UI_WALLS_APPLY_HINT": "Apply a bought colour in Decorations, under the garage or the café."
+  "UI_WALLS_APPLY_HINT": "Apply a bought colour in Decorations, under the garage or the café.",
+  "BREED_SIBERIAN": "Siberian",
+  "BREED_BOMBAY": "Bombay",
+  "BREED_CHARTREUX": "Chartreux",
+  "BREED_BURMESE": "Burmese",
+  "BREED_ABYSSINIAN": "Abyssinian",
+  "BREED_TURKISH_ANGORA": "Turkish Angora",
+  "BREED_BIRMAN": "Birman",
+  "BREED_BENGAL": "Bengal",
+  "BREED_EGYPTIAN_MAU": "Egyptian Mau",
+  "BREED_DEVON_REX": "Devon Rex",
+  "BREED_TURKISH_VAN": "Turkish Van",
+  "TITLE_WIKI": "Player guide"
 }

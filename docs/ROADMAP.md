@@ -70,6 +70,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Kastračné kampane – nekonečný sink peňazí (Mesto → Okolie → Kraj)
 - [x] Prestíž kampaní (nový program, 🏅), Deň adopcií a želania stálic za ❤
 - [x] Dekorácie aj pre kliniku a hotel, jednotný obchod s dekoráciami po miestnostiach
+- [x] Viac mien (242) bez opakovania v útulku, 23 plemien, album 104 políčok
+- [x] Príručka hráča (wiki) generovaná z herných dát
 - [ ] PC build cez Tauri
 
 ## M3 – Komunitný útulok (Fáza 2)

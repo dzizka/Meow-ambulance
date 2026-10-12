@@ -188,6 +188,11 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Nové výrezy v `frames.ts` (CLINIC_FRAMES: pohovka, kreslá, bonsaj, kvety, lavička, TV; INTERIOR_FRAMES: `carpet`). Výrezy sa overujú obrázkom hárku s vyznačenými rámčekmi (súradnice z hľadania súvislých nepriehľadných oblastí).
 - UI: `UI.decorContent` (výber miestnosti `decorRoom`), `wallPicker` – nastavenie farby stien je v Dekoráciách, nákup v ❤ Srdiečka.
 
+## Príručka hráča (wiki)
+- `scripts/build-wiki.mjs` – po `vite build` (súčasť `npm run build`) vygeneruje z herných dát a prekladov `dist/wiki/index.html` (SK) a `dist/wiki/en/index.html` (EN): plemená, farby (s obrázkami), diagnózy, povahy, záujemcovia, úrovne, budovy, vybavenie, dekorácie, personál, výzvy, úspechy, udalosti, kampane, srdiečka, tipy; hľadanie v stránke. Nasadí sa s hrou na GitHub Pages: https://dzizka.github.io/Meow-ambulance/wiki/
+- V hre: tlačidlo „📖 Príručka hráča“ v hlavnom menu a v pauze (`openWiki` v `platform.ts` – na Androide sa otvorí online stránka v prehliadači).
+- Ručne písané časti (úvod, tipy) sú v objekte `TEXT` v skripte; všetko ostatné je z dát, takže sa nikdy nerozíde s hrou.
+
 ## Podmodul s assetmi
 - Klonovanie: `git clone --recurse-submodules …`, aktualizácia: `git submodule update --remote public/assets`.
 - Nové assety sa commitujú **najprv** v podmodule (`public/assets/`), potom sa vo verejnom repozitári commitne posun podmodulu.
