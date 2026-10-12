@@ -90,6 +90,23 @@
     "rating_bad": 2.7,
     "rating_effect": 0.1
   },
+  "campaigns": {
+    "_comment": "Kastračné kampane (GDD §7.7): nekonečný sink peňazí. Cena n-tej kampane = base_price × growth^n.",
+    "per_district": 3,
+    "districts_per_tier": 6,
+    "tiers": 3,
+    "base_price": 800,
+    "growth": 1.18,
+    "duration_s": 120,
+    "duration_step_s": 15,
+    "duration_max_s": 480,
+    "rep": 6,
+    "rep_step": 1,
+    "hearts": 2,
+    "district_hearts": 6,
+    "adopter_bonus_per_district": 0.03,
+    "adopter_bonus_max": 0.3
+  },
   "levels": [
     {
       "rep": 0,

@@ -174,6 +174,10 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Zuzka sa načítava ako bežný hárok `personKey(ZUZKA_SHEET)` (má chôdzu).
 - Hodnotenie kaviarne: `CafeState.reviews` (voliteľné, bez migrácie), `GameState.reviewFor`, `cafeRating`, `ratingMult` (interval príchodov); udalosť `guestLeft` nesie `review`.
 
+## Kastračné kampane
+- `GameState.campaigns` (save v16, `MIGRATIONS[15]`): `done` + `active { endsAt, price }`. `startCampaign`, `advanceCampaign` (v `tick` aj `applyOffline`), `campaignPrice` (exponent so stropom 150), `campaignDistrict`, `campaignAdopterBonus` (násobí interval záujemcov). Udalosti `campaignStarted`, `campaignDone { district, cleared }`, počítadlo `counters.campaigns`.
+- Názvy obvodov: `CITY_TIER_<0–2>`, `CITY_D_<úroveň>_<0–5>`, `UI.districtName` (po poslednej úrovni ďalšie kolo).
+
 ## Podmodul s assetmi
 - Klonovanie: `git clone --recurse-submodules …`, aktualizácia: `git submodule update --remote public/assets`.
 - Nové assety sa commitujú **najprv** v podmodule (`public/assets/`), potom sa vo verejnom repozitári commitne posun podmodulu.

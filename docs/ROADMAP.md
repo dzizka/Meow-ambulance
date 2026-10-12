@@ -67,6 +67,7 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Pošta: nástenka, spomienky, orezávanie starých pohľadníc
 - [x] Minihry pre všetky vyšetrenia (ruka, teplomer, stetoskop, otoskop) a pre česanie, maškrtu z ruky, zohriatie
 - [x] Živé prostredie: postavičky dýchajú a obzerajú sa, ťuknutie na postavičku = rada, hodnotenie kaviarne
+- [x] Kastračné kampane – nekonečný sink peňazí (Mesto → Okolie → Kraj)
 - [ ] PC build cez Tauri
 
 ## M3 – Komunitný útulok (Fáza 2)

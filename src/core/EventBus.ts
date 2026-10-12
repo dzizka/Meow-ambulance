@@ -81,6 +81,8 @@ export interface GameEvents {
   };
   guestArrived: { guest: CafeGuest };
   guestServed: { guest: CafeGuest };
+  campaignStarted: { district: number };
+  campaignDone: { district: number; cleared: boolean };
   guestLeft: { guest: CafeGuest; amount: number; review: CafeReview };
   levelUp: { level: number; def: LevelDef };
   equipmentBought: { id: string; level: number };

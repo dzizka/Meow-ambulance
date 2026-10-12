@@ -168,6 +168,27 @@
       "kind": "buildings",
       "target": 8,
       "money": 1000
+    },
+    {
+      "id": "campaign_1",
+      "icon": "🏘️",
+      "kind": "campaigns",
+      "target": 1,
+      "money": 100
+    },
+    {
+      "id": "campaign_district",
+      "icon": "🏙️",
+      "kind": "campaigns",
+      "target": 3,
+      "money": 300
+    },
+    {
+      "id": "campaign_city",
+      "icon": "🌆",
+      "kind": "campaigns",
+      "target": 18,
+      "money": 2000
     }
   ]
 }

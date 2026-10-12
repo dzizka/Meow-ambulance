@@ -1228,3 +1228,38 @@ body.minigame .toast:not(:last-child) {
 .review .sprite {
   position: static;
 }
+
+/* ---------- Kastračné kampane (Mesto) ---------- */
+.campaign-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--ui-bg-deep);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.campaign-card .hint {
+  margin: 2px 0 0;
+  letter-spacing: 1px;
+}
+.districts {
+  display: grid;
+  gap: 4px;
+}
+.district {
+  display: flex;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--ui-bg-deep);
+  font-size: 14px;
+}
+.district.done {
+  color: var(--ui-good);
+}
+.district.now {
+  outline: 1px solid var(--ui-accent);
+}
+.district.todo {
+  color: var(--ui-dim);
+}
