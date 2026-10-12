@@ -189,6 +189,20 @@
       "kind": "campaigns",
       "target": 18,
       "money": 2000
+    },
+    {
+      "id": "wish_1",
+      "icon": "💭",
+      "kind": "wishes",
+      "target": 1,
+      "money": 50
+    },
+    {
+      "id": "wish_25",
+      "icon": "🧚",
+      "kind": "wishes",
+      "target": 25,
+      "money": 500
     }
   ]
 }

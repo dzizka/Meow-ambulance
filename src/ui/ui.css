@@ -1263,3 +1263,41 @@ body.minigame .toast:not(:last-child) {
 .district.todo {
   color: var(--ui-dim);
 }
+
+/* ---------- Srdiečka: Deň adopcií, želania, prestíž ---------- */
+.adoption-day {
+  display: grid;
+  gap: 6px;
+}
+.adoption-day.on {
+  color: var(--ui-good);
+  font-weight: 700;
+  margin: 0;
+}
+.adoption-day .hint {
+  margin: 0;
+}
+.wish {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--ui-bg-deep);
+  border: 1px solid var(--ui-accent);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.wish p {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+.prestige {
+  display: grid;
+  gap: 6px;
+  background: var(--ui-bg-deep);
+  border: 1px solid var(--ui-warn);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.prestige .hint {
+  margin: 0;
+}

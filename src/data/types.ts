@@ -246,6 +246,10 @@ export interface BalanceData {
     district_hearts: number;
     adopter_bonus_per_district: number;
     adopter_bonus_max: number;
+    /** Prestíž (nový program): cena +30 %, odmeny +25 %, príspevky z adopcií +10 % za bod. */
+    prestige_price: number;
+    prestige_reward: number;
+    prestige_fee: number;
   };
 }
 
@@ -266,6 +270,7 @@ export interface Counters {
   hotel: number;
   lectures: number;
   campaigns: number;
+  wishes: number;
 }
 
 export type ChallengeKind = keyof Counters | 'residents';
@@ -379,6 +384,11 @@ export interface CatData {
   lastSocialAt: number;
   /** Ako mačka reagovala na jednotlivé aktivity (zobrazí sa v karte „O mačke"). */
   reactions?: Partial<Record<SocialActivity, 'love' | 'ok' | 'meh'>>;
+  /** Stálica: aktuálne želanie (id z cosmetics.wishes) a kedy príde ďalšie. */
+  wish?: string | null;
+  nextWishAt?: number;
+  /** Puto so stálicou (0–bond_max) – rastie plnením želaní. */
+  bond?: number;
   lastFedAt: number;
   /** Odkiaľ prišla (id hlásenia). */
   reportId: string;
@@ -448,6 +458,10 @@ export interface CafeState {
 /** Kastračné kampane: koľko je hotových a ktorá práve beží. */
 export interface CampaignState {
   done: number;
+  /** Body prestíže (🏅) – za každú dokončenú úroveň pri „novom programe". */
+  prestige?: number;
+  /** Všetky vyčistené obvody naprieč programami (bonus k záujemcom). */
+  cleared?: number;
   /** Bežiaca kampaň – kedy skončí (ms simulácie). */
   active: { endsAt: number; price: number } | null;
 }
@@ -539,6 +553,28 @@ export interface CosmeticsData {
     rare: number;
   };
   walls: WallColorDef[];
+  /** Deň adopcií za srdiečka (veľa záujemcov naraz). */
+  adoption_day: {
+    price: number;
+    duration_s: number;
+    cooldown_s: number;
+    interval_mult: number;
+    extra_waiting: number;
+  };
+  wish_rules: {
+    interval_s: [number, number];
+    satisfaction: number;
+    bond_max: number;
+    bond_donation: number;
+  };
+  wishes: WishDef[];
+}
+
+/** Želanie stálice (GDD §7.8) – splní sa za ❤, prehĺbi puto. */
+export interface WishDef {
+  id: string;
+  icon: string;
+  price: number;
 }
 
 /** Úspech (GDD §7.5). */

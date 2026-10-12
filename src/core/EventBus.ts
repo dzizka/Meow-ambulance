@@ -10,6 +10,7 @@ import type {
   LevelDef,
   Report,
   StaffId,
+  WishDef,
 } from '../data/types';
 
 /** Súhrn toho, čo sa udialo, kým bola hra zatvorená (GDD §2.3). */
@@ -82,6 +83,10 @@ export interface GameEvents {
   guestArrived: { guest: CafeGuest };
   guestServed: { guest: CafeGuest };
   campaignStarted: { district: number };
+  campaignPrestige: { prestige: number; gained: number };
+  adoptionDay: { active: boolean };
+  wishAppeared: { cat: CatData };
+  wishGranted: { cat: CatData; def: WishDef };
   campaignDone: { district: number; cleared: boolean };
   guestLeft: { guest: CafeGuest; amount: number; review: CafeReview };
   levelUp: { level: number; def: LevelDef };

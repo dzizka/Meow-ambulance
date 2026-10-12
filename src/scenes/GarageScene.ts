@@ -164,7 +164,9 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       this.spawnCat(cat, area.x + 20 + ((i * 47) % span), area.centerY);
     });
     this.listen();
-    this.setEventFx(this.state.events.active?.id ?? null);
+    this.setEventFx(
+      this.state.adoptionDayActive ? 'openday' : (this.state.events.active?.id ?? null),
+    );
     this.applyWall('garage');
     this.applyWall('cafe');
 
@@ -661,6 +663,21 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     });
     bus.on('eventEnded', () => {
       this.setEventFx(null);
+      save();
+    });
+    // Deň adopcií za ❤ – girlandy ako na dni otvorených dverí
+    bus.on('adoptionDay', ({ active }) => {
+      this.setEventFx(active ? 'openday' : (this.state.events.active?.id ?? null));
+      save();
+    });
+    // splnené želanie stálice – iskričky a srdiečka nad mačkou
+    bus.on('wishGranted', ({ cat }) => {
+      const sprite = this.sprites.get(cat.id);
+      if (sprite) {
+        this.burst(sprite.x, sprite.y - 12, 10);
+        this.cafe?.heartsAt(sprite.x, sprite.y - 20);
+      }
+      this.playSound('mewPurr', 0.6);
       save();
     });
     bus.on('tripArrived', ({ trip }) => {
