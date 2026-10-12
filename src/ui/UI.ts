@@ -128,6 +128,7 @@ const SOCIAL: {
   },
 ];
 
+const REACTION_ICON = { love: '✨', ok: '🙂', meh: '💢' } as const;
 const STAT_COLORS: Record<keyof CatStats, string> = {
   health: 'var(--ui-bad)',
   cleanliness: 'var(--ui-info)',
@@ -1246,9 +1247,14 @@ export class UI {
     const feedLeft = Math.ceil(s.feedCooldownLeft(cat.id) / 1000);
     const care = el('div', { class: 'actions' });
     for (const a of SOCIAL) {
-      const b = button(`${a.icon} ${t(a.key)}`, () => void this.doSocial(cat, a), {
-        disabled: this.busy || socialLeft > 0,
-      });
+      const r = cat.reactions?.[a.id];
+      const b = button(
+        `${a.icon} ${t(a.key)}${r ? ` ${REACTION_ICON[r]}` : ''}`,
+        () => void this.doSocial(cat, a),
+        {
+          disabled: this.busy || socialLeft > 0,
+        },
+      );
       if (socialLeft > 0) b.append(el('small', {}, t('UI_RESTING', { s: socialLeft })));
       care.append(b);
     }
@@ -1337,6 +1343,7 @@ export class UI {
         hidden > 0 ? el('span', { class: 'muted' }, ` ${t('UI_UNKNOWN')}`) : '',
       ),
       el('p', { class: 'hint' }, t('UI_TRAITS_HINT')),
+      ...this.likesSection(cat),
       cat.clinicCase ? el('p', { class: 'hint' }, `💗 ${t('UI_CLINIC_CASE')}`) : el('span'),
       cat.special
         ? el(
@@ -1348,6 +1355,32 @@ export class UI {
       report
         ? el('p', { class: 'hint' }, t('UI_FOUND_AT', { where: t(report.name_key) }))
         : el('span'),
+    ];
+  }
+
+  /** Čo má mačka rada – podľa toho, ako reagovala na aktivity (GDD §4.3). */
+  private likesSection(cat: CatData): HTMLElement[] {
+    const r = cat.reactions ?? {};
+    const rows = SOCIAL.map((a) => {
+      const v = r[a.id];
+      return el(
+        'div',
+        { class: `like-row ${v ?? 'unknown'}` },
+        el('span', {}, `${a.icon} ${t(a.key)}`),
+        el(
+          'span',
+          { class: 'like-val' },
+          v
+            ? `${REACTION_ICON[v]} ${t(`UI_LIKE_${v.toUpperCase()}`)}`
+            : `❔ ${t('UI_LIKE_UNTRIED')}`,
+        ),
+      );
+    });
+    const tried = SOCIAL.filter((a) => r[a.id]).length;
+    return [
+      el('h3', {}, t('UI_LIKES')),
+      el('div', { class: 'likes' }, ...rows),
+      tried < SOCIAL.length ? el('p', { class: 'hint' }, t('UI_LIKES_HINT')) : el('span'),
     ];
   }
 

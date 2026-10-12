@@ -82,6 +82,7 @@ export function socialize(
   });
   cat.lastSocialAt = now;
   const reaction = mult > 1.05 ? 'love' : mult < 0.95 ? 'meh' : 'ok';
+  (cat.reactions ??= {})[activity] = reaction;
   return { trustGain: gain, reaction, revealed };
 }
 

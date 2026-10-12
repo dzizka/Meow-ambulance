@@ -690,5 +690,11 @@
   "MG_TREAT_HINT": "Slowly bring the fish to the cat's mouth – quick moves scare the cat.",
   "MG_TOO_FAST": "Slower!",
   "MG_WARM_HINT": "Rub the cat in gentle circles until it's warm again.",
-  "MG_WARM_DONE": "Toasty!"
+  "MG_WARM_DONE": "Toasty!",
+  "UI_LIKES": "Likes",
+  "UI_LIKE_LOVE": "loves it",
+  "UI_LIKE_OK": "it's fine",
+  "UI_LIKE_MEH": "not a fan",
+  "UI_LIKE_UNTRIED": "not tried yet",
+  "UI_LIKES_HINT": "Try activities in the Care tab – the cat's reaction will be noted here."
 }

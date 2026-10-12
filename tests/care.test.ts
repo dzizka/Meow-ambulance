@@ -75,7 +75,8 @@ describe('Starostlivosť', () => {
     expect(cat.stats.trust).toBeGreaterThan(10 + data.balance.care.social_base_trust);
     expect(Care.socialize(cat, 'feather', 2, 1000, data)).toBeNull();
     const later = data.balance.care.social_cooldown_s * 1000;
-    expect(Care.socialize(cat, 'feather', 2, later, data)?.reaction).toBe('meh');
+    expect(Care.socialize(cat, 'feather', 2, later, data)?.reaction).toBe('meh'); // reakcie sa zapamätajú – karta „O mačke" ukáže, čo má rada
+    expect(cat.reactions).toEqual({ sit_quietly: 'love', feather: 'meh' });
   });
 
   it('kŕmenie má prestávku', () => {
