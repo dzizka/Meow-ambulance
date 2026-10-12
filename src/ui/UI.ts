@@ -544,12 +544,8 @@ export class UI {
     const s = this.state;
     const phaseIcon = { night: '🌙', morning: '🌅', day: '☀️', evening: '🌆' }[s.dayPhase];
     this.clockPill.textContent = `${phaseIcon} ${s.clock}`;
-    const rate = s.donationsPerMinute;
-    this.moneyPill.replaceChildren(
-      `${Math.floor(s.money)} €`,
-      rate > 0 ? el('small', {}, t('UI_PER_MIN', { n: round1(rate) })) : '',
-    );
-    this.repPill.replaceChildren(`★ ${s.reputation}`, el('small', {}, ` · ${s.level + 1}`));
+    this.moneyPill.textContent = `${Math.floor(s.money)} €`;
+    this.repPill.textContent = `★ ${s.reputation}`;
     this.setBadge(this.badges.reports, s.reports.length);
     this.setBadge(this.badges.visitors, s.adopters.length);
     this.setBadge(this.badges.menu, s.claimableChallenges + this.unseenPostcards);

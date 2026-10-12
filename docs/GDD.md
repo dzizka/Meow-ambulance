@@ -543,6 +543,7 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 - **Hlavné menu** 🟢 pri spustení: logo, ▶ Hrať / Pokračovať, ⚙️ Nastavenia (zvuk, jazyk), ↺ Nová hra (s potvrdením), 🚪 Ukončiť hru (iba Android). Herný čas kým je menu otvorené stojí.
 - **Pauza** 🟢 – tlačidlo ⏸ v hornom paneli (na PC aj Escape, na Androide tlačidlo Späť): Pokračovať, zvuk, jazyk, štatistiky, 🏠 Hlavné menu, 🚪 Ukončiť hru (Android, s potvrdením). Čas v hre stojí.
 - **Tlačidlo Späť (Android)** zavrie to, čo je navrchu: minihru, okno, výber mačky; inak otvorí pauzu. V hlavnom menu hru ukončí. Hra sa ukladá sama, ukončenie nič nestratí.
+- **Horný panel** ukazuje iba sumu € a ★ – bez priebežných darov za minútu a bez čísla úrovne (úroveň a jej názov sú v Obchode). Dary stálic bežia ďalej, len sa nevypisujú.
 - Menu ☰ obsahuje herný obsah: Výzvy, Úspechy, Album, Pohľadnice, Obchod.
 - **Živé prostredie** 🟢: postavičky dýchajú, obzerajú sa, prešľapujú (Zuzka, baristka, recepčná) a občas im nad hlavou vyskočí ikonka (telefón, šálka, srdiečko); hostia v kaviarni a deti na prednáške sa obzerajú. Para z hrnčekov v kaviarni, rastliny sa jemne hojdajú, cez deň prach v svetle garáže a motýle vo výbehu.
 - **Písmo:** všade čitateľné Nunito (nadpisy hrubším rezom). Pixelové písmo sa pri malých veľkostiach rozmazávalo.
