@@ -1358,3 +1358,12 @@ body.minigame .toast:not(:last-child) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+.rating-tips {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--ui-warn);
+}
+.rating-tips li {
+  margin: 2px 0;
+}

@@ -61,4 +61,23 @@ describe('Hodnotenie kaviarne (GDD §5.5)', () => {
     }));
     expect(s.ratingMult).toBeCloseTo(1 + c.rating_effect);
   });
+
+  it('zlé hodnotenia postupne vypadnú – dobrou obsluhou sa dá dostať na čistých 5 ★', () => {
+    const s = cafeWithGuest(11);
+    s.cafe.reviews = Array.from({ length: c.reviews_keep }, () => ({
+      stars: 1,
+      key: 'REVIEW_NOT_SERVED',
+      cat: '',
+      sprite: '',
+    }));
+    expect(s.cafeRating).toBe(1);
+    // každý ďalší hosť: obslúžený hráčom, stálice spokojné
+    for (let i = 0; i < 400 && (s.cafe.reviews ?? []).some((r) => r.stars < 5); i++) {
+      for (const g of s.cafe.guests) if (!g.served) s.serveGuest(g.id);
+      s.residents.forEach((cat) => (cat.stats.satisfaction = 100));
+      s.tick(5000);
+    }
+    expect(s.cafeRating).toBe(5);
+    expect(s.cafe.reviews).toHaveLength(c.reviews_keep);
+  });
 });
