@@ -15,6 +15,7 @@ import type {
   DecorRoom,
   DiagnosticTool,
   SocialActivity,
+  StoryBeat,
 } from '../data/types';
 import { generateCat } from '../core/systems/CatGenerator';
 import { Rng } from '../core/Rng';
@@ -237,7 +238,8 @@ function postcardText(
     const own = def
       ? [1, 2].map((n) => `POSTCARD_A_${def.id.toUpperCase()}_${n}`).filter(hasText)
       : [];
-    if (rec.score >= perfectAt && own.length) keys = [...own, ...own, ...keys];
+    if (def?.story && own.length) keys = own;
+    else if (rec.score >= perfectAt && own.length) keys = [...own, ...own, ...keys];
   }
   const main = t(keys[roll(keys.length, 0)] ?? keys[0]!, vars);
   const traits = rec.cat.traits.map((x) => `POSTCARD_PS_${x.id.toUpperCase()}`).filter(hasText);
@@ -283,7 +285,11 @@ export class UI {
   private busy = false;
   private muted = false;
   private modalKind:
-    'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | 'event' | 'pause' | null = null;
+    'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | 'event' | 'pause' | 'story' | null =
+    null;
+  /** Príbeh (GDD §8): práve zobrazená scénka a riadok. */
+  private storyBeat: StoryBeat | null = null;
+  private storyLine = 0;
   /** Hlavné menu (úvodná obrazovka) – ukáže sa pri spustení a z pauzy. */
   private title = el('div', { class: 'title-screen', role: 'dialog', 'aria-modal': 'true' });
   private titleView: 'main' | 'settings' | 'new' | 'backup' = 'main';
@@ -350,7 +356,8 @@ export class UI {
     );
     document.body.append(this.root);
     this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.closeModal();
+      // scénka príbehu sa nezavrie omylom ťuknutím vedľa (inak by sa hneď ukázala znova)
+      if (e.target === this.modal && this.modalKind !== 'story') this.closeModal();
     });
     this.subscribe();
     this.layout();
@@ -597,7 +604,8 @@ export class UI {
       if (this.modalKind === 'pause' && this.confirmExit) {
         this.confirmExit = false;
         this.renderModal();
-      } else this.closeModal();
+      } else if (this.modalKind === 'story') this.finishStory();
+      else this.closeModal();
       return;
     }
     if (this.selectedId) {
@@ -924,6 +932,7 @@ export class UI {
 
   private tick(): void {
     this.updateHud();
+    this.maybeShowStory();
     // Kaviareň v noci zatvára a ráno otvára (GDD §5.5)
     const open = this.state.cafeOpenNow;
     if (this.cafeWasOpen !== null && open !== this.cafeWasOpen && this.state.cafe.open) {
@@ -2426,6 +2435,10 @@ export class UI {
       case 'event':
         box.append(...this.eventContent(closeBtn));
         break;
+      case 'story':
+        box.classList.add('story-box');
+        box.append(...this.storyContent());
+        break;
       case 'welcome':
         box.append(
           el('h2', {}, t('UI_WELCOME')),
@@ -2445,6 +2458,69 @@ export class UI {
     this.modalViewKey = key;
     this.modal.replaceChildren(box);
     box.scrollTop = scroll;
+  }
+
+  /** Scénka z príbehu sa ukáže, keď hráč nič iné nerobí (žiadne okno, minihra ani menu). */
+  private maybeShowStory(): void {
+    if (!this.modal.hidden || !this.title.hidden || this.busy) return;
+    const beat = this.state.nextStoryBeat;
+    if (!beat) return;
+    this.storyBeat = beat;
+    this.storyLine = 0;
+    this.openModal('story');
+  }
+
+  /** Scénka dočítaná (alebo preskočená tlačidlom Späť) – už sa neukáže. */
+  private finishStory(): void {
+    const beat = this.storyBeat;
+    this.storyBeat = null;
+    this.closeModal();
+    if (!beat) return;
+    const hearts = this.state.markStorySeen(beat.id);
+    this.game.saveNow();
+    if (hearts > 0) {
+      this.toast(t('TOAST_STORY_DONE', { n: hearts }));
+      this.game.playSound('success', 0.5);
+    }
+  }
+
+  /** Príbeh (GDD §8): jeden riadok naraz – portrét hovorcu, meno a text. */
+  private storyContent(): HTMLElement[] {
+    const s = this.state;
+    const beat = this.storyBeat;
+    const story = s.data.story;
+    const line = beat?.lines[this.storyLine];
+    if (!beat || !story || !line) return [];
+    const [who, key] = line;
+    const speaker = story.speakers[who];
+    const last = this.storyLine >= beat.lines.length - 1;
+    const next = button(
+      last ? t('UI_CLOSE') : `${t('UI_STORY_NEXT')} ▸`,
+      () => {
+        if (!last) {
+          this.storyLine += 1;
+          this.renderModal();
+          return;
+        }
+        this.finishStory();
+      },
+      { class: 'btn primary' },
+    );
+    return [
+      el(
+        'div',
+        { class: 'story-line' },
+        speaker ? personPortrait(speaker.sprite, 3) : null,
+        el(
+          'div',
+          {},
+          el('div', { class: 'sub' }, speaker ? t(speaker.name_key) : ''),
+          el('p', {}, t(key, { cat: s.story.neighborCat ?? '' })),
+        ),
+      ),
+      el('div', { class: 'story-dots' }, `${this.storyLine + 1} / ${beat.lines.length}`),
+      next,
+    ];
   }
 
   /** Udalosť: ponuka (prijať / odložiť) alebo prebiehajúca s postupom (GDD §7.3). */
@@ -2703,7 +2779,9 @@ export class UI {
         el('h2', {}, adopterName(def, visit.variant)),
         visit.friendOf
           ? el('p', { class: 'hint friend' }, t('UI_VISITOR_RETURNING', { friend: visit.friendOf }))
-          : null,
+          : def.story
+            ? el('p', { class: 'hint friend' }, t('UI_VISITOR_NEIGHBOR'))
+            : null,
         el('p', { style: 'margin:4px 0' }, t(def.desc_key)),
         el(
           'div',

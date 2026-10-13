@@ -17,6 +17,7 @@ export const DATA_FILES = {
   achievements: 'data/achievements.json',
   events: 'data/events.json',
   cosmetics: 'data/cosmetics.json',
+  story: 'data/story.json',
 } as const;
 
 export const IMAGES = {

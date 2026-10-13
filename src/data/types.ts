@@ -60,6 +60,8 @@ export interface AdopterDef {
   sprites: string[];
   /** Počet variantov mena: kľúče `name_key`, `name_key_2`… (opis ostáva). */
   name_variants?: number;
+  /** Postava z príbehu (GDD §8) – nepríde náhodne. */
+  story?: boolean;
 }
 
 export interface ReportDef {
@@ -363,6 +365,28 @@ export interface GameData {
   achievements: AchievementDef[];
   events: EventsData;
   cosmetics: CosmeticsData;
+  /** Príbeh pána Kováča (GDD §8). */
+  story?: StoryData;
+}
+
+/** Príbeh (GDD §8): scénky v poradí podľa postupu hráča. */
+export interface StoryBeat {
+  id: string;
+  when: { rescued?: number; level?: number; neighbor_adopted?: boolean };
+  /** [hovorca, kľúč textu] */
+  lines: [string, string][];
+  /** Po tejto scénke príde sused ako záujemca (keď je niekto pripravený). */
+  neighbor_visit?: boolean;
+  /** Záverečná scénka – odmena ❤. */
+  final?: boolean;
+}
+
+export interface StoryData {
+  /** Id záujemcu (adopters.json, `story: true`), ktorým je sused. */
+  neighbor: string;
+  final_hearts: number;
+  speakers: Record<string, { sprite: string; name_key: string }>;
+  beats: StoryBeat[];
 }
 
 export interface CatStats {

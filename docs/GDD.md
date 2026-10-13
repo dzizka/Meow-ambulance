@@ -511,7 +511,14 @@ Nekonečné míňanie peňazí s dobrým pocitom – tak, ako to robia skutočn�
 
 - **Hlavná postava:** hráč (bez pohlavia, voliteľné meno), ktorý našiel prvé mačiatko a „nejako sa to celé začalo".
 - **Zuzka** – dobrovoľníčka, tutoriál, priateľský komentár. Neskôr vedúca ošetrovateľov.
-- **Pán Kováč** – mrzutý sused z garáže, ktorý sa postupne obmäkčí (a nakoniec si adoptuje mačku – emočný míľnik konca Fázy 1).
+- **Pán Kováč** 🟢 – mrzutý sused z garáže, ktorý sa postupne obmäkčí (a nakoniec si adoptuje mačku – emočný míľnik konca Fázy 1). Príbeh je v `public/data/story.json`: 5 krátkych scénok (okno s portrétom, riadok po riadku, „Ďalej"), ukážu sa, keď hráč nič iné nerobí:
+  1. po prvej záchrane – „Garáž je na auto, nie na mačky!",
+  2. úroveň 2 – prinesie starú deku („len nech nemrznú"),
+  3. úroveň 3 – vypytuje sa na plachú mačku,
+  4. úroveň 4 – prizná sa ku kocúrovi Murkovi z detstva a súhlasí, že mu nájdeme mačku,
+  5. po jeho adopcii – „{mačka} mi spala na nohách – ako kedysi Murko." (+10 ❤).
+  - Po 4. scénke príde **pán Kováč ako záujemca** (`adopters.json → kovac`, `story: true` – náhodne nikdy), keď je niekto pripravený. Hráč mu vyberá mačku ako každému inému (senior, záhrada, veľa doma, tichý domov). Pri slabej zhode sa mačka vráti a on príde znova; inak istá pohľadnica s vlastným textom („– K.").
+  - Tlačidlo Späť scénku preskočí; ťuknutie vedľa okna ju nezavrie. Starý save uvidí iba scénku, pri ktorej práve je.
 - **Tón:** teplý, jemný humor, nikdy nie ponurý. Ťažké témy (týranie, množiarne) sa spomínajú, ale nezobrazujú – hra sa sústreďuje na záchranu, nie na utrpenie.
 - **Jazyk:** slovenčina + angličtina od začiatku (lokalizácia cez JSON súbory v `src/i18n/`). Žiadny text natvrdo v kóde.
 

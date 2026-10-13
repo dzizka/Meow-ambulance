@@ -1,5 +1,5 @@
 {
-  "_comment": "Archetypy adoptérov MVP (GDD §5). tags = domácnosť, dealbreakers = zhoda 0 (id rysu, 'kitten' alebo 'senior_cat'). sprites = postavy G5 (public/assets/sprites/people/gbtl). name_variants = počet variantov mena (kľúče NAME_KEY, NAME_KEY_2…), opis ostáva rovnaký.",
+  "_comment": "Archetypy adoptérov MVP (GDD §5). tags = domácnosť, dealbreakers = zhoda 0 (id rysu, 'kitten' alebo 'senior_cat'). sprites = postavy G5 (public/assets/sprites/people/gbtl). name_variants = počet variantov mena (kľúče NAME_KEY, NAME_KEY_2…), opis ostáva rovnaký. story = postava z príbehu (GDD §8) – nepríde náhodne, iba v príbehu.",
   "adopters": [
     {
       "id": "grandma",
@@ -87,7 +87,7 @@
       "tags": ["flat", "rarely_home", "quiet_home"],
       "age_pref": "adult",
       "dealbreakers": ["kitten"],
-      "sprites": ["012", "014"],
+      "sprites": ["014", "016"],
       "desc_key": "ADOPT_NIGHT_NURSE_DESC",
       "name_variants": 3
     },
@@ -117,7 +117,7 @@
       "tags": ["senior", "garden", "home_often"],
       "age_pref": "adult",
       "dealbreakers": ["kitten"],
-      "sprites": ["028", "035", "020"],
+      "sprites": ["028", "035"],
       "desc_key": "ADOPT_COTTAGE_DESC",
       "name_variants": 3
     },
@@ -140,6 +140,16 @@
       "sprites": ["017", "027", "026"],
       "desc_key": "ADOPT_RUNNER_DESC",
       "name_variants": 3
+    },
+    {
+      "id": "kovac",
+      "name_key": "ADOPT_KOVAC",
+      "tags": ["senior", "garden", "home_often", "quiet_home"],
+      "age_pref": "any",
+      "dealbreakers": [],
+      "sprites": ["020"],
+      "desc_key": "ADOPT_KOVAC_DESC",
+      "story": true
     }
   ]
 }
