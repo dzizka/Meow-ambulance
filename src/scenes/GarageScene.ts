@@ -36,6 +36,7 @@ import { EducationRoom, PLAY_SPOTS } from './EducationRoom';
 import { addProp, type WorldGeom } from './world';
 import type { CafeGuest } from '../data/types';
 import { DPR } from './dpr';
+import { drawSeasonDecor } from './seasonDecor';
 
 /** Miesta pre klietky – prvé dve od začiatku, ďalšie sa dokupujú (GDD §6.1). */
 const CAGES = [
@@ -116,9 +117,18 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   /** Stálice, ktoré sú práve vonku vo výbehu. */
   private readonly outside = new Set<string>();
   private sinceCatio = 0;
-  /** Efekty udalosti: sneh (zima) alebo girlandy (deň otvorených dverí). */
-  private snow: { g: Phaser.GameObjects.Rectangle; x: number; y: number; v: number }[] = [];
+  /** Efekty udalosti: sneh (zima), dážď (povodne) alebo girlandy (deň otvorených dverí, bazár). */
+  private snow: {
+    g: Phaser.GameObjects.Rectangle;
+    x: number;
+    y: number;
+    v: number;
+    sway: number;
+  }[] = [];
   private bunting: Phaser.GameObjects.Graphics | null = null;
+  /** Sezónna výzdoba (Halloween, Vianoce) a sezóna, pre ktorú je nakreslená. */
+  private seasonDecor: Phaser.GameObjects.GameObject[] = [];
+  private seasonShown = '';
   /** Farba stien (kozmetika, GDD §7.6) – tónovací obdĺžnik cez stenu miestnosti. */
   private readonly wallTints = new Map<string, Phaser.GameObjects.Rectangle>();
   /** Mačky práve na klinike (pri prístroji alebo na zotavení) – kedy sa vrátia. */
@@ -170,6 +180,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     );
     this.applyWall('garage');
     this.applyWall('cafe');
+    this.updateSeasonDecor();
 
     this.enableDragPan();
     this.input.on(
@@ -218,6 +229,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       this.sinceCatio = 0;
       this.wanderOutside();
       this.hotelNaps();
+      this.updateSeasonDecor();
     }
     this.sinceSparkle += delta;
     if (this.sinceSparkle > 1400) {
@@ -353,10 +365,18 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
     if (id === 'winter') {
       for (let i = 0; i < 70; i++) {
         const g = this.add.rectangle(0, 0, 2, 2, 0xffffff, 0.9).setDepth(5100);
-        this.snow.push({ g, x: Math.random(), y: Math.random(), v: 0.04 + Math.random() * 0.05 });
+        const v = 0.04 + Math.random() * 0.05;
+        this.snow.push({ g, x: Math.random(), y: Math.random(), v, sway: 4 });
       }
     }
-    if (id === 'openday') {
+    if (id === 'flood') {
+      for (let i = 0; i < 60; i++) {
+        const g = this.add.rectangle(0, 0, 1, 5, 0x9cc8ee, 0.7).setDepth(5100);
+        const v = 0.5 + Math.random() * 0.3;
+        this.snow.push({ g, x: Math.random(), y: Math.random(), v, sway: 0 });
+      }
+    }
+    if (id === 'openday' || id === 'bazaar') {
       const g = this.add.graphics().setDepth(-975);
       const colors = [0xe05a5a, 0xf2c14e, 0x7ec8ee, 0x9ad17b, 0xe88aa8];
       for (let room = 0; room < 8; room++) {
@@ -371,6 +391,18 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
       }
       this.bunting = g;
     }
+  }
+
+  /** Sezónna výzdoba podľa dátumu – prekreslí sa, iba keď sa sezóna zmení. */
+  private updateSeasonDecor(): void {
+    const id = this.state.season?.id ?? '';
+    if (id === this.seasonShown) return;
+    this.seasonShown = id;
+    for (const o of this.seasonDecor) {
+      this.tweens.killTweensOf(o);
+      o.destroy();
+    }
+    this.seasonDecor = drawSeasonDecor(this, id);
   }
 
   /** Farba stien garáže alebo kaviarne (priesvitná vrstva – vzor tapety presvitá). */
@@ -399,7 +431,7 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
         f.y = 0;
         f.x = Math.random();
       }
-      f.g.setPosition(v.x + f.x * v.width + Math.sin(t + f.x * 10) * 4, v.y + f.y * v.height);
+      f.g.setPosition(v.x + f.x * v.width + Math.sin(t + f.x * 10) * f.sway, v.y + f.y * v.height);
     }
   }
 

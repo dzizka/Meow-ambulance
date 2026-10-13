@@ -323,6 +323,8 @@ Všetko sa kupuje v menu ☰ → **🛒 Obchod** (ťuknutie na ★ v hornom pane
 
 Pri novej úrovni: oznámenie, iskričky a zoznam toho, čo sa odomklo. Úrovne sú v `balance.json → levels`.
 
+**Ocenenia 🎖️ (po úrovni 7)** 🟢 – ★ ďalej rastú, takže majú zmysel aj potom: **každých 200 ★ nad 800** = jedno ocenenie (Čestné uznanie mesta, Zlatá labka, Cena primátora, Krištáľové srdce, Útulok roka, Cena verejnosti, Medaila za záchranu, Hviezda felíd – potom dokola). Odmena **+12 ❤ a 500 €**. Obchod → úroveň útulku ukazuje počet ocenení, posledné a postup k ďalšiemu. Aktívny hráč dostane ocenenie asi raz za pol hodiny. Dáta: `balance.json → honors`.
+
 #### 6.1.2 Vybavenie 🟢
 Každý kus má 3 stupne (2. a 3. stupeň odomyká úroveň ★). Je ho vidieť v garáži. Dáta: `equipment.json`.
 
@@ -435,6 +437,7 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 - Každá adoptovaná mačka = stránka: portrét pred/po, meno, povaha, príbeh, pohľadnice.
 - Percentá dokončenia a odmeny za dokončené strany (dekorácie, nové typy hlásení).
 - **104 políčok** (menu ☰ → Album): 9 plemien s akoukoľvek farbou × 10 farieb + 14 plemien s vlastnou farbou. Zapisuje sa prvá mačka každého políčka, ďalšie zvyšujú počítadlo ×N.
+- **Strany a odmeny** 🟢: každé plemeno je jedna strana, ďalej strana plemien s vlastnou farbou, **Vzácnosti** a sezónne strany (**🎃 Halloween**, **🎄 Vianoce** – po 4 farby, mimo sezóny s poznámkou, kedy prídu). Celá strana = **+10 ❤ a 300 €** (raz) a pri nadpise ✅. Staré savy dostanú odmeny za hotové strany hneď pri hraní. Sezónne strany sa nerátajú do „celého albumu" (úspech), aby sa dal dokončiť kedykoľvek.
 
 ### 7.2 Vzácne mačky 🟢
 - Vzácne znaky (`balance.json → rare`): **rôznofarebné oči** (2 %), **palčiaky** – 6 prstov (2,5 %), **trojfarebný kocúr** (12 % trojfarebných mačiek). Od úrovne 4 (vzácne plemená) 2× častejšie.
@@ -463,7 +466,21 @@ Hodnoty sú v `balance.json → staff`. Personál chodí po miestnosti, kde prac
 | ❄️ Zima prichádza | úroveň 2 | 10 min | hlásenia 2× častejšie, nová diagnóza **podchladenie** (teplomer, zahriať v deke), sneh | zachrániť 4 mačky | 120 € + 5 ★ (+150 € + 5 ★) |
 | 🎈 Deň otvorených dverí | úroveň 2, kaviareň | 8 min | hostia kaviarne 2,5× častejšie, záujemcovia ~3× častejšie a o 1 viac, girlandy | 2 adopcie | 100 € + 5 ★ (+200 € + 8 ★) |
 | 🏚️ Záchrana z množiarne | úroveň 4, útulok | 15 min | hneď príde mama s 4–5 mačiatkami, +4 dočasné klietky v karanténe | vyliečiť 6 diagnóz | 300 € + 8 ★ (+300 € + 10 ★) |
-| **Sezónne** (Vianoce, Halloween…) 🔵 | Kozmetika, tematické mačky | Dekorácie |
+| 🌊 Povodne | úroveň 3 | 10 min | hlásenia ~1,7× častejšie, zachránené mačky prídu mokré a vystrašené (dôvera −10, čistota max. 20), dážď | 12× socializácia | 150 € + 5 ★ (+200 € + 6 ★) |
+| 🧺 Charitatívny bazár | úroveň 3, kaviareň | 8 min | hostia kaviarne ~1,7× častejšie, prepitné 2×, girlandy | obslúžiť 8 hostí | 100 € + 4 ★ (+200 € + 6 ★) |
+| 🧳 Prázdniny | úroveň 6, hotel | 10 min | hostia hotela 2× častejšie, pobyt o 25 % drahší | 4 hotelové pobyty | 250 € + 6 ★ (+350 € + 8 ★) |
+| 🎒 Týždeň škôl | úroveň 7, edukačné centrum | 10 min | školské výlety 2,5× častejšie | 3 prednášky (aspoň 1 ★) | 300 € + 8 ★ (+400 € + 10 ★) |
+
+Účinky udalostí sú v dátach (`events.json → effects`: násobky intervalov hlásení, záujemcov, hostí, hotela a výletov, prepitného a poplatku, dočasné klietky, stav zachránených mačiek), nová udalosť nepotrebuje kód.
+
+**Sezóny** 🟢 – podľa skutočného dátumu (`balance.json → seasons`), bežia popri udalostiach:
+
+| Sezóna | Kedy | Čo prinesie |
+|---|---|---|
+| 🎃 Halloween | 20. 10. – 2. 11. | každá 4. zachránená mačka môže mať fantasy farbu – **duchová, lektvarová, čarodejnícka, polnočná** (assety G1) a tematické meno (Strašidielko, Lektvar, Morgana, Netopierik…); v budovách oranžovo-fialové vlajočky, v garáži a kaviarni tekvičky |
+| 🎄 Vianoce | 1. 12. – 6. 1. | farby **mikulášska, mrazivá, jedľová, marcipánová** (Mikuláš, Mrázik, Jedlička, Perník…); blikajúce svetielka, v garáži a kaviarni stromček |
+
+Pri prvom spustení v sezóne hra sezónu privíta oznámením (raz za rok). Sezónne mačky sa zapisujú na sezónnu stranu albumu; najprv padajú farby, ktoré v albume ešte chýbajú. Vo vývojárskom menu sa dá sezóna prepnúť (Sezóna ďalej).
 
 ### 7.4 Vizuálna spätná väzba 🟢 MVP
 Každá mačka má **3 vizuálne stavy** (pre MVP stačí kombinácia sprite + overlay):
@@ -486,7 +503,7 @@ Pri prechode stavu: krátka „premena" s efektom a zvukom (dopamínový moment)
 
 
 ### 7.6 Srdiečka ❤ a kozmetika 🟢
-- **Srdiečka** sa nedajú kúpiť za €: +3 za pohľadnicu, +2 za nové políčko albumu, +5 za vzácnu mačku v albume, +5 za úspech, +3 za splnený cieľ udalosti (`public/data/cosmetics.json → hearts`).
+- **Srdiečka** sa nedajú kúpiť za €: +3 za pohľadnicu, +2 za nové políčko albumu, +5 za vzácnu mačku v albume, +10 za celú stranu albumu, +5 za úspech, +3 za splnený cieľ udalosti, +12 za ocenenie (`public/data/cosmetics.json → hearts`, `balance.json → honors`).
 - **Obchod → ❤️ Srdiečka:** Deň adopcií (§7.8) a farby stien; srdiečka sa míňajú aj na želania stálic. (Ozdoby na mačkách – obojky, mašličky – boli skúšobne pridané a odstránené: pôsobili neprirodzene.)
 - **Farba stien** garáže a kaviarne (mätová, levanduľová, broskyňová, nebeská – po 8 ❤); kúpená farba sa dá použiť v oboch miestnostiach a kedykoľvek vrátiť pôvodnú.
 

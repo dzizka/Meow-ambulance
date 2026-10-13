@@ -5,7 +5,8 @@
     "album": 2,
     "achievement": 5,
     "event_bonus": 3,
-    "rare": 5
+    "rare": 5,
+    "album_page": 10
   },
   "walls": [
     {

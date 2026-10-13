@@ -3,11 +3,13 @@ import { IMAGES, ZUZKA_SHEET, catSheetPath, personSheetPath } from '../assets';
 import { CLINIC_FRAMES, INTERIOR_FRAMES, type FrameRect } from '../data/frames';
 import { GameState } from '../core/GameState';
 import * as Care from '../core/systems/Care';
+import * as Late from '../core/systems/LateGame';
 import type { Stars } from '../core/systems/Care';
 import type { MatchResult } from '../core/systems/Match';
 import type {
   AdopterDef,
   AdoptionRecord,
+  AlbumEntry,
   CatData,
   ClinicRoomId,
   CatStats,
@@ -189,6 +191,12 @@ function decorPreview(def: DecorDef): HTMLElement {
 }
 
 const paws = (n: number): string => '🐾'.repeat(n);
+
+/** „MM-DD" → „20. 10." (SK) alebo „20/10" (EN). */
+function dayMonth(md: string): string {
+  const [m, d] = md.split('-').map(Number);
+  return lang === 'sk' ? `${d}. ${m}.` : `${d}/${m}`;
+}
 /** Ikony miestností kliniky (prízemie aj 2. poschodie). */
 const CLINIC_ICONS: Record<ClinicRoomId, string> = {
   lab: '🔬',
@@ -933,6 +941,7 @@ export class UI {
   private tick(): void {
     this.updateHud();
     this.maybeShowStory();
+    this.maybeGreetSeason();
     // Kaviareň v noci zatvára a ráno otvára (GDD §5.5)
     const open = this.state.cafeOpenNow;
     if (this.cafeWasOpen !== null && open !== this.cafeWasOpen && this.state.cafe.open) {
@@ -1008,6 +1017,30 @@ export class UI {
       if (this.modalKind === 'menu') this.renderModal();
     });
     bus.on('albumAdded', () => this.toast(t('TOAST_ALBUM')));
+    bus.on('albumPageDone', ({ page }) => {
+      this.toast(
+        t('TOAST_ALBUM_PAGE', {
+          page: this.albumPageName(page),
+          hearts: this.state.data.cosmetics?.hearts.album_page ?? 0,
+          money: this.state.data.balance.rewards.album_page_money,
+        }),
+      );
+      this.game.playSound('success', 0.6);
+      if (this.modalKind === 'menu') this.renderModal();
+    });
+    bus.on('honorEarned', ({ n, gained }) => {
+      const h = this.state.data.balance.honors;
+      this.toast(
+        t('TOAST_HONOR', {
+          title: t(Late.honorTitleKey(this.state.data, n)),
+          hearts: h.hearts * gained,
+          money: h.money * gained,
+        }),
+      );
+      this.game.playSound('upgrade', 0.6);
+      this.game.playSound('mewPurr', 0.5);
+      if (this.modalKind === 'menu') this.renderModal();
+    });
     bus.on('upgradeBought', ({ kind }) => {
       const key = {
         cage: 'TOAST_BOUGHT_CAGE',
@@ -2461,6 +2494,15 @@ export class UI {
   }
 
   /** Scénka z príbehu sa ukáže, keď hráč nič iné nerobí (žiadne okno, minihra ani menu). */
+  /** Raz za sezónu privíta Halloween / Vianoce (GDD §7.3) – až keď hráč hrá. */
+  private maybeGreetSeason(): void {
+    if (!this.modal.hidden || !this.title.hidden || this.busy) return;
+    const season = this.state.takeSeasonGreeting();
+    if (!season) return;
+    this.toast(t(`SEASON_${season.id.toUpperCase()}_HELLO`, { to: dayMonth(season.to) }));
+    this.game.playSound('mewPurr', 0.5);
+  }
+
   private maybeShowStory(): void {
     if (!this.modal.hidden || !this.title.hidden || this.busy) return;
     const beat = this.state.nextStoryBeat;
@@ -3266,6 +3308,58 @@ export class UI {
     return out;
   }
 
+  /** Názov strany albumu pre oznámenia a nadpisy. */
+  private albumPageName(id: string): string {
+    if (id === 'fixed') return t('UI_ALBUM_FIXED');
+    if (id === 'rare') return t('UI_ALBUM_RARE');
+    if (id.startsWith('season:')) return t(`SEASON_${id.slice(7).toUpperCase()}`);
+    const breed = this.state.data.breeds.find((b) => `breed:${b.id}` === id);
+    return breed ? t(breed.name_key) : id;
+  }
+
+  /** Nadpis strany albumu – s fajkou, keď je celá (a odmenená). */
+  private albumHeader(id: string, icon = ''): HTMLElement {
+    const done = this.state.albumPageDone(id);
+    return el(
+      'div',
+      { class: 'album-breed' },
+      `${icon}${this.albumPageName(id)}`,
+      done ? el('span', { class: 'album-done', title: t('UI_ALBUM_PAGE_DONE') }, ' ✅') : '',
+    );
+  }
+
+  private albumCell(
+    entry: AlbumEntry | undefined,
+    label: string,
+    empty: string,
+    rare = false,
+  ): HTMLElement {
+    if (!entry)
+      return el('div', { class: 'album-cell empty', title: label, 'aria-label': label }, empty);
+    const cell = el(
+      'button',
+      {
+        class: rare ? 'album-cell rare' : 'album-cell',
+        type: 'button',
+        title: `${entry.name} – ${label}`,
+        'aria-label': `${entry.name} – ${label}`,
+      },
+      catPortrait(
+        { sprite: entry.sprite, name: entry.name, stats: { cleanliness: 100 } } as CatData,
+        1.4,
+      ),
+      entry.count > 1 ? el('span', { class: 'album-count' }, `×${entry.count}`) : '',
+    );
+    cell.addEventListener('click', () =>
+      this.toast(
+        rare
+          ? `✨ ${entry.name} – ${label}`
+          : `${t(entry.how === 'adopted' ? 'UI_ALBUM_ADOPTED' : 'UI_ALBUM_RESIDENT', { cat: entry.name })} (${label})`,
+      ),
+    );
+    return cell;
+  }
+
   private albumContent(): HTMLElement[] {
     const s = this.state;
     const data = s.data;
@@ -3273,72 +3367,50 @@ export class UI {
     const grid = el('div', { class: 'album' });
     const regular = data.coats.filter((c) => !c.special);
     // Bežné plemená majú riadok, plemená s pevnou farbou sú spolu v jednom riadku na konci
-    const ordered = [...data.breeds.filter((b) => !b.coat), ...data.breeds.filter((b) => b.coat)];
-    let specialHeader = false;
-    for (const breed of ordered) {
-      if (!breed.coat) grid.append(el('div', { class: 'album-breed' }, t(breed.name_key)));
-      else if (!specialHeader) {
-        specialHeader = true;
-        grid.append(el('div', { class: 'album-breed' }, t('UI_ALBUM_FIXED')));
-      }
-      const fixed = data.coats.find((c) => c.id === breed.coat);
-      for (const coat of fixed ? [fixed] : regular) {
-        const entry = s.album[GameState.albumKey(breed.id, coat.id)];
-        const label = `${t(breed.name_key)} · ${t(coat.name_key)}`;
-        if (!entry) {
-          grid.append(
-            el('div', { class: 'album-cell empty', title: label, 'aria-label': label }, '?'),
-          );
-          continue;
-        }
-        const cell = el(
-          'button',
-          {
-            class: 'album-cell',
-            type: 'button',
-            title: `${entry.name} – ${label}`,
-            'aria-label': `${entry.name} – ${label}`,
-          },
-          catPortrait(
-            { sprite: entry.sprite, name: entry.name, stats: { cleanliness: 100 } } as CatData,
-            1.4,
-          ),
-          entry.count > 1 ? el('span', { class: 'album-count' }, `×${entry.count}`) : '',
-        );
-        cell.addEventListener('click', () =>
-          this.toast(
-            `${t(entry.how === 'adopted' ? 'UI_ALBUM_ADOPTED' : 'UI_ALBUM_RESIDENT', { cat: entry.name })} (${label})`,
-          ),
-        );
-        grid.append(cell);
-      }
-    }
-    // strana vzácností (GDD §7.2)
-    grid.append(el('div', { class: 'album-breed' }, `✨ ${t('UI_ALBUM_RARE')}`));
-    for (const mark of ['hetero', 'poly', 'tortie_male'] as const) {
-      const entry = s.album[`special:${mark}`];
-      const label = t(`RARE_${mark.toUpperCase()}`);
-      if (!entry) {
+    for (const breed of data.breeds.filter((b) => !b.coat)) {
+      grid.append(this.albumHeader(`breed:${breed.id}`));
+      for (const coat of regular)
         grid.append(
-          el('div', { class: 'album-cell empty', title: label, 'aria-label': label }, '✨'),
+          this.albumCell(
+            s.album[GameState.albumKey(breed.id, coat.id)],
+            `${t(breed.name_key)} · ${t(coat.name_key)}`,
+            '?',
+          ),
         );
-        continue;
-      }
-      const cell = el(
-        'button',
-        {
-          class: 'album-cell rare',
-          type: 'button',
-          title: `${entry.name} – ${label}`,
-          'aria-label': `${entry.name} – ${label}`,
-        },
-        catPortrait(
-          { sprite: entry.sprite, name: entry.name, stats: { cleanliness: 100 } } as CatData,
-          1.4,
+    }
+    grid.append(this.albumHeader('fixed'));
+    for (const breed of data.breeds.filter((b) => b.coat)) {
+      const coat = data.coats.find((c) => c.id === breed.coat);
+      grid.append(
+        this.albumCell(
+          s.album[GameState.albumKey(breed.id, breed.coat ?? '')],
+          `${t(breed.name_key)} · ${t(coat?.name_key ?? '')}`,
+          '?',
         ),
       );
-      cell.addEventListener('click', () => this.toast(`✨ ${entry.name} – ${label}`));
-      grid.append(cell);
+    }
+    // strana vzácností (GDD §7.2)
+    grid.append(this.albumHeader('rare', '✨ '));
+    for (const mark of Late.RARE_MARKS)
+      grid.append(
+        this.albumCell(s.album[`special:${mark}`], t(`RARE_${mark.toUpperCase()}`), '✨', true),
+      );
+    // sezónne strany (GDD §7.3) – mačky prichádzajú iba v sezóne
+    const season = s.season;
+    for (const def of data.balance.seasons?.list ?? []) {
+      const coats = Late.seasonCoats(data, def.id);
+      if (!coats.length) continue;
+      grid.append(this.albumHeader(`season:${def.id}`, `${def.icon} `));
+      if (season?.id !== def.id && !coats.some((c) => s.album[`season:${c.id}`]))
+        grid.append(
+          el(
+            'p',
+            { class: 'hint album-note' },
+            t('UI_ALBUM_SEASON_WHEN', { from: dayMonth(def.from), to: dayMonth(def.to) }),
+          ),
+        );
+      for (const coat of coats)
+        grid.append(this.albumCell(s.album[`season:${coat.id}`], t(coat.name_key), def.icon, true));
     }
     return [
       el(
@@ -3352,7 +3424,51 @@ export class UI {
         el('i', { style: `width:${(filled / s.albumSize) * 100}%;background:var(--ui-accent)` }),
       ),
       el('p', { class: 'hint' }, t('UI_ALBUM_HINT')),
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_ALBUM_PAGES', {
+          hearts: data.cosmetics?.hearts.album_page ?? 0,
+          money: data.balance.rewards.album_page_money,
+        }),
+      ),
       grid,
+    ];
+  }
+
+  /** Ocenenia po poslednej úrovni (GDD §6.1.1): počet, postup k ďalšiemu a posledné. */
+  private honorsInfo(): HTMLElement[] {
+    const s = this.state;
+    const data = s.data;
+    const h = data.balance.honors;
+    if (!h) return [];
+    const n = s.late.honors;
+    const from = Late.honorRep(data, n);
+    const pct = Math.min(100, ((s.reputation - from) / h.every) * 100);
+    return [
+      el(
+        'div',
+        { class: 'row' },
+        el('strong', {}, t('UI_HONORS', { n })),
+        n > 0
+          ? el(
+              'span',
+              { class: 'muted' },
+              t('UI_HONOR_LAST', { title: t(Late.honorTitleKey(data, n)) }),
+            )
+          : '',
+      ),
+      el('div', { class: 'bar' }, el('i', { style: `width:${pct}%;background:#c9a0e8` })),
+      el(
+        'p',
+        { class: 'hint' },
+        t('UI_HONOR_NEXT', {
+          every: h.every,
+          hearts: h.hearts,
+          money: h.money,
+          rep: Late.honorRep(data, n + 1),
+        }),
+      ),
     ];
   }
 
@@ -3398,6 +3514,7 @@ export class UI {
           ? `${t('UI_NEXT_LEVEL', { name: t(next.name_key) })} ${next.unlocks.map((u) => t(`UNLOCK_${u.toUpperCase()}`)).join(', ')}`
           : t('UI_MAX_LEVEL'),
       ),
+      ...(next ? [] : this.honorsInfo()),
     );
 
     // Rozšírenie

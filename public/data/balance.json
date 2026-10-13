@@ -50,7 +50,8 @@
     "return_delay_s": [180, 360],
     "return_trust_loss": 30,
     "return_satisfaction": 30,
-    "return_rep_loss": 3
+    "return_rep_loss": 3,
+    "album_page_money": 300
   },
   "glow": {
     "min_cleanliness": 80,
@@ -256,5 +257,30 @@
     "boost": 2,
     "fee_bonus": 0.3,
     "rep_bonus": 3
+  },
+  "seasons": {
+    "_comment": "Sezóny podľa skutočného dátumu (GDD §7.3): v sezóne zachránená mačka s pravdepodobnosťou chance dostane sezónnu farbu (domáca krátkosrstá), v garáži je výzdoba a v albume vlastná strana. from/to = MM-DD vrátane, môže prejsť cez Nový rok.",
+    "chance": 0.25,
+    "list": [
+      {
+        "id": "halloween",
+        "icon": "🎃",
+        "from": "10-20",
+        "to": "11-02"
+      },
+      {
+        "id": "christmas",
+        "icon": "🎄",
+        "from": "12-01",
+        "to": "01-06"
+      }
+    ]
+  },
+  "honors": {
+    "_comment": "Ocenenia (GDD §6.1.1): po poslednej úrovni každých every ★ = jedno ocenenie s odmenou. Názvy HONOR_1…HONOR_n sa opakujú dokola.",
+    "every": 200,
+    "hearts": 12,
+    "money": 500,
+    "titles": 8
   }
 }

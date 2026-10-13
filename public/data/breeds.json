@@ -1,5 +1,5 @@
 {
-  "_comment": "Plemená (12) a farby (GDD §4.4, §7.1). rarity: 1 bežná – 5 legendárna. coat = plemeno má vždy túto farbu (napr. siamská). coat_care: long = rýchlejšie špinavá srsť, none = takmer vôbec (sfinga). Farby so special: true padnú iba s plemenom. Album = bežné plemená × bežné farby + 1 slot za každé plemeno s pevnou farbou.",
+  "_comment": "Plemená (12) a farby (GDD §4.4, §7.1). rarity: 1 bežná – 5 legendárna. coat = plemeno má vždy túto farbu (napr. siamská). coat_care: long = rýchlejšie špinavá srsť, none = takmer vôbec (sfinga). Farby so special: true padnú iba s plemenom. Album = bežné plemená × bežné farby + 1 slot za každé plemeno s pevnou farbou. Farby so season padnú iba v sezóne (Halloween, Vianoce – balance.seasons).",
   "breeds": [
     {
       "id": "domestic_short",
@@ -264,6 +264,86 @@
       "sprites": [
         "hairless_0",
         "hairless_1"
+      ]
+    },
+    {
+      "id": "ghost",
+      "name_key": "COAT_GHOST",
+      "rarity": 5,
+      "special": true,
+      "season": "halloween",
+      "sprites": [
+        "ghost_0"
+      ]
+    },
+    {
+      "id": "potion",
+      "name_key": "COAT_POTION",
+      "rarity": 5,
+      "special": true,
+      "season": "halloween",
+      "sprites": [
+        "radioactive_0"
+      ]
+    },
+    {
+      "id": "witch",
+      "name_key": "COAT_WITCH",
+      "rarity": 5,
+      "special": true,
+      "season": "halloween",
+      "sprites": [
+        "indigo_0"
+      ]
+    },
+    {
+      "id": "midnight",
+      "name_key": "COAT_MIDNIGHT",
+      "rarity": 5,
+      "special": true,
+      "season": "halloween",
+      "sprites": [
+        "dark_0"
+      ]
+    },
+    {
+      "id": "santa",
+      "name_key": "COAT_SANTA",
+      "rarity": 5,
+      "special": true,
+      "season": "christmas",
+      "sprites": [
+        "red_0"
+      ]
+    },
+    {
+      "id": "frost",
+      "name_key": "COAT_FROST",
+      "rarity": 5,
+      "special": true,
+      "season": "christmas",
+      "sprites": [
+        "cotton_candy_blue_0"
+      ]
+    },
+    {
+      "id": "fir",
+      "name_key": "COAT_FIR",
+      "rarity": 5,
+      "special": true,
+      "season": "christmas",
+      "sprites": [
+        "teal_0"
+      ]
+    },
+    {
+      "id": "marzipan",
+      "name_key": "COAT_MARZIPAN",
+      "rarity": 5,
+      "special": true,
+      "season": "christmas",
+      "sprites": [
+        "cotton_candy_pink_0"
       ]
     }
   ]

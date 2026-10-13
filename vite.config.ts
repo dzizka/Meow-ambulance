@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -65,4 +66,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 2000,
   },
   plugins: [stripPrivateAssetFiles()],
+  test: {
+    setupFiles: ['tests/setup.ts'],
+  },
 });

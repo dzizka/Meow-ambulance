@@ -773,6 +773,8 @@ body.minigame .toast:not(:last-child) {
 }
 .album-cell.empty {
   cursor: default;
+  /* ✨ / 🎃 / 🎄 v prázdnom políčku – sivé, kým sa mačka nezapíše */
+  filter: grayscale(1);
 }
 .album-cell .sprite {
   transform: translateY(-4px);
@@ -1421,4 +1423,10 @@ body.minigame .toast:not(:last-child) {
 }
 .rating-tips li {
   margin: 2px 0;
+}
+
+/* Album: poznámka pod nadpisom sezónnej strany */
+.album-note {
+  grid-column: 1 / -1;
+  margin: 0;
 }

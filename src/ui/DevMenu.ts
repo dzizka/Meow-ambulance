@@ -222,7 +222,29 @@ export class DevMenu {
           s.devOpenShelter();
           return s.devOfferEvent('mill') && 'Ponuka: Množiareň';
         }),
+        act('Udalosť: Povodne', () => s.devOfferEvent('flood') && 'Ponuka: Povodne'),
+        act('Udalosť: Bazár', () => {
+          s.devOpenCafe();
+          return s.devOfferEvent('bazaar') && 'Ponuka: Charitatívny bazár';
+        }),
+        act('Udalosť: Prázdniny', () => {
+          if (!s.hotel.open) s.devOpenHotel();
+          return s.devOfferEvent('holidays') && 'Ponuka: Prázdniny';
+        }),
+        act('Udalosť: Týždeň škôl', () => s.devOfferEvent('schoolweek') && 'Ponuka: Týždeň škôl'),
         act('Ukončiť udalosť', () => s.devEndEvent() && 'Udalosť skončila'),
+        act('Sezóna ďalej', () => {
+          // podľa dátumu → Halloween → Vianoce → žiadna → podľa dátumu
+          const order = [undefined, 'halloween', 'christmas', ''];
+          s.seasonOverride = order[(order.indexOf(s.seasonOverride) + 1) % order.length];
+          return `Sezóna: ${s.season?.id ?? 'žiadna'}${s.seasonOverride === undefined ? ' (podľa dátumu)' : ''}`;
+        }),
+        act('+1 ocenenie', () => {
+          const top = s.data.balance.levels[s.data.balance.levels.length - 1]?.rep ?? 0;
+          const need = Math.max(top, s.reputation) + s.data.balance.honors.every - s.reputation;
+          s.devGive(0, need);
+          return `+${need} ★`;
+        }),
         act('Školský výlet', () => {
           if (!s.hasUnlock('education'))
             s.devGive(0, Math.max(0, (s.unlockRep('education') ?? 0) - s.reputation));
