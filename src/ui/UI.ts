@@ -6,6 +6,7 @@ import * as Care from '../core/systems/Care';
 import type { Stars } from '../core/systems/Care';
 import type { MatchResult } from '../core/systems/Match';
 import type {
+  AdopterDef,
   AdoptionRecord,
   CatData,
   ClinicRoomId,
@@ -14,6 +15,7 @@ import type {
   DecorRoom,
   DiagnosticTool,
   SocialActivity,
+  StoryBeat,
 } from '../data/types';
 import { generateCat } from '../core/systems/CatGenerator';
 import { Rng } from '../core/Rng';
@@ -32,6 +34,9 @@ export interface GameBridge {
   setMuted(muted: boolean): void;
   /** Zmaže uloženú hru a začne odznova. */
   resetGame(): void;
+  /** Záloha hry (GDD §10.3): kód aktuálnej hry a jeho načítanie (potom sa hra načíta nanovo). */
+  exportSave(): string | null;
+  importSave(code: string): boolean;
   /** Miestnosť, ktorú vidí kamera, a prepnutie do inej (GDD §5.5). */
   readonly room: Room;
   showRoom(room: Room): void;
@@ -203,6 +208,45 @@ const ROOM_ICON: Record<Room, string> = {
   education: '🎓',
 };
 const ORDER_ICON = { coffee: '☕', tea: '🍵', cake: '🍰' } as const;
+/** Meno záujemcu podľa variantu (GDD §5.1): `name_key`, `name_key_2`… */
+function adopterName(def: AdopterDef, variant = 1): string {
+  return t(variant > 1 ? `${def.name_key}_${variant}` : def.name_key);
+}
+
+/** Kľúč existuje v slovníku? (`t` vráti pri chýbajúcom kľúči samotný kľúč) */
+const hasText = (key: string): boolean => t(key) !== key;
+
+/**
+ * Text pohľadnice (GDD §5.3): podľa záujemcu a zhody, kamarátka spomenie obe mačky,
+ * a P.S. podľa povahy mačky. Tá istá pohľadnica má vždy ten istý text.
+ */
+function postcardText(
+  rec: AdoptionRecord,
+  def: AdopterDef | undefined,
+  perfectAt: number,
+): { main: string; ps: string | null } {
+  let h = 2166136261; // FNV-1a
+  for (const ch of `${rec.cat.id}:${rec.adoptedAt}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const roll = (n: number, salt: number) => ((h >>> 0) + salt * 7919) % n;
+  const vars = { cat: rec.cat.name, friend: rec.friendOf ?? '' };
+  let keys: string[];
+  if (rec.friendOf) keys = ['POSTCARD_FRIEND_1', 'POSTCARD_FRIEND_2'];
+  else {
+    const base = rec.score >= perfectAt ? 'POSTCARD_PERFECT' : 'POSTCARD_GOOD';
+    keys = [base, `${base}_2`, `${base}_3`, `${base}_4`];
+    // dokonalá zhoda: aj texty od konkrétneho typu záujemcu
+    const own = def
+      ? [1, 2].map((n) => `POSTCARD_A_${def.id.toUpperCase()}_${n}`).filter(hasText)
+      : [];
+    if (def?.story && own.length) keys = own;
+    else if (rec.score >= perfectAt && own.length) keys = [...own, ...own, ...keys];
+  }
+  const main = t(keys[roll(keys.length, 0)] ?? keys[0]!, vars);
+  const traits = rec.cat.traits.map((x) => `POSTCARD_PS_${x.id.toUpperCase()}`).filter(hasText);
+  const ps = traits.length ? t(traits[roll(traits.length, 1)]!) : null;
+  return { main, ps };
+}
+
 const round1 = (n: number): string =>
   (Math.round(n * 10) / 10).toLocaleString(undefined, { maximumFractionDigits: 1 });
 
@@ -241,10 +285,17 @@ export class UI {
   private busy = false;
   private muted = false;
   private modalKind:
-    'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | 'event' | 'pause' | null = null;
+    'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | 'event' | 'pause' | 'story' | null =
+    null;
+  /** Príbeh (GDD §8): práve zobrazená scénka a riadok. */
+  private storyBeat: StoryBeat | null = null;
+  private storyLine = 0;
   /** Hlavné menu (úvodná obrazovka) – ukáže sa pri spustení a z pauzy. */
   private title = el('div', { class: 'title-screen', role: 'dialog', 'aria-modal': 'true' });
-  private titleView: 'main' | 'settings' | 'new' = 'main';
+  private titleView: 'main' | 'settings' | 'new' | 'backup' = 'main';
+  /** Záloha hry: zobrazený kód a či posledný import zlyhal. */
+  private backupCode: string | null = null;
+  private backupError = false;
   /** Po prvom „Hrať" už hlavné menu ponúka Pokračovať a Novú hru. */
   private started = false;
   private confirmExit = false;
@@ -305,7 +356,8 @@ export class UI {
     );
     document.body.append(this.root);
     this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.closeModal();
+      // scénka príbehu sa nezavrie omylom ťuknutím vedľa (inak by sa hneď ukázala znova)
+      if (e.target === this.modal && this.modalKind !== 'story') this.closeModal();
     });
     this.subscribe();
     this.layout();
@@ -366,6 +418,8 @@ export class UI {
         ...this.settingsControls(),
         button(`← ${t('TITLE_BACK')}`, () => this.setTitleView('main')),
       );
+    } else if (this.titleView === 'backup') {
+      box.append(...this.backupContent());
     } else if (this.titleView === 'new') {
       box.append(
         el('p', { class: 'warning' }, t('UI_NEW_GAME_CONFIRM')),
@@ -383,12 +437,84 @@ export class UI {
         }),
         button(`⚙️ ${t('TITLE_SETTINGS')}`, () => this.setTitleView('settings')),
         button(`📖 ${t('TITLE_WIKI')}`, () => openWiki(lang)),
+        button(`💾 ${t('BACKUP_TITLE')}`, () => {
+          this.backupCode = null;
+          this.backupError = false;
+          this.setTitleView('backup');
+        }),
         ...(this.started ? [button(`↺ ${t('UI_NEW_GAME')}`, () => this.setTitleView('new'))] : []),
         ...(isNative ? [button(`🚪 ${t('TITLE_EXIT')}`, () => this.quit())] : []),
         el('p', { class: 'hint' }, t('TITLE_SAVED')),
       );
     }
     this.title.replaceChildren(box);
+  }
+
+  /**
+   * Záloha hry (GDD §10.3): kód na skopírovanie a vloženie – prenos na iné zariadenie
+   * alebo poistka pred stratou dát. Na webe aj ako súbor.
+   */
+  private backupContent(): HTMLElement[] {
+    const tryImport = (code: string) => {
+      if (this.game.importSave(code)) return; // hra sa načíta nanovo
+      this.backupError = true;
+      this.renderTitle();
+    };
+
+    const exportBtn = button(`📋 ${t('BACKUP_COPY')}`, () => {
+      this.backupCode = this.game.exportSave();
+      this.renderTitle();
+      if (this.backupCode)
+        void navigator.clipboard?.writeText(this.backupCode).then(
+          () => this.toast(t('BACKUP_COPIED')),
+          () => undefined,
+        );
+    });
+    const out: HTMLElement[] = [
+      el('h2', {}, `💾 ${t('BACKUP_TITLE')}`),
+      el('p', { class: 'hint' }, t('BACKUP_HINT')),
+      exportBtn,
+    ];
+    if (this.backupCode) {
+      const shown = el('textarea', { class: 'backup-code', readonly: 'readonly', rows: '3' });
+      shown.value = this.backupCode;
+      shown.addEventListener('focus', () => shown.select());
+      out.push(shown);
+      if (!isNative) {
+        const code = this.backupCode;
+        out.push(
+          button(`⬇️ ${t('BACKUP_DOWNLOAD')}`, () => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+            a.download = `meow-ambulance-${new Date().toISOString().slice(0, 10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          }),
+        );
+      }
+    }
+
+    const input = el('textarea', {
+      class: 'backup-code',
+      rows: '3',
+      placeholder: t('BACKUP_PASTE'),
+    });
+    out.push(
+      el('h3', {}, t('BACKUP_IMPORT')),
+      el('p', { class: 'warning' }, t('BACKUP_REPLACE_WARN')),
+      input,
+      button(`📥 ${t('BACKUP_LOAD')}`, () => tryImport(input.value), { class: 'btn primary' }),
+    );
+    if (!isNative) {
+      const file = el('input', { type: 'file', accept: '.txt,text/plain', class: 'backup-file' });
+      file.addEventListener('change', () => {
+        void file.files?.[0]?.text().then(tryImport);
+      });
+      out.push(el('label', { class: 'btn backup-file-btn' }, `📂 ${t('BACKUP_FROM_FILE')}`, file));
+    }
+    if (this.backupError) out.push(el('p', { class: 'warning' }, t('BACKUP_INVALID')));
+    out.push(button(`← ${t('TITLE_BACK')}`, () => this.setTitleView('main')));
+    return out;
   }
 
   /** Zvuk a jazyk – v hlavnom menu aj v pauze. */
@@ -478,7 +604,8 @@ export class UI {
       if (this.modalKind === 'pause' && this.confirmExit) {
         this.confirmExit = false;
         this.renderModal();
-      } else this.closeModal();
+      } else if (this.modalKind === 'story') this.finishStory();
+      else this.closeModal();
       return;
     }
     if (this.selectedId) {
@@ -805,6 +932,7 @@ export class UI {
 
   private tick(): void {
     this.updateHud();
+    this.maybeShowStory();
     // Kaviareň v noci zatvára a ráno otvára (GDD §5.5)
     const open = this.state.cafeOpenNow;
     if (this.cafeWasOpen !== null && open !== this.cafeWasOpen && this.state.cafe.open) {
@@ -2307,6 +2435,10 @@ export class UI {
       case 'event':
         box.append(...this.eventContent(closeBtn));
         break;
+      case 'story':
+        box.classList.add('story-box');
+        box.append(...this.storyContent());
+        break;
       case 'welcome':
         box.append(
           el('h2', {}, t('UI_WELCOME')),
@@ -2326,6 +2458,69 @@ export class UI {
     this.modalViewKey = key;
     this.modal.replaceChildren(box);
     box.scrollTop = scroll;
+  }
+
+  /** Scénka z príbehu sa ukáže, keď hráč nič iné nerobí (žiadne okno, minihra ani menu). */
+  private maybeShowStory(): void {
+    if (!this.modal.hidden || !this.title.hidden || this.busy) return;
+    const beat = this.state.nextStoryBeat;
+    if (!beat) return;
+    this.storyBeat = beat;
+    this.storyLine = 0;
+    this.openModal('story');
+  }
+
+  /** Scénka dočítaná (alebo preskočená tlačidlom Späť) – už sa neukáže. */
+  private finishStory(): void {
+    const beat = this.storyBeat;
+    this.storyBeat = null;
+    this.closeModal();
+    if (!beat) return;
+    const hearts = this.state.markStorySeen(beat.id);
+    this.game.saveNow();
+    if (hearts > 0) {
+      this.toast(t('TOAST_STORY_DONE', { n: hearts }));
+      this.game.playSound('success', 0.5);
+    }
+  }
+
+  /** Príbeh (GDD §8): jeden riadok naraz – portrét hovorcu, meno a text. */
+  private storyContent(): HTMLElement[] {
+    const s = this.state;
+    const beat = this.storyBeat;
+    const story = s.data.story;
+    const line = beat?.lines[this.storyLine];
+    if (!beat || !story || !line) return [];
+    const [who, key] = line;
+    const speaker = story.speakers[who];
+    const last = this.storyLine >= beat.lines.length - 1;
+    const next = button(
+      last ? t('UI_CLOSE') : `${t('UI_STORY_NEXT')} ▸`,
+      () => {
+        if (!last) {
+          this.storyLine += 1;
+          this.renderModal();
+          return;
+        }
+        this.finishStory();
+      },
+      { class: 'btn primary' },
+    );
+    return [
+      el(
+        'div',
+        { class: 'story-line' },
+        speaker ? personPortrait(speaker.sprite, 3) : null,
+        el(
+          'div',
+          {},
+          el('div', { class: 'sub' }, speaker ? t(speaker.name_key) : ''),
+          el('p', {}, t(key, { cat: s.story.neighborCat ?? '' })),
+        ),
+      ),
+      el('div', { class: 'story-dots' }, `${this.storyLine + 1} / ${beat.lines.length}`),
+      next,
+    ];
   }
 
   /** Udalosť: ponuka (prijať / odložiť) alebo prebiehajúca s postupom (GDD §7.3). */
@@ -2581,7 +2776,12 @@ export class UI {
         'div',
         {},
         el('div', { class: 'sub' }, t('UI_VISITOR_TITLE')),
-        el('h2', {}, t(def.name_key)),
+        el('h2', {}, adopterName(def, visit.variant)),
+        visit.friendOf
+          ? el('p', { class: 'hint friend' }, t('UI_VISITOR_RETURNING', { friend: visit.friendOf }))
+          : def.story
+            ? el('p', { class: 'hint friend' }, t('UI_VISITOR_NEIGHBOR'))
+            : null,
         el('p', { style: 'margin:4px 0' }, t(def.desc_key)),
         el(
           'div',
@@ -3740,13 +3940,7 @@ export class UI {
     const cat = catPortrait(rec.cat, 3);
     cat.style.left = '48%';
     cat.style.filter = '';
-    const base = rec.score >= s.data.balance.match.perfect ? 'POSTCARD_PERFECT' : 'POSTCARD_GOOD';
-    // text sa vyberie podľa mačky – tá istá pohľadnica má vždy ten istý text
-    let h = 2166136261; // FNV-1a
-    for (const ch of `${rec.cat.id}:${rec.adoptedAt}`)
-      h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
-    const n = (h >>> 0) % 4;
-    const key = n === 0 ? base : `${base}_${n + 1}`;
+    const text = postcardText(rec, def, s.data.balance.match.perfect);
     const full = !rec.pinned && s.pinnedCount >= s.data.balance.rewards.postcard_pins;
     const pin = button(
       rec.pinned ? t('UI_PC_UNPIN') : t('UI_PC_PIN'),
@@ -3763,11 +3957,16 @@ export class UI {
       'div',
       { class: `postcard${rec.pinned ? ' pinned' : ''}` },
       el('div', { class: 'scene' }, person, cat),
-      el('p', {}, t(key, { cat: rec.cat.name })),
+      el('p', {}, text.main),
+      text.ps ? el('p', { class: 'pc-ps' }, text.ps) : null,
       el(
         'div',
         { class: 'pc-foot' },
-        el('p', { class: 'from' }, t('UI_POSTCARD_FROM', { who: t(def?.name_key ?? '') })),
+        el(
+          'p',
+          { class: 'from' },
+          t('UI_POSTCARD_FROM', { who: def ? adopterName(def, rec.adopterVariant) : '' }),
+        ),
         pin,
       ),
     );

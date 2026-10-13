@@ -25,6 +25,7 @@ export function loadTestData(): GameData {
       .achievements,
     events: read<GameData['events']>('events.json'),
     cosmetics: read<GameData['cosmetics']>('cosmetics.json'),
+    story: read<GameData['story']>('story.json'),
   };
 }
 

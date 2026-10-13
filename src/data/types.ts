@@ -58,6 +58,10 @@ export interface AdopterDef {
   age_pref: AgeGroup | 'any';
   dealbreakers: string[];
   sprites: string[];
+  /** Počet variantov mena: kľúče `name_key`, `name_key_2`… (opis ostáva). */
+  name_variants?: number;
+  /** Postava z príbehu (GDD §8) – nepríde náhodne. */
+  story?: boolean;
 }
 
 export interface ReportDef {
@@ -87,7 +91,14 @@ export interface BalanceData {
     start_hour: number;
   };
   rescue: { interval_s: number; first_delay_s: number; max_waiting: number };
-  adopters: { interval_s: number; first_delay_s: number; max_waiting: number };
+  adopters: {
+    interval_s: number;
+    first_delay_s: number;
+    max_waiting: number;
+    /** Šanca, že príde záujemca z dokonalej adopcie po kamaráta pre svoju mačku (GDD §5.1). */
+    friend_chance: number;
+    friend_rep_bonus: number;
+  };
   decay_per_min: { cleanliness: number; satisfaction: number };
   stat_floor: number;
   recovery_health_per_min: number;
@@ -354,6 +365,28 @@ export interface GameData {
   achievements: AchievementDef[];
   events: EventsData;
   cosmetics: CosmeticsData;
+  /** Príbeh pána Kováča (GDD §8). */
+  story?: StoryData;
+}
+
+/** Príbeh (GDD §8): scénky v poradí podľa postupu hráča. */
+export interface StoryBeat {
+  id: string;
+  when: { rescued?: number; level?: number; neighbor_adopted?: boolean };
+  /** [hovorca, kľúč textu] */
+  lines: [string, string][];
+  /** Po tejto scénke príde sused ako záujemca (keď je niekto pripravený). */
+  neighbor_visit?: boolean;
+  /** Záverečná scénka – odmena ❤. */
+  final?: boolean;
+}
+
+export interface StoryData {
+  /** Id záujemcu (adopters.json, `story: true`), ktorým je sused. */
+  neighbor: string;
+  final_hearts: number;
+  speakers: Record<string, { sprite: string; name_key: string }>;
+  beats: StoryBeat[];
 }
 
 export interface CatStats {
@@ -436,6 +469,10 @@ export interface AdopterVisit {
   id: string;
   defId: string;
   sprite: string;
+  /** Variant mena (1 = `name_key`). */
+  variant?: number;
+  /** Vracia sa po kamaráta pre mačku s týmto menom (GDD §5.1). */
+  friendOf?: string;
 }
 
 /** Záznam o adopcii – podklad pre pohľadnicu a album. */
@@ -452,6 +489,11 @@ export interface AdoptionRecord {
   postcardSeen: boolean;
   /** Pripnutá na nástenku – nezahodí sa. */
   pinned?: boolean;
+  adopterVariant?: number;
+  /** Mačka je kamarátka pre túto skôr adoptovanú mačku (meno). */
+  friendOf?: string;
+  /** Záujemca z tejto adopcie sa už vrátil po kamaráta. */
+  friendVisited?: boolean;
   /** Slabá zhoda (GDD §5.2): kedy sa mačka vráti (ms simulácie); po návrate `returned`. */
   returnDueAt?: number | null;
   returned?: boolean;

@@ -2,7 +2,7 @@ import type { GameData } from '../data/types';
 import { GameState, SAVE_VERSION, emptyCafe, emptyCounters, type SaveData } from './GameState';
 import type { OfflineSummary } from './EventBus';
 
-/** Úložisko savu – v prehliadači localStorage, na mobile neskôr Capacitor Preferences (TECH.md). */
+/** Úložisko savu – v prehliadači localStorage, v aplikácii navyše Capacitor Preferences (src/saveStorage.ts). */
 export interface SaveStorage {
   get(key: string): string | null;
   set(key: string, value: string): void;
@@ -136,10 +136,24 @@ const MIGRATIONS: Record<number, (s: SaveData) => SaveData> = {
   }),
 };
 
+/** Kľúč savu v úložisku. */
+export const SAVE_KEY = 'meow-ambulance:save:1';
+
+/** Predpona kódu na prenos uloženej hry (export / import). */
+const CODE_PREFIX = 'MEOW1:';
+
+const toBase64 = (text: string): string => {
+  let bin = '';
+  for (const b of new TextEncoder().encode(text)) bin += String.fromCharCode(b);
+  return btoa(bin);
+};
+const fromBase64 = (code: string): string =>
+  new TextDecoder().decode(Uint8Array.from(atob(code), (c) => c.charCodeAt(0)));
+
 export class SaveManager {
   constructor(
     private storage: SaveStorage,
-    private key = 'meow-ambulance:save:1',
+    private key = SAVE_KEY,
     private clock: () => number = () => Date.now(),
   ) {}
 
@@ -155,18 +169,50 @@ export class SaveManager {
     const raw = this.storage.get(this.key);
     if (!raw) return null;
     try {
-      let save = JSON.parse(raw) as SaveData;
-      while (save.version < SAVE_VERSION) {
-        const migrate = MIGRATIONS[save.version];
-        if (!migrate) return null;
-        save = migrate(save);
-      }
+      const save = this.parse(raw, data);
+      if (!save) return null;
       const state = GameState.fromSave(data, save);
       const elapsed = Math.max(0, this.clock() - save.savedAt);
       const offline = state.applyOffline(elapsed);
       return { state, offline };
     } catch {
       return null;
+    }
+  }
+
+  /** JSON savu → aktuálna verzia (migrácie); null, ak sa nedá načítať. */
+  private parse(raw: string, data: GameData): SaveData | null {
+    let save = JSON.parse(raw) as SaveData;
+    if (typeof save?.version !== 'number' || save.version > SAVE_VERSION) return null;
+    while (save.version < SAVE_VERSION) {
+      const migrate = MIGRATIONS[save.version];
+      if (!migrate) return null;
+      save = migrate(save);
+    }
+    GameState.fromSave(data, structuredClone(save)); // overí, že sa z neho dá postaviť hra
+    return save;
+  }
+
+  /** Uložená hra ako text na skopírovanie (záloha, prenos na iné zariadenie). */
+  exportCode(): string | null {
+    const raw = this.storage.get(this.key);
+    return raw ? CODE_PREFIX + toBase64(raw) : null;
+  }
+
+  /**
+   * Nahradí uloženú hru kódom z `exportCode`. Neplatný kód nič nezmení a vráti false.
+   * Hra sa potom načíta nanovo (reload).
+   */
+  importCode(code: string, data: GameData): boolean {
+    const trimmed = code.replace(/\s+/g, '');
+    if (!trimmed.startsWith(CODE_PREFIX)) return false;
+    try {
+      const raw = fromBase64(trimmed.slice(CODE_PREFIX.length));
+      if (!this.parse(raw, data)) return false;
+      this.storage.set(this.key, raw);
+      return true;
+    } catch {
+      return false;
     }
   }
 

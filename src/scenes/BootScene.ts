@@ -14,7 +14,8 @@ import { DPR } from './dpr';
 import type { GameData } from '../data/types';
 import { t } from '../i18n/t';
 import { GameState } from '../core/GameState';
-import { SaveManager, browserStorage } from '../core/SaveManager';
+import { SAVE_KEY, SaveManager } from '../core/SaveManager';
+import { restoreNativeSave, saveStorage } from '../saveStorage';
 
 /** Načíta dáta, grafiku a zvuky; potom spustí garáž. */
 export class BootScene extends Phaser.Scene {
@@ -111,11 +112,14 @@ export class BootScene extends Phaser.Scene {
       achievements: json.get('achievements').achievements,
       events: json.get('events'),
       cosmetics: json.get('cosmetics'),
+      story: json.get('story'),
     };
     this.registry.set('gameData', data);
 
     // Uložená hra + dopočítanie offline času (GDD §2.3). „#novahra" v adrese začne odznova.
-    const saves = new SaveManager(browserStorage);
+    // V aplikácii najprv obnoví save z natívneho úložiska, ak ho WebView stratil
+    await restoreNativeSave(SAVE_KEY);
+    const saves = new SaveManager(saveStorage);
     if (location.hash === '#novahra') {
       saves.clear();
       try {

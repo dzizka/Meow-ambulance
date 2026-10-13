@@ -1,0 +1,75 @@
+{
+  "_comment": "Príbeh pána Kováča (GDD §8): scénky v poradí; when.rescued = počet záchran, when.level = úroveň útulku (1–7), when.neighbor_adopted = sused si adoptoval mačku. Riadok = [hovorca, kľúč textu]. Po scénke s neighbor_visit príde sused ako záujemca, keď je niekto pripravený.",
+  "neighbor": "kovac",
+  "final_hearts": 10,
+  "speakers": {
+    "kovac": {
+      "sprite": "020",
+      "name_key": "STORY_KOVAC"
+    },
+    "zuzka": {
+      "sprite": "012",
+      "name_key": "STORY_ZUZKA"
+    }
+  },
+  "beats": [
+    {
+      "id": "kovac_1",
+      "when": {
+        "rescued": 1
+      },
+      "lines": [
+        ["kovac", "STORY_KOVAC_1_1"],
+        ["zuzka", "STORY_KOVAC_1_2"],
+        ["kovac", "STORY_KOVAC_1_3"]
+      ]
+    },
+    {
+      "id": "kovac_2",
+      "when": {
+        "level": 2
+      },
+      "lines": [
+        ["kovac", "STORY_KOVAC_2_1"],
+        ["zuzka", "STORY_KOVAC_2_2"],
+        ["kovac", "STORY_KOVAC_2_3"]
+      ]
+    },
+    {
+      "id": "kovac_3",
+      "when": {
+        "level": 3
+      },
+      "lines": [
+        ["kovac", "STORY_KOVAC_3_1"],
+        ["zuzka", "STORY_KOVAC_3_2"],
+        ["kovac", "STORY_KOVAC_3_3"]
+      ]
+    },
+    {
+      "id": "kovac_4",
+      "when": {
+        "level": 4
+      },
+      "neighbor_visit": true,
+      "lines": [
+        ["kovac", "STORY_KOVAC_4_1"],
+        ["kovac", "STORY_KOVAC_4_2"],
+        ["zuzka", "STORY_KOVAC_4_3"],
+        ["kovac", "STORY_KOVAC_4_4"]
+      ]
+    },
+    {
+      "id": "kovac_5",
+      "when": {
+        "neighbor_adopted": true
+      },
+      "final": true,
+      "lines": [
+        ["kovac", "STORY_KOVAC_5_1"],
+        ["kovac", "STORY_KOVAC_5_2"],
+        ["zuzka", "STORY_KOVAC_5_3"]
+      ]
+    }
+  ]
+}

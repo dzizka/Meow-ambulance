@@ -1,5 +1,5 @@
 {
-  "_comment": "Archetypy adoptérov MVP (GDD §5). tags = domácnosť, dealbreakers = zhoda 0 (id rysu, 'kitten' alebo 'senior_cat'). sprites = postavy G5 (public/assets/sprites/people/gbtl).",
+  "_comment": "Archetypy adoptérov MVP (GDD §5). tags = domácnosť, dealbreakers = zhoda 0 (id rysu, 'kitten' alebo 'senior_cat'). sprites = postavy G5 (public/assets/sprites/people/gbtl). name_variants = počet variantov mena (kľúče NAME_KEY, NAME_KEY_2…), opis ostáva rovnaký. story = postava z príbehu (GDD §8) – nepríde náhodne, iba v príbehu.",
   "adopters": [
     {
       "id": "grandma",
@@ -8,7 +8,8 @@
       "age_pref": "adult",
       "dealbreakers": ["kitten"],
       "sprites": ["015", "008"],
-      "desc_key": "ADOPT_GRANDMA_DESC"
+      "desc_key": "ADOPT_GRANDMA_DESC",
+      "name_variants": 3
     },
     {
       "id": "family_kids",
@@ -17,7 +18,8 @@
       "age_pref": "kitten",
       "dealbreakers": ["wild"],
       "sprites": ["010", "013", "024"],
-      "desc_key": "ADOPT_FAMILY_KIDS_DESC"
+      "desc_key": "ADOPT_FAMILY_KIDS_DESC",
+      "name_variants": 3
     },
     {
       "id": "farmer",
@@ -26,7 +28,8 @@
       "age_pref": "adult",
       "dealbreakers": [],
       "sprites": ["003", "019", "025"],
-      "desc_key": "ADOPT_FARMER_DESC"
+      "desc_key": "ADOPT_FARMER_DESC",
+      "name_variants": 3
     },
     {
       "id": "student",
@@ -35,7 +38,8 @@
       "age_pref": "adult",
       "dealbreakers": ["senior_cat"],
       "sprites": ["000", "014", "017"],
-      "desc_key": "ADOPT_STUDENT_DESC"
+      "desc_key": "ADOPT_STUDENT_DESC",
+      "name_variants": 3
     },
     {
       "id": "homeworker",
@@ -44,7 +48,8 @@
       "age_pref": "any",
       "dealbreakers": [],
       "sprites": ["009", "022", "026"],
-      "desc_key": "ADOPT_HOMEWORKER_DESC"
+      "desc_key": "ADOPT_HOMEWORKER_DESC",
+      "name_variants": 3
     },
     {
       "id": "young_couple",
@@ -53,7 +58,8 @@
       "age_pref": "kitten",
       "dealbreakers": [],
       "sprites": ["001", "011", "016"],
-      "desc_key": "ADOPT_YOUNG_COUPLE_DESC"
+      "desc_key": "ADOPT_YOUNG_COUPLE_DESC",
+      "name_variants": 3
     },
     {
       "id": "retired_vet",
@@ -62,7 +68,8 @@
       "age_pref": "senior",
       "dealbreakers": [],
       "sprites": ["002", "020", "028"],
-      "desc_key": "ADOPT_RETIRED_VET_DESC"
+      "desc_key": "ADOPT_RETIRED_VET_DESC",
+      "name_variants": 3
     },
     {
       "id": "dog_owner",
@@ -71,7 +78,78 @@
       "age_pref": "any",
       "dealbreakers": ["shy"],
       "sprites": ["018", "021", "004"],
-      "desc_key": "ADOPT_DOG_OWNER_DESC"
+      "desc_key": "ADOPT_DOG_OWNER_DESC",
+      "name_variants": 3
+    },
+    {
+      "id": "night_nurse",
+      "name_key": "ADOPT_NIGHT_NURSE",
+      "tags": ["flat", "rarely_home", "quiet_home"],
+      "age_pref": "adult",
+      "dealbreakers": ["kitten"],
+      "sprites": ["014", "016"],
+      "desc_key": "ADOPT_NIGHT_NURSE_DESC",
+      "name_variants": 3
+    },
+    {
+      "id": "big_family",
+      "name_key": "ADOPT_BIG_FAMILY",
+      "tags": ["kids", "garden", "other_pets", "home_often", "active"],
+      "age_pref": "kitten",
+      "dealbreakers": ["grumpy"],
+      "sprites": ["029", "013", "010"],
+      "desc_key": "ADOPT_BIG_FAMILY_DESC",
+      "name_variants": 3
+    },
+    {
+      "id": "writer",
+      "name_key": "ADOPT_WRITER",
+      "tags": ["flat", "home_often", "quiet_home", "no_kids"],
+      "age_pref": "senior",
+      "dealbreakers": [],
+      "sprites": ["032", "034"],
+      "desc_key": "ADOPT_WRITER_DESC",
+      "name_variants": 3
+    },
+    {
+      "id": "cottage",
+      "name_key": "ADOPT_COTTAGE",
+      "tags": ["senior", "garden", "home_often"],
+      "age_pref": "adult",
+      "dealbreakers": ["kitten"],
+      "sprites": ["028", "035"],
+      "desc_key": "ADOPT_COTTAGE_DESC",
+      "name_variants": 3
+    },
+    {
+      "id": "bookshop",
+      "name_key": "ADOPT_BOOKSHOP",
+      "tags": ["home_often", "quiet_home", "experienced"],
+      "age_pref": "any",
+      "dealbreakers": ["wild"],
+      "sprites": ["033", "015"],
+      "desc_key": "ADOPT_BOOKSHOP_DESC",
+      "name_variants": 3
+    },
+    {
+      "id": "runner",
+      "name_key": "ADOPT_RUNNER",
+      "tags": ["flat", "active", "rarely_home"],
+      "age_pref": "adult",
+      "dealbreakers": ["senior_cat"],
+      "sprites": ["017", "027", "026"],
+      "desc_key": "ADOPT_RUNNER_DESC",
+      "name_variants": 3
+    },
+    {
+      "id": "kovac",
+      "name_key": "ADOPT_KOVAC",
+      "tags": ["senior", "garden", "home_often", "quiet_home"],
+      "age_pref": "any",
+      "dealbreakers": [],
+      "sprites": ["020"],
+      "desc_key": "ADOPT_KOVAC_DESC",
+      "story": true
     }
   ]
 }

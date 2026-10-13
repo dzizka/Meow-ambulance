@@ -18,6 +18,7 @@ import type {
   LevelDef,
   StaffDef,
   StaffId,
+  StoryBeat,
   Unlock,
   Counters,
   CatData,
@@ -86,6 +87,14 @@ export interface SaveData {
   // od verzie 16
   campaigns: CampaignState;
   adoptionDay?: { until: number; readyAt: number };
+  /** Príbeh pána Kováča (GDD §8); chýba = starý save, dopočíta sa. */
+  story?: StoryState;
+}
+
+/** Príbeh (GDD §8): videné scénky a mačka, ktorú si sused adoptoval. */
+export interface StoryState {
+  seen: string[];
+  neighborCat: string | null;
 }
 
 /** Kozmetika (GDD §7.6): kúpené ozdoby a farby stien, zvolená farba v miestnostiach. */
@@ -226,6 +235,7 @@ export class GameState {
   campaigns: CampaignState = { done: 0, active: null };
   /** Deň adopcií za ❤: do kedy beží a odkedy sa dá znova (ms simulácie). */
   adoptionDay = { until: 0, readyAt: 0 };
+  story: StoryState = { seen: [], neighborCat: null };
   private adDayWasActive = false;
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
@@ -524,8 +534,16 @@ export class GameState {
     this.adopterTimer = 0;
     // Uprednostni typ, ktorý ešte nečaká
     const waiting = new Set(this.adopters.map((v) => v.defId));
-    const pool = this.data.adopters.filter((d) => !waiting.has(d.id));
-    const options = pool.length ? pool : this.data.adopters;
+    // Sused z príbehu príde, keď naňho príde rad a niekto je pripravený (GDD §8)
+    const neighbor = this.neighborVisit(waiting);
+    if (neighbor) {
+      this.adopters.push(neighbor);
+      this.bus.emit('adopterArrived', { visit: neighbor });
+      return;
+    }
+    const random = this.data.adopters.filter((d) => !d.story);
+    const pool = random.filter((d) => !waiting.has(d.id));
+    const options = pool.length ? pool : random;
     let def = this.rng.pick(options);
     // Správca sietí často nájde záujemcu, ktorý sa k niektorej mačke hodí najlepšie
     if (social && this.rng.chance(social.best_match_chance)) {
@@ -534,13 +552,98 @@ export class GameState {
         Math.max(...ready.map((c) => computeMatch(c, d, this.data, true).score));
       def = options.reduce((x, y) => (best(y) > best(x) ? y : x), def);
     }
-    const visit: AdopterVisit = {
+    const friend = this.friendVisit(waiting);
+    const visit: AdopterVisit = friend ?? {
       id: this.newId('a'),
       defId: def.id,
       sprite: this.rng.pick(def.sprites),
+      variant: this.rng.int(1, def.name_variants ?? 1),
     };
     this.adopters.push(visit);
     this.bus.emit('adopterArrived', { visit });
+  }
+
+  // ---------- Príbeh pána Kováča (GDD §8) ----------
+
+  private storyDone(beat: StoryBeat): boolean {
+    const w = beat.when;
+    return (
+      (w.rescued === undefined || this.counters.rescued >= w.rescued) &&
+      (w.level === undefined || this.level + 1 >= w.level) &&
+      (!w.neighbor_adopted || this.story.neighborCat !== null)
+    );
+  }
+
+  /** Ďalšia scénka, ktorá sa má ukázať (scénky idú za sebou), alebo null. */
+  get nextStoryBeat(): StoryBeat | null {
+    const next = this.data.story?.beats.find((b) => !this.story.seen.includes(b.id));
+    return next && this.storyDone(next) ? next : null;
+  }
+
+  /** Hráč scénku dočítal. Vráti počet ❤ za záverečnú scénku (inak 0). */
+  markStorySeen(id: string): number {
+    const beat = this.data.story?.beats.find((b) => b.id === id);
+    if (!beat || this.story.seen.includes(id)) return 0;
+    this.story.seen.push(id);
+    if (!beat.final) return 0;
+    const n = this.data.story?.final_hearts ?? 0;
+    this.addHearts(n);
+    return n;
+  }
+
+  /** Sused čaká na mačku: videl scénku s pozvaním a ešte si žiadnu neadoptoval. */
+  get neighborWaiting(): boolean {
+    const invite = this.data.story?.beats.find((b) => b.neighbor_visit);
+    return !!invite && this.story.seen.includes(invite.id) && this.story.neighborCat === null;
+  }
+
+  private neighborVisit(waiting: Set<string>): AdopterVisit | null {
+    const id = this.data.story?.neighbor;
+    const def = id ? this.data.adopters.find((d) => d.id === id) : undefined;
+    if (!def || !this.neighborWaiting || waiting.has(def.id)) return null;
+    return { id: this.newId('a'), defId: def.id, sprite: this.rng.pick(def.sprites) };
+  }
+
+  /**
+   * Starý save (pred príbehom): splnené scénky okrem poslednej sa považujú za videné,
+   * takže hráč uvidí iba tú, kde práve je – a príbeh môže dokončiť.
+   */
+  private storyForOldSave(): StoryState {
+    const story: StoryState = { seen: [], neighborCat: null };
+    this.story = story;
+    const beats = this.data.story?.beats ?? [];
+    const done = beats.filter((b) => !b.final && this.storyDone(b));
+    story.seen = done.slice(0, -1).map((b) => b.id);
+    return story;
+  }
+
+  /**
+   * Občas sa vráti záujemca z nedávnej dokonalej adopcie – chce kamaráta pre svoju mačku
+   * (GDD §5.1). Rovnaká postava aj meno; každá adopcia najviac raz.
+   */
+  private friendVisit(waiting: Set<string>): AdopterVisit | null {
+    if (!this.rng.chance(this.data.balance.adopters.friend_chance ?? 0)) return null;
+    const perfect = this.data.balance.match.perfect;
+    const rec = this.adoptions
+      .slice(-20)
+      .filter(
+        (r) =>
+          r.score >= perfect &&
+          !r.friendVisited &&
+          !r.friendOf &&
+          !waiting.has(r.adopterDefId) &&
+          this.data.adopters.some((d) => d.id === r.adopterDefId && !d.story),
+      )
+      .at(-1);
+    if (!rec) return null;
+    rec.friendVisited = true;
+    return {
+      id: this.newId('a'),
+      defId: rec.adopterDefId,
+      sprite: rec.adopterSprite,
+      variant: rec.adopterVariant ?? 1,
+      friendOf: rec.cat.name,
+    };
   }
 
   private deliverPostcards(): number {
@@ -1345,6 +1448,10 @@ export class GameState {
     if (!cat || !visit || !def || !this.isReady(cat)) return null;
     const match = computeMatch(cat, def, this.data);
     if (match.quality === 'blocked') return null;
+    // kamarátka pre skôr adoptovanú mačku: istá pohľadnica (o oboch) a ★ navyše
+    const friend = match.quality !== 'poor' ? visit.friendOf : undefined;
+    // sused z príbehu: pri slabej zhode sa mačka vráti a on príde znova (GDD §8)
+    const neighbor = !!def.story && match.quality !== 'poor';
 
     const r = this.data.balance.rewards;
     // Vzácnejšie plemeno = vyšší príspevok (+15 % za každý stupeň vzácnosti)
@@ -1376,12 +1483,14 @@ export class GameState {
       (cat.vaccinated ? this.data.balance.shelter.vaccine_rep_bonus : 0) +
       (cat.neutered ? this.data.balance.clinic.neuter_rep_bonus : 0) +
       (cat.clinicCase ? this.data.balance.clinic.case_rep_bonus : 0) +
-      (cat.special ? this.data.balance.rare.rep_bonus : 0);
+      (cat.special ? this.data.balance.rare.rep_bonus : 0) +
+      (friend ? (this.data.balance.adopters.friend_rep_bonus ?? 0) : 0);
     // Lesklá mačka (čistá a spokojná) – istá pohľadnica pri dobrej zhode (GDD §3.3)
     const glow = Care.isGlowing(cat, this.data);
     const postcard =
       match.quality === 'perfect' ||
-      (match.quality === 'good' && (glow || this.rng.chance(r.postcard_chance_good)));
+      (match.quality === 'good' &&
+        (glow || !!friend || neighbor || this.rng.chance(r.postcard_chance_good)));
     const delay = this.rng.int(r.postcard_delay_s[0], r.postcard_delay_s[1]) * 1000;
     // Slabá zhoda: nový domov nevyjde, mačka sa po chvíli vráti (GDD §5.2)
     const returnDueAt =
@@ -1394,6 +1503,8 @@ export class GameState {
       cat: structuredClone(cat),
       adopterDefId: def.id,
       adopterSprite: visit.sprite,
+      ...(visit.variant ? { adopterVariant: visit.variant } : {}),
+      ...(friend ? { friendOf: friend } : {}),
       score: match.score,
       fee,
       adoptedAt: this.now,
@@ -1402,6 +1513,7 @@ export class GameState {
       postcardSeen: false,
       ...(returnDueAt !== null ? { returnDueAt } : {}),
     };
+    if (neighbor) this.story.neighborCat = cat.name;
     this.cats = this.cats.filter((c) => c !== cat);
     this.adopters = this.adopters.filter((v) => v !== visit);
     this.readyIds.delete(cat.id);
@@ -2281,6 +2393,7 @@ export class GameState {
       cosmetics: structuredClone(this.cosmetics),
       campaigns: structuredClone(this.campaigns),
       adoptionDay: { ...this.adoptionDay },
+      story: structuredClone(this.story),
     };
   }
 
@@ -2322,6 +2435,7 @@ export class GameState {
     s.cosmetics = structuredClone(save.cosmetics ?? { owned: [], walls: {} });
     s.campaigns = structuredClone(save.campaigns ?? { done: 0, active: null });
     s.adoptionDay = { ...(save.adoptionDay ?? { until: 0, readyAt: 0 }) };
+    s.story = save.story ? structuredClone(save.story) : s.storyForOldSave();
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();

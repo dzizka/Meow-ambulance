@@ -308,7 +308,7 @@ function build(lang) {
          lang === 'sk' ? 'Domov' : 'Home',
          lang === 'sk' ? 'Nechce' : 'Won’t take',
        ],
-       data.adopters.map((a) => [
+       data.adopters.filter((a) => !a.story).map((a) => [
          `<b>${esc(t(a.name_key))}</b><br><small>${esc(t(a.desc_key))}</small>`,
          esc(a.tags.map((g) => t(`TAG_${g}`)).join(', ')),
          esc(

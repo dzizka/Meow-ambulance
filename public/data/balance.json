@@ -13,7 +13,9 @@
   "adopters": {
     "interval_s": 180,
     "first_delay_s": 20,
-    "max_waiting": 2
+    "max_waiting": 2,
+    "friend_chance": 0.2,
+    "friend_rep_bonus": 2
   },
   "decay_per_min": {
     "cleanliness": 0.5,
