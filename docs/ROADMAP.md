@@ -52,7 +52,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] Ekonomika: €, ★, nákup 3. a 4. klietky a rozšírenie kútika (menu ☰ → Obchod)
 - [x] Tutoriál so Zuzkou (rady podľa postupu hráča, dá sa skryť)
 - [x] Ukladanie v2 s migráciou starých savov, „Nová hra" v menu
-- [ ] Ukladanie (3 sloty, autosave)
+- [x] Ukladanie: autosave, záloha v natívnom úložisku Androidu, export/import kódu zálohy
+- [ ] Ukladanie: 3 sloty
 - [x] Ekonomika: úrovne útulku podľa ★, obchod s vybavením (5 kusov × 3 stupne) a dekoráciami (15, útulnosť) – GDD §6.1
 - [x] Fáza 2 – Komunitný útulok: karanténa (+4 klietky), ambulancia (otoskop, ušné roztoče, očkovanie), mačacia rodinka
 - [x] Hudba: 6 skladieb – lo-fi cez deň, pokojné večer a v noci, načítanie na pozadí

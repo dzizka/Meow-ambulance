@@ -591,7 +591,9 @@ src/
 ### 10.3 Ukladanie hry 🟢 MVP
 - Automatické uloženie každých 15 s, po každej dôležitej akcii a pri zatvorení/skrytí hry (aj na mobile). Ukladá sa aj čas uloženia kvôli offline príjmu (§2.3).
 - Formát JSON s poľom `save_version` (migrácie pri zmene formátu).
-- 3 sloty.
+- **Kde:** v prehliadači `localStorage`. V aplikácii (Android) sa každé uloženie zrkadlí aj do **Capacitor Preferences** (natívne úložisko, zálohuje ho Android – `allowBackup`). Pri štarte sa použije novší z oboch, takže hra prežije aj vymazanie dát WebView (`src/saveStorage.ts`).
+- **💾 Záloha hry** 🟢 (hlavné menu): kód `MEOW1:…` na skopírovanie a vloženie – poistka a prenos na iné zariadenie; na webe aj stiahnutie/načítanie súboru. Neplatný kód nič nezmení; načítanie nahradí terajšiu hru.
+- 🟡 3 sloty (viac hier naraz) – zatiaľ jeden slot.
 
 ### 10.4 Výkonnostné ciele
 - 60 FPS na bežnom notebooku s integrovanou grafikou pri 50 mačkách na scéne.

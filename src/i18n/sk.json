@@ -832,5 +832,16 @@
   "UI_GLOW_ON": "Lesklá – čistá a spokojná. Záujemcovi sa bude páčiť viac (lepšia zhoda, príspevok +{p} %, pri dobrej zhode istá pohľadnica).",
   "UI_GLOW_TIP": "Tip: keď bude čistá a spokojná (✨ lesk), urobí na záujemcu lepší dojem.",
   "UI_MATCH_GLOW": "lesk",
-  "UI_HELPER": "{cat} ju upokojuje – dôvera rastie rýchlejšie."
+  "UI_HELPER": "{cat} ju upokojuje – dôvera rastie rýchlejšie.",
+  "BACKUP_TITLE": "Záloha hry",
+  "BACKUP_HINT": "Hra sa ukladá sama. Kód zálohy si môžeš odložiť (napr. do poznámok) alebo ním preniesť hru na iné zariadenie.",
+  "BACKUP_COPY": "Skopírovať kód zálohy",
+  "BACKUP_COPIED": "Kód zálohy je skopírovaný.",
+  "BACKUP_DOWNLOAD": "Stiahnuť ako súbor",
+  "BACKUP_IMPORT": "Obnoviť zo zálohy",
+  "BACKUP_REPLACE_WARN": "Načítanie zálohy nahradí terajšiu hru.",
+  "BACKUP_PASTE": "Sem vlož kód zálohy (začína MEOW1:)",
+  "BACKUP_LOAD": "Načítať zálohu",
+  "BACKUP_FROM_FILE": "Načítať zo súboru",
+  "BACKUP_INVALID": "Tento kód sa nedá načítať. Skontroluj, či je celý."
 }

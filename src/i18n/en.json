@@ -832,5 +832,16 @@
   "UI_GLOW_ON": "Glowing – clean and content. Adopters will like her more (better match, +{p} % fee, a sure postcard on a good match).",
   "UI_GLOW_TIP": "Tip: once she’s clean and content (✨ glow), she’ll make a better first impression.",
   "UI_MATCH_GLOW": "glow",
-  "UI_HELPER": "{cat} keeps her calm – trust grows faster."
+  "UI_HELPER": "{cat} keeps her calm – trust grows faster.",
+  "BACKUP_TITLE": "Game backup",
+  "BACKUP_HINT": "The game saves itself. You can keep the backup code (e.g. in your notes) or use it to move the game to another device.",
+  "BACKUP_COPY": "Copy backup code",
+  "BACKUP_COPIED": "Backup code copied.",
+  "BACKUP_DOWNLOAD": "Download as a file",
+  "BACKUP_IMPORT": "Restore from backup",
+  "BACKUP_REPLACE_WARN": "Loading a backup replaces your current game.",
+  "BACKUP_PASTE": "Paste the backup code here (starts with MEOW1:)",
+  "BACKUP_LOAD": "Load backup",
+  "BACKUP_FROM_FILE": "Load from a file",
+  "BACKUP_INVALID": "This code can’t be loaded. Check that it’s complete."
 }

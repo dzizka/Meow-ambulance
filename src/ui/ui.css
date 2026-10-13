@@ -1096,6 +1096,32 @@ body.minigame .toast:not(:last-child) {
   margin: -4px 0 8px;
   color: var(--ui-dim);
 }
+/* Záloha hry – kód na skopírovanie / vloženie */
+.title-box h3 {
+  margin: 6px 0 0;
+  font-size: 16px;
+  color: var(--ui-accent);
+}
+.backup-code {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-deep);
+  color: var(--ui-text);
+  font:
+    12px/1.3 ui-monospace,
+    monospace;
+  word-break: break-all;
+}
+.backup-file {
+  display: none;
+}
+.backup-file-btn {
+  cursor: pointer;
+}
 .title-box .btn,
 .pause-box .btn {
   text-align: center;

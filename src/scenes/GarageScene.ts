@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { MUSIC_DAY, MUSIC_NIGHT, ZUZKA_SHEET } from '../assets';
 import type { GameState } from '../core/GameState';
-import { SaveManager, browserStorage } from '../core/SaveManager';
+import { SAVE_KEY, SaveManager } from '../core/SaveManager';
+import { flushNativeSave, saveStorage } from '../saveStorage';
 import type { OfflineSummary } from '../core/EventBus';
 import * as Care from '../core/systems/Care';
 import type { Stars } from '../core/systems/Care';
@@ -72,7 +73,7 @@ const rect = (sheet: Sheet, name: string): FrameRect =>
  */
 export class GarageScene extends Phaser.Scene implements GameBridge {
   state!: GameState;
-  private saves = new SaveManager(browserStorage);
+  private saves = new SaveManager(saveStorage);
   private sprites = new Map<string, CatSprite>();
   private selected: CatSprite | null = null;
   private zuzka!: Phaser.GameObjects.Sprite;
@@ -576,7 +577,24 @@ export class GarageScene extends Phaser.Scene implements GameBridge {
   resetGame(): void {
     this.noSave = true;
     this.saves.clear();
-    location.reload();
+    void flushNativeSave(SAVE_KEY).finally(() => location.reload());
+  }
+
+  /** Aktuálna hra ako kód na skopírovanie (GDD §10.3). */
+  exportSave(): string | null {
+    this.save();
+    return this.saves.exportCode();
+  }
+
+  /** Nahradí hru kódom zo zálohy a načíta ju nanovo; neplatný kód vráti false. */
+  importSave(code: string): boolean {
+    this.noSave = true;
+    if (!this.saves.importCode(code, this.state.data)) {
+      this.noSave = false;
+      return false;
+    }
+    void flushNativeSave(SAVE_KEY).finally(() => location.reload());
+    return true;
   }
 
   private save(): void {

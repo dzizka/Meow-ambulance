@@ -32,6 +32,9 @@ export interface GameBridge {
   setMuted(muted: boolean): void;
   /** Zmaže uloženú hru a začne odznova. */
   resetGame(): void;
+  /** Záloha hry (GDD §10.3): kód aktuálnej hry a jeho načítanie (potom sa hra načíta nanovo). */
+  exportSave(): string | null;
+  importSave(code: string): boolean;
   /** Miestnosť, ktorú vidí kamera, a prepnutie do inej (GDD §5.5). */
   readonly room: Room;
   showRoom(room: Room): void;
@@ -244,7 +247,10 @@ export class UI {
     'reports' | 'visitors' | 'menu' | 'welcome' | 'station' | 'event' | 'pause' | null = null;
   /** Hlavné menu (úvodná obrazovka) – ukáže sa pri spustení a z pauzy. */
   private title = el('div', { class: 'title-screen', role: 'dialog', 'aria-modal': 'true' });
-  private titleView: 'main' | 'settings' | 'new' = 'main';
+  private titleView: 'main' | 'settings' | 'new' | 'backup' = 'main';
+  /** Záloha hry: zobrazený kód a či posledný import zlyhal. */
+  private backupCode: string | null = null;
+  private backupError = false;
   /** Po prvom „Hrať" už hlavné menu ponúka Pokračovať a Novú hru. */
   private started = false;
   private confirmExit = false;
@@ -366,6 +372,8 @@ export class UI {
         ...this.settingsControls(),
         button(`← ${t('TITLE_BACK')}`, () => this.setTitleView('main')),
       );
+    } else if (this.titleView === 'backup') {
+      box.append(...this.backupContent());
     } else if (this.titleView === 'new') {
       box.append(
         el('p', { class: 'warning' }, t('UI_NEW_GAME_CONFIRM')),
@@ -383,12 +391,84 @@ export class UI {
         }),
         button(`⚙️ ${t('TITLE_SETTINGS')}`, () => this.setTitleView('settings')),
         button(`📖 ${t('TITLE_WIKI')}`, () => openWiki(lang)),
+        button(`💾 ${t('BACKUP_TITLE')}`, () => {
+          this.backupCode = null;
+          this.backupError = false;
+          this.setTitleView('backup');
+        }),
         ...(this.started ? [button(`↺ ${t('UI_NEW_GAME')}`, () => this.setTitleView('new'))] : []),
         ...(isNative ? [button(`🚪 ${t('TITLE_EXIT')}`, () => this.quit())] : []),
         el('p', { class: 'hint' }, t('TITLE_SAVED')),
       );
     }
     this.title.replaceChildren(box);
+  }
+
+  /**
+   * Záloha hry (GDD §10.3): kód na skopírovanie a vloženie – prenos na iné zariadenie
+   * alebo poistka pred stratou dát. Na webe aj ako súbor.
+   */
+  private backupContent(): HTMLElement[] {
+    const tryImport = (code: string) => {
+      if (this.game.importSave(code)) return; // hra sa načíta nanovo
+      this.backupError = true;
+      this.renderTitle();
+    };
+
+    const exportBtn = button(`📋 ${t('BACKUP_COPY')}`, () => {
+      this.backupCode = this.game.exportSave();
+      this.renderTitle();
+      if (this.backupCode)
+        void navigator.clipboard?.writeText(this.backupCode).then(
+          () => this.toast(t('BACKUP_COPIED')),
+          () => undefined,
+        );
+    });
+    const out: HTMLElement[] = [
+      el('h2', {}, `💾 ${t('BACKUP_TITLE')}`),
+      el('p', { class: 'hint' }, t('BACKUP_HINT')),
+      exportBtn,
+    ];
+    if (this.backupCode) {
+      const shown = el('textarea', { class: 'backup-code', readonly: 'readonly', rows: '3' });
+      shown.value = this.backupCode;
+      shown.addEventListener('focus', () => shown.select());
+      out.push(shown);
+      if (!isNative) {
+        const code = this.backupCode;
+        out.push(
+          button(`⬇️ ${t('BACKUP_DOWNLOAD')}`, () => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+            a.download = `meow-ambulance-${new Date().toISOString().slice(0, 10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          }),
+        );
+      }
+    }
+
+    const input = el('textarea', {
+      class: 'backup-code',
+      rows: '3',
+      placeholder: t('BACKUP_PASTE'),
+    });
+    out.push(
+      el('h3', {}, t('BACKUP_IMPORT')),
+      el('p', { class: 'warning' }, t('BACKUP_REPLACE_WARN')),
+      input,
+      button(`📥 ${t('BACKUP_LOAD')}`, () => tryImport(input.value), { class: 'btn primary' }),
+    );
+    if (!isNative) {
+      const file = el('input', { type: 'file', accept: '.txt,text/plain', class: 'backup-file' });
+      file.addEventListener('change', () => {
+        void file.files?.[0]?.text().then(tryImport);
+      });
+      out.push(el('label', { class: 'btn backup-file-btn' }, `📂 ${t('BACKUP_FROM_FILE')}`, file));
+    }
+    if (this.backupError) out.push(el('p', { class: 'warning' }, t('BACKUP_INVALID')));
+    out.push(button(`← ${t('TITLE_BACK')}`, () => this.setTitleView('main')));
+    return out;
   }
 
   /** Zvuk a jazyk – v hlavnom menu aj v pauze. */
