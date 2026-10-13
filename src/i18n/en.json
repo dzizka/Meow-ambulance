@@ -134,7 +134,6 @@
   "TOAST_POSTCARD": "A postcard arrived!",
   "TOAST_ADMITTED": "{cat} is here. Do a check-up.",
   "TOAST_RESIDENT": "{cat} is staying with us ❤",
-  "UI_PER_MIN": "+€{n}/min",
   "UI_RESIDENTS": "Residents {n}/{max}",
   "MG_TICK_TITLE": "Tick removal",
   "MG_TICK_HINT": "Grab a tick and pull it away slowly. Too fast and it slips!",

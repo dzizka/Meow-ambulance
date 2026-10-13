@@ -134,7 +134,6 @@
   "TOAST_POSTCARD": "Prišla pohľadnica!",
   "TOAST_ADMITTED": "{cat} je u nás. Urob prehliadku.",
   "TOAST_RESIDENT": "{cat} zostáva s nami ❤",
-  "UI_PER_MIN": "+{n} €/min",
   "UI_RESIDENTS": "Stálice {n}/{max}",
   "MG_TICK_TITLE": "Vyťahovanie kliešťov",
   "MG_TICK_HINT": "Chyť kliešťa a ťahaj pomaly preč. Príliš rýchlo a vykĺzne!",
