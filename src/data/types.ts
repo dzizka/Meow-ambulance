@@ -48,6 +48,8 @@ export interface CoatDef {
   sprites: string[];
   /** Iba s plemenom, ktoré ju má pevne – nepadne náhodne. */
   special?: boolean;
+  /** Sezónna farba (Halloween, Vianoce) – padne iba v sezóne (GDD §7.3). */
+  season?: string;
 }
 
 export interface AdopterDef {
@@ -132,6 +134,8 @@ export interface BalanceData {
     return_satisfaction: number;
     /** O koľko ★ príde útulok pri vrátení (nikdy nie pod aktuálnu úroveň). */
     return_rep_loss: number;
+    /** Odmena za dokončenú stranu albumu (GDD §7.1). */
+    album_page_money: number;
   };
   /** Lesk (GDD §3.3): čistá a spokojná mačka sa pri adopcii lepšie uplatní. */
   glow: {
@@ -292,6 +296,18 @@ export interface BalanceData {
     prestige_reward: number;
     prestige_fee: number;
   };
+  /** Sezóny podľa skutočného dátumu (GDD §7.3). */
+  seasons: { chance: number; list: SeasonDef[] };
+  /** Ocenenia po poslednej úrovni (GDD §6.1.1). */
+  honors: { every: number; hearts: number; money: number; titles: number };
+}
+
+/** Sezóna (Halloween, Vianoce): from/to = „MM-DD" vrátane, môže prejsť cez Nový rok. */
+export interface SeasonDef {
+  id: string;
+  icon: string;
+  from: string;
+  to: string;
 }
 
 /** Čo sa v hre počíta (pre výzvy a štatistiky). */
@@ -629,6 +645,7 @@ export interface CosmeticsData {
     achievement: number;
     event_bonus: number;
     rare: number;
+    album_page: number;
   };
   walls: WallColorDef[];
   /** Deň adopcií za srdiečka (veľa záujemcov naraz). */
@@ -665,11 +682,30 @@ export interface AchievementDef {
 }
 
 /** Udalosť (GDD §7.3). */
+/** Účinky udalosti – násobky a príplatky, ktoré platia, kým udalosť beží. */
+export interface EventEffects {
+  report_interval?: number;
+  adopter_interval?: number;
+  extra_adopters?: number;
+  guest_interval?: number;
+  tip_mult?: number;
+  hotel_interval?: number;
+  hotel_fee?: number;
+  lecture_interval?: number;
+  extra_quarantine?: number;
+  /** Zachránené mačky prídu vystrašené (dôvera ±) a špinavé. */
+  arrival_trust?: number;
+  arrival_dirty?: boolean;
+  /** Hlásenie, ktoré príde hneď na začiatku (napr. rodinka z množiarne). */
+  start_report?: string;
+}
+
 export interface EventDef {
-  id: 'winter' | 'openday' | 'mill';
+  id: string;
   icon: string;
   min_level: number;
-  requires?: 'cafe' | 'shelter';
+  requires?: 'cafe' | 'shelter' | 'hotel' | 'education';
+  effects?: EventEffects;
   duration_s: number;
   goal: { kind: keyof Counters; target: number };
   money: number;

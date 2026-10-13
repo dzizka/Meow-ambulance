@@ -1,5 +1,5 @@
 {
-  "_comment": "Udalosti (GDD §7.3): prídu ako ponuka, hráč ich prijme alebo odloží; nikdy nezlyhajú – základná odmena vždy, bonus za splnený cieľ. goal.kind = počítadlo z Counters.",
+  "_comment": "Udalosti (GDD §7.3): prídu ako ponuka, hráč ich prijme alebo odloží; nikdy nezlyhajú – základná odmena vždy, bonus za splnený cieľ. goal.kind = počítadlo z Counters. effects = násobky počas udalosti: report_interval (hlásenia), adopter_interval + extra_adopters (záujemcovia), guest_interval + tip_mult (kaviareň), hotel_interval + hotel_fee (hotel), lecture_interval (školské výlety), extra_quarantine (dočasné klietky), arrival_trust + arrival_dirty (zachránené mačky), start_report (hlásenie hneď na začiatku).",
   "interval_s": 1200,
   "first_delay_s": 900,
   "decline_delay_s": 600,
@@ -16,7 +16,10 @@
       "money": 120,
       "rep": 5,
       "bonus_money": 150,
-      "bonus_rep": 5
+      "bonus_rep": 5,
+      "effects": {
+        "report_interval": 0.5
+      }
     },
     {
       "id": "openday",
@@ -31,7 +34,12 @@
       "money": 100,
       "rep": 5,
       "bonus_money": 200,
-      "bonus_rep": 8
+      "bonus_rep": 8,
+      "effects": {
+        "adopter_interval": 0.35,
+        "extra_adopters": 1,
+        "guest_interval": 0.4
+      }
     },
     {
       "id": "mill",
@@ -46,6 +54,85 @@
       "money": 300,
       "rep": 8,
       "bonus_money": 300,
+      "bonus_rep": 10,
+      "effects": {
+        "extra_quarantine": 4,
+        "start_report": "mill"
+      }
+    },
+    {
+      "id": "flood",
+      "icon": "🌊",
+      "min_level": 3,
+      "duration_s": 600,
+      "effects": {
+        "report_interval": 0.6,
+        "arrival_trust": -10,
+        "arrival_dirty": true
+      },
+      "goal": {
+        "kind": "social",
+        "target": 12
+      },
+      "money": 150,
+      "rep": 5,
+      "bonus_money": 200,
+      "bonus_rep": 6
+    },
+    {
+      "id": "bazaar",
+      "icon": "🧺",
+      "min_level": 3,
+      "requires": "cafe",
+      "duration_s": 480,
+      "effects": {
+        "guest_interval": 0.6,
+        "tip_mult": 2
+      },
+      "goal": {
+        "kind": "served",
+        "target": 8
+      },
+      "money": 100,
+      "rep": 4,
+      "bonus_money": 200,
+      "bonus_rep": 6
+    },
+    {
+      "id": "holidays",
+      "icon": "🧳",
+      "min_level": 6,
+      "requires": "hotel",
+      "duration_s": 600,
+      "effects": {
+        "hotel_interval": 0.5,
+        "hotel_fee": 1.25
+      },
+      "goal": {
+        "kind": "hotel",
+        "target": 4
+      },
+      "money": 250,
+      "rep": 6,
+      "bonus_money": 350,
+      "bonus_rep": 8
+    },
+    {
+      "id": "schoolweek",
+      "icon": "🎒",
+      "min_level": 7,
+      "requires": "education",
+      "duration_s": 600,
+      "effects": {
+        "lecture_interval": 0.4
+      },
+      "goal": {
+        "kind": "lectures",
+        "target": 3
+      },
+      "money": 300,
+      "rep": 8,
+      "bonus_money": 400,
       "bonus_rep": 10
     }
   ]

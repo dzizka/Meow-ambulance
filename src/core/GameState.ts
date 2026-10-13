@@ -15,6 +15,7 @@ import type {
   DecorDef,
   EquipmentDef,
   EventDef,
+  EventEffects,
   LevelDef,
   StaffDef,
   StaffId,
@@ -27,12 +28,14 @@ import type {
   GameData,
   GuestOrder,
   Report,
+  SeasonDef,
   SocialActivity,
 } from '../data/types';
 import { EventBus, type OfflineSummary } from './EventBus';
 import { Rng } from './Rng';
 import * as Care from './systems/Care';
 import { generateCat } from './systems/CatGenerator';
+import * as Late from './systems/LateGame';
 import { computeMatch, type MatchResult } from './systems/Match';
 
 export const SAVE_VERSION = 16;
@@ -89,6 +92,15 @@ export interface SaveData {
   adoptionDay?: { until: number; readyAt: number };
   /** Príbeh pána Kováča (GDD §8); chýba = starý save, dopočíta sa. */
   story?: StoryState;
+  /** Neskorá hra (GDD §7.1, §6.1.1); chýba = starý save, odmeny sa doplnia pri hraní. */
+  late?: LateState;
+}
+
+/** Ocenenia, odmenené strany albumu a sezóna, ktorú hráč už privítal. */
+export interface LateState {
+  honors: number;
+  pages: string[];
+  greeted: string;
 }
 
 /** Príbeh (GDD §8): videné scénky a mačka, ktorú si sused adoptoval. */
@@ -110,6 +122,8 @@ export interface EventsState {
   timer: number;
   done: Partial<Record<EventDef['id'], number>>;
 }
+
+const NO_EFFECTS: EventEffects = {};
 export const emptyEvents = (first: number): EventsState => ({
   offer: null,
   active: null,
@@ -236,6 +250,12 @@ export class GameState {
   /** Deň adopcií za ❤: do kedy beží a odkedy sa dá znova (ms simulácie). */
   adoptionDay = { until: 0, readyAt: 0 };
   story: StoryState = { seen: [], neighborCat: null };
+  late: LateState = { honors: 0, pages: [], greeted: '' };
+  /** Skutočný dátum pre sezóny – testy ho nahradia pevným dňom. */
+  static today: () => Date = () => new Date();
+  /** Vývojárske menu: vynútená sezóna ('' = žiadna, undefined = podľa dátumu). Neukladá sa. */
+  seasonOverride: string | undefined = undefined;
+  private albumSeen = -1;
   private adDayWasActive = false;
   /** Najatý personál a či práve pracuje (GDD §6.4). */
   staff: Partial<Record<StaffId, { active: boolean }>> = {};
@@ -343,7 +363,7 @@ export class GameState {
   get quarantineCages(): number {
     if (!this.shelter.open) return 0;
     // počas záchrany z množiarne pomôžu susedia dočasnými klietkami
-    return this.data.balance.shelter.quarantine_cages + (this.eventActive('mill') ? 4 : 0);
+    return this.data.balance.shelter.quarantine_cages + (this.fx.extra_quarantine ?? 0);
   }
 
   get totalCages(): number {
@@ -450,6 +470,7 @@ export class GameState {
     this.adDayWasActive = this.adoptionDayActive;
     this.checkReadiness();
     this.checkAchievements();
+    this.checkLateGame();
   }
 
   /**
@@ -483,8 +504,8 @@ export class GameState {
 
   private advanceReports(deltaMs: number): void {
     const r = this.data.balance.rescue;
-    // v zime prichádza 2× viac hlásení
-    const interval = r.interval_s * 1000 * (this.eventActive('winter') ? 0.5 : 1);
+    // v zime a pri povodniach prichádza viac hlásení
+    const interval = r.interval_s * 1000 * (this.fx.report_interval ?? 1);
     this.reportTimer += deltaMs;
     while (this.reportTimer >= interval) {
       if (this.reports.length >= r.max_waiting) {
@@ -511,12 +532,12 @@ export class GameState {
     // Adoptéri chodia iba vtedy, keď je komu nájsť domov
     if (!this.cats.some((c) => this.isReady(c))) return;
     const social = this.staffWorking('social') ? this.data.balance.staff.social : null;
-    const openDay = this.eventActive('openday');
+    const fx = this.fx;
     const interval =
       a.interval_s *
       1000 *
       (social?.adopter_interval_mult ?? 1) *
-      (openDay ? 0.35 : 1) *
+      (fx.adopter_interval ?? 1) *
       (this.adoptionDayActive ? (this.data.cosmetics?.adoption_day.interval_mult ?? 1) : 1) *
       (1 - this.campaignAdopterBonus);
     this.adopterTimer += deltaMs;
@@ -525,7 +546,7 @@ export class GameState {
       a.max_waiting +
       (this.hasUnlock('adopters_plus') ? 1 : 0) +
       (social?.extra_waiting ?? 0) +
-      (openDay ? 1 : 0) +
+      (fx.extra_adopters ?? 0) +
       (this.adoptionDayActive ? (this.data.cosmetics?.adoption_day.extra_waiting ?? 0) : 0);
     if (this.adopters.length >= maxWaiting) {
       this.adopterTimer = interval;
@@ -777,6 +798,7 @@ export class GameState {
       return c;
     };
     const cat = make(def.age, def.difficulty);
+    this.maybeSeasonal(cat, usedNames);
     const family = [cat];
     // Mačacia rodinka: mačiatka po mame (rovnaké plemeno a farba)
     if (def.family) {
@@ -797,6 +819,11 @@ export class GameState {
         const free = names.filter((n) => !used.has(n));
         if (free.length) c.name = this.rng.pick(free);
       }
+      // povodne: mokré a vystrašené
+      const fx = this.fx;
+      if (fx.arrival_trust) Care.addStats(c, { trust: fx.arrival_trust });
+      if (fx.arrival_dirty)
+        c.stats.cleanliness = Math.min(c.stats.cleanliness, this.rng.int(5, 20));
       // do garáže, a keď je plná, do karantény
       c.ward = this.freeIn('garage') > 0 ? 'garage' : 'quarantine';
       this.cats.push(c);
@@ -806,6 +833,32 @@ export class GameState {
     }
     this.checkChallenges();
     return cat;
+  }
+
+  /** V sezóne niektoré zachránené mačky prídu v sezónnej farbe (GDD §7.3). */
+  private maybeSeasonal(cat: CatData, usedNames: Set<string>): void {
+    const season = this.season;
+    const chance = this.data.balance.seasons?.chance ?? 0;
+    if (!season || !this.rng.chance(chance)) return;
+    const coats = Late.seasonCoats(this.data, season.id);
+    // najprv farby, ktoré v albume ešte chýbajú
+    const missing = coats.filter((c) => !this.album[`season:${c.id}`]);
+    const coat = missing.length
+      ? this.rng.pick(missing)
+      : coats.length
+        ? this.rng.pick(coats)
+        : null;
+    if (!coat) return;
+    // plemeno s pevnou farbou (siamská…) by v sezónnej farbe nedávalo zmysel
+    if (this.data.breeds.find((b) => b.id === cat.breedId)?.coat) cat.breedId = 'domestic_short';
+    cat.coatId = coat.id;
+    cat.sprite = this.rng.pick(coat.sprites);
+    const names = (this.data.names.by_coat[coat.id] ?? []).filter((n) => !usedNames.has(n));
+    if (names.length) {
+      usedNames.delete(cat.name);
+      cat.name = this.rng.pick(names);
+      usedNames.add(cat.name);
+    }
   }
 
   /** Presun pacienta medzi garážou a karanténou (ak je tam voľná klietka). */
@@ -1001,7 +1054,8 @@ export class GameState {
     const h = this.data.balance.hotel;
     // útulná hala = vyšší poplatok (GDD §6.1.3)
     const cozy = 1 + this.coziness('hotel') * this.data.balance.coziness.hotel_fee_per_point;
-    return Math.round((h.fee * (0.5 + this.hotelHappiness(cat) / 100) * cozy) / 5) * 5;
+    const fee = h.fee * (0.5 + this.hotelHappiness(cat) / 100) * cozy * (this.fx.hotel_fee ?? 1);
+    return Math.round(fee / 5) * 5;
   }
 
   /** Hostia: starnutie potrieb, odchody (platba) a príchody cez deň. */
@@ -1036,7 +1090,7 @@ export class GameState {
     if (!arrivals || this.dayPhase === 'night') return;
     if (this.hotel.guests.length >= this.suiteCount) return;
     this.hotel.timer += deltaMs;
-    if (this.hotel.timer < h.arrival_interval_s * 1000) return;
+    if (this.hotel.timer < h.arrival_interval_s * 1000 * (this.fx.hotel_interval ?? 1)) return;
     this.hotel.timer = 0;
     this.checkInGuest();
   }
@@ -1120,13 +1174,21 @@ export class GameState {
     return this.events.active?.id === id;
   }
 
+  /** Účinky prebiehajúcej udalosti (prázdne, keď žiadna nebeží). */
+  get fx(): EventEffects {
+    const a = this.events.active;
+    return (a && this.eventDef(a.id)?.effects) || NO_EFFECTS;
+  }
+
   /** Udalosti, ktoré sa môžu ponúknuť (úroveň, kaviareň, útulok). */
   private eligibleEvents(): EventDef[] {
     return (this.data.events?.events ?? []).filter(
       (e) =>
         this.level + 1 >= e.min_level &&
         (e.requires !== 'cafe' || this.cafe.open) &&
-        (e.requires !== 'shelter' || this.shelter.open),
+        (e.requires !== 'shelter' || this.shelter.open) &&
+        (e.requires !== 'hotel' || this.hotel.open) &&
+        (e.requires !== 'education' || this.education.open),
     );
   }
 
@@ -1177,8 +1239,9 @@ export class GameState {
       start: this.counters[def.goal.kind],
     };
     // množiareň: hneď príde veľká rodinka (mama a mačiatka)
-    if (def.id === 'mill') {
-      const report: Report = { id: this.newId('r'), defId: 'mill' };
+    const start = def.effects?.start_report;
+    if (start) {
+      const report: Report = { id: this.newId('r'), defId: start };
       this.reports.push(report);
       this.bus.emit('reportAdded', { report });
     }
@@ -1247,7 +1310,7 @@ export class GameState {
     }
     if (this.dayPhase === 'night' || this.dayPhase === 'evening') return;
     this.education.timer += deltaMs;
-    if (this.education.timer < e.interval_s * 1000) return;
+    if (this.education.timer < e.interval_s * 1000 * (this.fx.lecture_interval ?? 1)) return;
     this.education.timer = 0;
     this.startTrip();
   }
@@ -1671,7 +1734,7 @@ export class GameState {
   }
 
   private addToAlbum(cat: CatData, how: AlbumEntry['how']): void {
-    const key = GameState.albumKey(cat.breedId, cat.coatId);
+    const key = Late.albumKeyFor(this.data, cat.breedId, cat.coatId);
     const existing = this.album[key];
     if (existing) {
       existing.count += 1;
@@ -1714,6 +1777,54 @@ export class GameState {
   get albumFilled(): number {
     return this.albumSlots.filter((x) => this.album[GameState.albumKey(x.breedId, x.coatId)])
       .length;
+  }
+
+  // ---------- Neskorá hra: strany albumu, ocenenia, sezóny ----------
+
+  /** Ocenenia za ★ nad poslednou úrovňou a odmeny za dokončené strany albumu. */
+  private checkLateGame(): void {
+    const honors = Late.honorsFor(this.data, this.reputation);
+    if (honors > this.late.honors) {
+      const h = this.data.balance.honors;
+      const gained = honors - this.late.honors;
+      this.late.honors = honors;
+      this.addMoney(h.money * gained, true);
+      this.addHearts(h.hearts * gained);
+      this.bus.emit('honorEarned', { n: honors, gained });
+    }
+    // strany albumu sa kontrolujú iba vtedy, keď v albume niečo pribudlo
+    const filled = Object.keys(this.album).length;
+    if (filled === this.albumSeen) return;
+    this.albumSeen = filled;
+    for (const page of Late.albumPages(this.data)) {
+      if (this.late.pages.includes(page.id) || !page.keys.every((k) => this.album[k])) continue;
+      this.late.pages.push(page.id);
+      this.addMoney(this.data.balance.rewards.album_page_money, true);
+      this.addHearts(this.heartRate('album_page'));
+      this.bus.emit('albumPageDone', { page: page.id });
+    }
+  }
+
+  /** Strana albumu je dokončená (a odmenená). */
+  albumPageDone(id: string): boolean {
+    return this.late.pages.includes(id);
+  }
+
+  /** Sezóna podľa skutočného dátumu (alebo vynútená vo vývojárskom menu). */
+  get season(): SeasonDef | null {
+    if (this.seasonOverride !== undefined)
+      return this.data.balance.seasons?.list.find((x) => x.id === this.seasonOverride) ?? null;
+    return Late.seasonAt(this.data, GameState.today());
+  }
+
+  /** Sezóna, ktorú hráč ešte nevidel – UI ju raz privíta. */
+  takeSeasonGreeting(): SeasonDef | null {
+    const s = this.season;
+    if (!s) return null;
+    const key = Late.seasonKey(s, GameState.today());
+    if (this.late.greeted === key) return null;
+    this.late.greeted = key;
+    return s;
   }
 
   // ---------- Vylepšenia garáže (GDD §6.1) ----------
@@ -2034,7 +2145,7 @@ export class GameState {
         ? this.data.balance.staff.barista.tip_multiplier
         : c.served_multiplier
       : 1;
-    const tip = (c.tip_base + bonus) * mult * cozy;
+    const tip = (c.tip_base + bonus) * mult * cozy * (this.fx.tip_mult ?? 1);
     return Math.round(tip * 10) / 10;
   }
 
@@ -2104,8 +2215,7 @@ export class GameState {
     // Príchody – iba cez deň, keď je na koho sa prísť pozrieť a je voľný stôl
     const residents = this.residents;
     if (residents.length === 0 || !this.cafeOpenNow) return;
-    const interval =
-      c.guest_interval_s * 1000 * (this.eventActive('openday') ? 0.4 : 1) * this.ratingMult;
+    const interval = c.guest_interval_s * 1000 * (this.fx.guest_interval ?? 1) * this.ratingMult;
     this.cafe.timer += deltaMs;
     if (this.cafe.timer < interval) return;
     const taken = new Set(this.cafe.guests.map((g) => g.table));
@@ -2394,6 +2504,7 @@ export class GameState {
       campaigns: structuredClone(this.campaigns),
       adoptionDay: { ...this.adoptionDay },
       story: structuredClone(this.story),
+      late: structuredClone(this.late),
     };
   }
 
@@ -2436,6 +2547,7 @@ export class GameState {
     s.campaigns = structuredClone(save.campaigns ?? { done: 0, active: null });
     s.adoptionDay = { ...(save.adoptionDay ?? { until: 0, readyAt: 0 }) };
     s.story = save.story ? structuredClone(save.story) : s.storyForOldSave();
+    s.late = structuredClone(save.late ?? { honors: 0, pages: [], greeted: '' });
     s.rng = new Rng(save.rng); // konštruktor už náhodu použil – obnov presný stav
     for (const c of s.cats) if (s.isReady(c)) s.readyIds.add(c.id);
     s.fillChallenges();

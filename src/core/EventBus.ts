@@ -40,6 +40,10 @@ export interface GameEvents {
   welcomeBack: { summary: OfflineSummary };
   challengeCompleted: { challenge: ActiveChallenge };
   albumAdded: { key: string };
+  /** Dokončená strana albumu (GDD §7.1) – id strany, napr. `breed:persian`, `season:halloween`. */
+  albumPageDone: { page: string };
+  /** Nové ocenenie za ★ nad poslednou úrovňou; n = počet všetkých, gained = koľko pribudlo. */
+  honorEarned: { n: number; gained: number };
   upgradeBought: {
     kind:
       | 'cage'

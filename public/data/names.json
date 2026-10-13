@@ -270,6 +270,70 @@
       "Faraón",
       "Nefertiti",
       "Tutanchamon"
+    ],
+    "ghost": [
+      "Strašidielko",
+      "Duško",
+      "Bubák",
+      "Hmlík",
+      "Kasper",
+      "Vidinka"
+    ],
+    "potion": [
+      "Lektvar",
+      "Elixír",
+      "Žabka",
+      "Bylinka",
+      "Mätka",
+      "Svetluška"
+    ],
+    "witch": [
+      "Čarodejka",
+      "Morgana",
+      "Kúzlo",
+      "Levanduľa",
+      "Sliva",
+      "Ostružinka"
+    ],
+    "midnight": [
+      "Polnoc",
+      "Mesiačik",
+      "Netopierik",
+      "Tieň",
+      "Sova",
+      "Hviezdička"
+    ],
+    "santa": [
+      "Mikuláš",
+      "Sobík",
+      "Jabĺčko",
+      "Brusnička",
+      "Rudolf",
+      "Šípka"
+    ],
+    "frost": [
+      "Mrázik",
+      "Inovať",
+      "Ľadulienka",
+      "Cencúľ",
+      "Vločka",
+      "Zimka"
+    ],
+    "fir": [
+      "Jedlička",
+      "Smrečok",
+      "Ihlička",
+      "Imelo",
+      "Šiška",
+      "Čečinka"
+    ],
+    "marzipan": [
+      "Marcipán",
+      "Perník",
+      "Medovník",
+      "Cukrovinka",
+      "Vanilkový rožtek",
+      "Pusinka"
     ]
   }
 }
