@@ -451,6 +451,16 @@ body.minigame .toast:not(:last-child) {
   font-size: 12px;
   opacity: 0.75;
 }
+.postcard .pc-ps {
+  margin-top: 4px;
+  font-size: 13px;
+  font-style: italic;
+  opacity: 0.85;
+}
+.visitor-head .friend {
+  margin: 2px 0 0;
+  color: var(--ui-good);
+}
 
 /* ---------- Oznámenia ---------- */
 .toasts {

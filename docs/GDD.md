@@ -237,6 +237,8 @@ Adoptér je postava s kartou:
 - **Domácnosť (tagy):** byt / dom so záhradou, deti, iné zvieratá, veľa doma / málo doma
 - **Želanie (voľný text + skryté preferencie):** „Hľadám pokojnú spoločníčku na gauč"
 - **Výnimky (dealbreakery):** napr. „žiadne mačiatka"
+- 🟢 **14 typov** (`adopters.json`): babka, rodina s deťmi, farmár, študentka, programátor, mladý pár, veterinárka na dôchodku, majiteľ psa, zdravotná sestra na nočné (samostatná dospelá), veľká rodina (deti + zvieratá, hravé mačiatko), spisovateľ (tichý byt, **seniorka**), dôchodcovia z chalupy, kníhkupkyňa (pokojná mačka na pult), bežkyňa (mladá samostatná). Každý typ má **3 varianty mena** (`name_variants`; kľúče `ADOPT_X`, `ADOPT_X_2`, `ADOPT_X_3`), opis a postavička ostávajú.
+- 🟢 **Kamarátka** – záujemca z nedávnej dokonalej adopcie sa občas (20 % príchodov, `adopters.friend_chance`) **vráti po druhú mačku**: rovnaká postava aj meno, v okne „🔁 Vracia sa! {mačka} potrebuje kamaráta.". Ak zhoda nie je slabá: istá pohľadnica o oboch mačkách a **+2 ★** (`friend_rep_bonus`). Každá adopcia najviac raz.
 
 ### 5.2 Výpočet zhody 🟢 MVP
 ```
@@ -259,7 +261,7 @@ zhoda = základ 50
 |---|---|
 | **Adopčný príspevok** | Peniaze (napr. 50–150 € podľa zhody a fázy) |
 | **Reputácia** | Odomyká granty, väčšie hlásenia, lepších adoptérov |
-| **Pohľadnica** 🟢 MVP | 2–5 minút po adopcii príde ilustrovaná pohľadnica: mačka v novom domove + krátky odkaz od majiteľa (4 texty pre dokonalú a 4 pre dobrú zhodu). V menu ☰ → Pošta: **📌 nástenka** (max. 6 pripnutých, ostanú navždy), **najnovšie** naplno (všetky nevidené, aspoň 6), staršie ako **spomienky** – malé náhľady, ťuknutím sa rozbalia. Uchováva sa posledných 60 pohľadníc (`balance.rewards.postcard_keep`). Viac pohľadníc naraz = jedno oznámenie. |
+| **Pohľadnica** 🟢 MVP | 2–5 minút po adopcii príde ilustrovaná pohľadnica: mačka v novom domove + krátky odkaz od majiteľa – pri dokonalej zhode často od konkrétneho typu záujemcu (2 texty na typ, inak 4 všeobecné pre dokonalú a 4 pre dobrú zhodu), u kamarátky o oboch mačkách, a **P.S. podľa povahy mačky** (15 rysov). V menu ☰ → Pošta: **📌 nástenka** (max. 6 pripnutých, ostanú navždy), **najnovšie** naplno (všetky nevidené, aspoň 6), staršie ako **spomienky** – malé náhľady, ťuknutím sa rozbalia. Uchováva sa posledných 60 pohľadníc (`balance.rewards.postcard_keep`). Viac pohľadníc naraz = jedno oznámenie. |
 | **Zápis do albumu** | Odomknutie plemena/farby/príbehu |
 
 ### 5.4 Stálice – mačky, ktoré si hráč nechá 🟢 MVP

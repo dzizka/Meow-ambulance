@@ -534,13 +534,44 @@ export class GameState {
         Math.max(...ready.map((c) => computeMatch(c, d, this.data, true).score));
       def = options.reduce((x, y) => (best(y) > best(x) ? y : x), def);
     }
-    const visit: AdopterVisit = {
+    const friend = this.friendVisit(waiting);
+    const visit: AdopterVisit = friend ?? {
       id: this.newId('a'),
       defId: def.id,
       sprite: this.rng.pick(def.sprites),
+      variant: this.rng.int(1, def.name_variants ?? 1),
     };
     this.adopters.push(visit);
     this.bus.emit('adopterArrived', { visit });
+  }
+
+  /**
+   * Občas sa vráti záujemca z nedávnej dokonalej adopcie – chce kamaráta pre svoju mačku
+   * (GDD §5.1). Rovnaká postava aj meno; každá adopcia najviac raz.
+   */
+  private friendVisit(waiting: Set<string>): AdopterVisit | null {
+    if (!this.rng.chance(this.data.balance.adopters.friend_chance ?? 0)) return null;
+    const perfect = this.data.balance.match.perfect;
+    const rec = this.adoptions
+      .slice(-20)
+      .filter(
+        (r) =>
+          r.score >= perfect &&
+          !r.friendVisited &&
+          !r.friendOf &&
+          !waiting.has(r.adopterDefId) &&
+          this.data.adopters.some((d) => d.id === r.adopterDefId),
+      )
+      .at(-1);
+    if (!rec) return null;
+    rec.friendVisited = true;
+    return {
+      id: this.newId('a'),
+      defId: rec.adopterDefId,
+      sprite: rec.adopterSprite,
+      variant: rec.adopterVariant ?? 1,
+      friendOf: rec.cat.name,
+    };
   }
 
   private deliverPostcards(): number {
@@ -1345,6 +1376,8 @@ export class GameState {
     if (!cat || !visit || !def || !this.isReady(cat)) return null;
     const match = computeMatch(cat, def, this.data);
     if (match.quality === 'blocked') return null;
+    // kamarátka pre skôr adoptovanú mačku: istá pohľadnica (o oboch) a ★ navyše
+    const friend = match.quality !== 'poor' ? visit.friendOf : undefined;
 
     const r = this.data.balance.rewards;
     // Vzácnejšie plemeno = vyšší príspevok (+15 % za každý stupeň vzácnosti)
@@ -1376,12 +1409,13 @@ export class GameState {
       (cat.vaccinated ? this.data.balance.shelter.vaccine_rep_bonus : 0) +
       (cat.neutered ? this.data.balance.clinic.neuter_rep_bonus : 0) +
       (cat.clinicCase ? this.data.balance.clinic.case_rep_bonus : 0) +
-      (cat.special ? this.data.balance.rare.rep_bonus : 0);
+      (cat.special ? this.data.balance.rare.rep_bonus : 0) +
+      (friend ? (this.data.balance.adopters.friend_rep_bonus ?? 0) : 0);
     // Lesklá mačka (čistá a spokojná) – istá pohľadnica pri dobrej zhode (GDD §3.3)
     const glow = Care.isGlowing(cat, this.data);
     const postcard =
       match.quality === 'perfect' ||
-      (match.quality === 'good' && (glow || this.rng.chance(r.postcard_chance_good)));
+      (match.quality === 'good' && (glow || !!friend || this.rng.chance(r.postcard_chance_good)));
     const delay = this.rng.int(r.postcard_delay_s[0], r.postcard_delay_s[1]) * 1000;
     // Slabá zhoda: nový domov nevyjde, mačka sa po chvíli vráti (GDD §5.2)
     const returnDueAt =
@@ -1394,6 +1428,8 @@ export class GameState {
       cat: structuredClone(cat),
       adopterDefId: def.id,
       adopterSprite: visit.sprite,
+      ...(visit.variant ? { adopterVariant: visit.variant } : {}),
+      ...(friend ? { friendOf: friend } : {}),
       score: match.score,
       fee,
       adoptedAt: this.now,

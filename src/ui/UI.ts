@@ -6,6 +6,7 @@ import * as Care from '../core/systems/Care';
 import type { Stars } from '../core/systems/Care';
 import type { MatchResult } from '../core/systems/Match';
 import type {
+  AdopterDef,
   AdoptionRecord,
   CatData,
   ClinicRoomId,
@@ -206,6 +207,44 @@ const ROOM_ICON: Record<Room, string> = {
   education: '🎓',
 };
 const ORDER_ICON = { coffee: '☕', tea: '🍵', cake: '🍰' } as const;
+/** Meno záujemcu podľa variantu (GDD §5.1): `name_key`, `name_key_2`… */
+function adopterName(def: AdopterDef, variant = 1): string {
+  return t(variant > 1 ? `${def.name_key}_${variant}` : def.name_key);
+}
+
+/** Kľúč existuje v slovníku? (`t` vráti pri chýbajúcom kľúči samotný kľúč) */
+const hasText = (key: string): boolean => t(key) !== key;
+
+/**
+ * Text pohľadnice (GDD §5.3): podľa záujemcu a zhody, kamarátka spomenie obe mačky,
+ * a P.S. podľa povahy mačky. Tá istá pohľadnica má vždy ten istý text.
+ */
+function postcardText(
+  rec: AdoptionRecord,
+  def: AdopterDef | undefined,
+  perfectAt: number,
+): { main: string; ps: string | null } {
+  let h = 2166136261; // FNV-1a
+  for (const ch of `${rec.cat.id}:${rec.adoptedAt}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const roll = (n: number, salt: number) => ((h >>> 0) + salt * 7919) % n;
+  const vars = { cat: rec.cat.name, friend: rec.friendOf ?? '' };
+  let keys: string[];
+  if (rec.friendOf) keys = ['POSTCARD_FRIEND_1', 'POSTCARD_FRIEND_2'];
+  else {
+    const base = rec.score >= perfectAt ? 'POSTCARD_PERFECT' : 'POSTCARD_GOOD';
+    keys = [base, `${base}_2`, `${base}_3`, `${base}_4`];
+    // dokonalá zhoda: aj texty od konkrétneho typu záujemcu
+    const own = def
+      ? [1, 2].map((n) => `POSTCARD_A_${def.id.toUpperCase()}_${n}`).filter(hasText)
+      : [];
+    if (rec.score >= perfectAt && own.length) keys = [...own, ...own, ...keys];
+  }
+  const main = t(keys[roll(keys.length, 0)] ?? keys[0]!, vars);
+  const traits = rec.cat.traits.map((x) => `POSTCARD_PS_${x.id.toUpperCase()}`).filter(hasText);
+  const ps = traits.length ? t(traits[roll(traits.length, 1)]!) : null;
+  return { main, ps };
+}
+
 const round1 = (n: number): string =>
   (Math.round(n * 10) / 10).toLocaleString(undefined, { maximumFractionDigits: 1 });
 
@@ -2661,7 +2700,10 @@ export class UI {
         'div',
         {},
         el('div', { class: 'sub' }, t('UI_VISITOR_TITLE')),
-        el('h2', {}, t(def.name_key)),
+        el('h2', {}, adopterName(def, visit.variant)),
+        visit.friendOf
+          ? el('p', { class: 'hint friend' }, t('UI_VISITOR_RETURNING', { friend: visit.friendOf }))
+          : null,
         el('p', { style: 'margin:4px 0' }, t(def.desc_key)),
         el(
           'div',
@@ -3820,13 +3862,7 @@ export class UI {
     const cat = catPortrait(rec.cat, 3);
     cat.style.left = '48%';
     cat.style.filter = '';
-    const base = rec.score >= s.data.balance.match.perfect ? 'POSTCARD_PERFECT' : 'POSTCARD_GOOD';
-    // text sa vyberie podľa mačky – tá istá pohľadnica má vždy ten istý text
-    let h = 2166136261; // FNV-1a
-    for (const ch of `${rec.cat.id}:${rec.adoptedAt}`)
-      h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
-    const n = (h >>> 0) % 4;
-    const key = n === 0 ? base : `${base}_${n + 1}`;
+    const text = postcardText(rec, def, s.data.balance.match.perfect);
     const full = !rec.pinned && s.pinnedCount >= s.data.balance.rewards.postcard_pins;
     const pin = button(
       rec.pinned ? t('UI_PC_UNPIN') : t('UI_PC_PIN'),
@@ -3843,11 +3879,16 @@ export class UI {
       'div',
       { class: `postcard${rec.pinned ? ' pinned' : ''}` },
       el('div', { class: 'scene' }, person, cat),
-      el('p', {}, t(key, { cat: rec.cat.name })),
+      el('p', {}, text.main),
+      text.ps ? el('p', { class: 'pc-ps' }, text.ps) : null,
       el(
         'div',
         { class: 'pc-foot' },
-        el('p', { class: 'from' }, t('UI_POSTCARD_FROM', { who: t(def?.name_key ?? '') })),
+        el(
+          'p',
+          { class: 'from' },
+          t('UI_POSTCARD_FROM', { who: def ? adopterName(def, rec.adopterVariant) : '' }),
+        ),
         pin,
       ),
     );
