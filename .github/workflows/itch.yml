@@ -1,0 +1,75 @@
+name: Balík pre itch.io
+
+# Zostaví webovú verziu hry aj s assetmi zo súkromného repozitára Meow-ambulance-offline
+# a pripraví ZIP na itch.io (index.html v koreni). Spúšťa sa iba ručne – hra sa nikde
+# automaticky nezverejňuje.
+#
+# Ak sú nastavené secret BUTLER_API_KEY a premenná ITCH_TARGET (napr. „dzizka/meow-ambulance"),
+# ZIP sa rovno nahrá na itch.io cez butler do kanála html5. Inak si ho stiahni z artefaktov behu
+# a nahraj ručne (docs/TECH.md – Vydanie na itch.io).
+on:
+  workflow_dispatch:
+    inputs:
+      latest_assets:
+        description: 'Použiť najnovšie assety z Meow-ambulance-offline (napr. po nahratí nových zvukov)'
+        type: boolean
+        default: true
+      upload:
+        description: 'Nahrať na itch.io (treba BUTLER_API_KEY a ITCH_TARGET)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: itch
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kontrola tokenu k assetom
+        env:
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
+        run: |
+          if [ -z "$ASSETS_TOKEN" ]; then
+            echo "::error::Chýba secret ASSETS_TOKEN (prístup na čítanie k repozitáru Meow-ambulance-offline). Pozri docs/TECH.md – Nasadenie."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.ASSETS_TOKEN }}
+      - name: Najnovšie assety
+        if: inputs.latest_assets
+        run: git submodule update --remote public/assets
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: ZIP pre itch.io
+        run: cd dist && zip -qr ../meow-ambulance-web.zip .
+      # Artefakt si vo verejnom repozitári stiahne každý prihlásený používateľ GitHubu – preto len na krátko.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meow-ambulance-web
+          path: meow-ambulance-web.zip
+          retention-days: 3
+      - name: Nahrať na itch.io (butler)
+        if: inputs.upload
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_TARGET: ${{ vars.ITCH_TARGET }}
+        run: |
+          if [ -z "$BUTLER_API_KEY" ] || [ -z "$ITCH_TARGET" ]; then
+            echo "::error::Chýba secret BUTLER_API_KEY alebo premenná ITCH_TARGET. Pozri docs/TECH.md – Vydanie na itch.io."
+            exit 1
+          fi
+          curl -sSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler && chmod +x butler/butler
+          ./butler/butler push dist "$ITCH_TARGET:html5" --userversion "0.1.${{ github.run_number }}"

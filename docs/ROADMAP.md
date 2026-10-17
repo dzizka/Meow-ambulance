@@ -13,8 +13,8 @@ Každý míľnik = GitHub Milestone. Každá odrážka = GitHub Issue. Značky r
 - [x] Konfigurácia Phaseru pre pixel-art (svet 480×270, na výšku aj na šírku, posúvanie prstom)
 - [x] `src/core/`: GameState, TimeManager, EventBus, Rng, CatGenerator + testy (SaveManager v M1)
 - [x] GitHub Actions: lint + testy + build pri PR
-- [x] Workflow na nasadenie na GitHub Pages (`deploy.yml`)
-- [ ] Zapnúť Pages a pridať secret `ASSETS_TOKEN` (TECH.md – Nasadenie)
+- [x] Workflow na nasadenie na GitHub Pages (`deploy.yml`) – nahradený balíkom pre itch.io (`itch.yml`), Pages vypnuté
+- [x] Secret `ASSETS_TOKEN` (TECH.md – Nasadenie)
 - [ ] GitHub Project (Kanban: Backlog → Todo → In progress → Review → Done)
 
 ## M1 – Hrateľná základná slučka (2–3 týždne)
@@ -62,8 +62,8 @@ Cieľ: celá slučka záchrana → liečba → adopcia alebo stálica, v otvoren
 - [x] SK + EN lokalizácia (rovnaké kľúče, kontroluje test)
 - [ ] Rozloženie UI na výšku aj na šírku, test na lacnom Android telefóne
 - [ ] **Playtest #2** (5–10 externých hráčov), metriky z GDD §13
-- [ ] Zverejniť webové demo na itch.io
-- [x] Prvý Android build cez Capacitor (podpísané APK v GitHub Release `android-latest`, zostavuje sa automaticky)
+- [ ] Zverejniť hru na itch.io – zadarmo s dobrovoľným príspevkom (TECH.md – Vydanie na itch.io)
+- [x] Prvý Android build cez Capacitor (podpísané APK; verejné vydanie v Releases je vypnuté, APK je iba v artefaktoch ručného behu)
 - [x] Hlavné menu, pauza, ukončenie hry a tlačidlo Späť na Androide
 - [x] Pošta: nástenka, spomienky, orezávanie starých pohľadníc
 - [x] Minihry pre všetky vyšetrenia (ruka, teplomer, stetoskop, otoskop) a pre česanie, maškrtu z ruky, zohriatie

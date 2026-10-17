@@ -994,5 +994,9 @@
   "UI_ALBUM_SEASON_WHEN": "Prichádzajú iba v sezóne ({from} – {to}).",
   "UI_ALBUM_PAGES": "Za každú celú stranu: +{hearts} ❤ a {money} €.",
   "UI_ALBUM_PAGE_DONE": "strana je kompletná",
-  "TOAST_ALBUM_PAGE": "📖 Strana albumu je kompletná: {page}! +{hearts} ❤ a {money} €"
+  "TOAST_ALBUM_PAGE": "📖 Strana albumu je kompletná: {page}! +{hearts} ❤ a {money} €",
+  "TITLE_SUPPORT": "Podporiť autora",
+  "SUPPORT_TEXT": "Meow Ambulance je a ostane zadarmo – bez reklám a nič sa v nej neplatí skutočnými peniazmi. Ak ťa hra teší, môžeš autora podporiť ľubovoľnou sumou na stránke hry na itch.io.",
+  "SUPPORT_KIDS": "Ak máš menej ako 18 rokov, opýtaj sa najprv rodičov. Hra bez podpory funguje úplne rovnako.",
+  "SUPPORT_OPEN": "Otvoriť stránku na itch.io"
 }

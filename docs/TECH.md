@@ -90,16 +90,40 @@ Ovládanie: iba ukazovateľ (myš = dotyk). Žiadna minihra nevyžaduje klávesn
 - Vitest pre `src/core/`: generovanie mačky, starostlivosť, výpočet zhody, hlásenia a adoptéri v čase, offline, ukladanie.
 - Pri testovaní v headless Chromiu s emuláciou mobilu môže byť plátno WebGL na snímke čierne, ak je nad ním vysoký rolovací HTML panel – je to obmedzenie softvérového vykresľovania, nie chyba hry. Overiť na skutočnom zariadení.
 - GitHub Actions: `npm ci && npm run lint && npm test && npm run build` pri každom PR.
-- Po merge do `main`: nasadenie na GitHub Pages (`.github/workflows/deploy.yml`) → https://dzizka.github.io/Meow-ambulance/
+- Hra sa automaticky nikde nezverejňuje. GitHub Pages (`deploy.yml`) a APK v Releases (`android-latest`) sú vypnuté – hra vyjde na itch.io.
 
-### Nasadenie – jednorazové nastavenie
-1. **Pages:** Settings → Pages → *Build and deployment* → Source: **GitHub Actions**.
-2. **Token k assetom:** GitHub → Settings (profil) → Developer settings → Personal access tokens → *Fine-grained tokens* → Generate new token
+### Token k assetom (jednorazovo)
+Workflowy, ktoré zostavujú hru s assetmi (`itch.yml`, `android.yml`), potrebujú prístup k súkromnému repozitáru:
+1. GitHub → Settings (profil) → Developer settings → Personal access tokens → *Fine-grained tokens* → Generate new token
    - Repository access: *Only select repositories* → **Meow-ambulance-offline**
    - Permissions: *Contents* → **Read-only** (nič viac)
    - Expirácia podľa uváženia (po vypršaní treba token obnoviť)
-3. Token uložiť do repozitára **Meow-ambulance**: Settings → Secrets and variables → Actions → *New repository secret* → názov **`ASSETS_TOKEN`**.
-4. Actions → *Deploy na GitHub Pages* → *Run workflow* (alebo ľubovoľný merge do `main`). Ručné spustenie má voľbu *latest_assets* – vezme najnovší stav súkromného repozitára namiesto zafixovaného podmodulu.
+2. Token uložiť do repozitára **Meow-ambulance**: Settings → Secrets and variables → Actions → *New repository secret* → názov **`ASSETS_TOKEN`**.
+
+### Vydanie na itch.io
+Hra je **zadarmo s dobrovoľným príspevkom**. V hlavnom menu je tlačidlo „❤ Podporiť autora", ktoré otvorí stránku hry na itch.io – ukáže sa, až keď je v `src/platform.ts` vyplnené `SUPPORT_URL`. V hre sa nič neplatí a nikde sa hráčovi nepripomína.
+
+**Balík:** Actions → **Balík pre itch.io** → *Run workflow*. Po pár minútach je v behu artefakt `meow-ambulance-web` (ZIP, `index.html` v koreni, aj s príručkou `wiki/`). Artefakt sa po 3 dňoch zmaže – vo verejnom repozitári by si ho inak mohol stiahnuť ktokoľvek prihlásený na GitHube.
+
+**Prvé nahratie (ručne):**
+1. Účet na https://itch.io (zadarmo). Používateľské meno bude v adrese hry: `meno.itch.io/meow-ambulance`.
+2. *Dashboard → Create new project*:
+   - Kind of project: **HTML**; Classification: **Games**; Genre: **Simulation**.
+   - Uploads: nahrať ZIP a zaškrtnúť **This file will be played in the browser**.
+   - Embed options: rozmer na výšku (napr. **480 × 854**), **Mobile friendly** (orientácia Portrait), **Fullscreen button**.
+   - Pricing: **$0 or donate** (navrhovaný príspevok napr. 2 €).
+   - Tagy: cozy, cats, management, pixel-art; jazyky: slovenčina, angličtina.
+   - Obrázok hry (630 × 500) a 3–5 screenshotov.
+   - Visibility: najprv **Draft** – vyskúšať, potom **Public**.
+3. Adresu stránky zapísať do `SUPPORT_URL` v `src/platform.ts` a vydať novú verziu.
+4. Výplaty príspevkov: *Settings → Payouts* (PayPal alebo Stripe) a daňový dotazník pre autorov mimo USA.
+
+**Ďalšie verzie:** buď znova nahrať ZIP ručne, alebo automaticky cez **butler**:
+- API kľúč: itch.io → *Settings → API keys* → uložiť ako secret **`BUTLER_API_KEY`**.
+- Premenná repozitára **`ITCH_TARGET`** = `meno/meow-ambulance` (Settings → Secrets and variables → Actions → *Variables*).
+- Pri spustení workflowu zaškrtnúť *Nahrať na itch.io* – butler nahrá novú verziu do kanála `html5` (iba zmenené súbory) a save hráčov ostane.
+
+**Deti do 13 rokov:** itch.io nemá vekové hodnotenie – hru zaraďuje autor. Hra nezbiera žiadne osobné údaje (save je iba v zariadení), nemá reklamy ani účty, takže nič ďalšie netreba. Plánovaná telemetria (playtest) musí ostať iba lokálna. Pri vydaní na Google Play by vek posúdil dotazník IARC (pridelí PEGI) a pri cieľovej skupine pod 13 rokov platia zásady Google Play pre rodiny.
 
 Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `licenses/`). To je v súlade s licenciami – assety sú súčasťou hry, nešíria sa samostatne.
 - Minihry a UI sa testujú ručne podľa checklistu v PR – **vždy aj na telefóne**.
@@ -152,13 +176,14 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 
 ## Android (Capacitor)
 - Konfigurácia `capacitor.config.ts` (appId `sk.meowambulance.app`), natívny projekt v `android/` (commitnutý; web sa doň kopíruje príkazom `npx cap sync android` a je v `.gitignore`).
-- APK zostavuje workflow **Android APK** (`.github/workflows/android.yml`) pri každom zlúčení do `main` (a na PR, ktoré menia `android/`): `npm ci` → `npm run build` → `npx cap sync android` → `./gradlew assembleRelease`. Výsledok je v GitHub Release **`android-latest`** (súbor `meow-ambulance.apk`) a ako artefakt behu. `versionCode` = číslo behu, `versionName` = `0.1.<beh>`.
+- APK zostavuje workflow **Android APK** (`.github/workflows/android.yml`) na PR, ktoré menia `android/` (iba kontrola, že sa dá zostaviť), a pri ručnom spustení (*Actions → Android APK → Run workflow*): `npm ci` → `npm run build` → `npx cap sync android` → `./gradlew assembleRelease`. Verejné vydanie v GitHub Release je vypnuté; pri ručnom behu je `meow-ambulance.apk` 3 dni v artefaktoch behu. `versionCode` = číslo behu, `versionName` = `0.1.<beh>`.
 - **Podpis:** kľúč je v súkromnom repozitári `public/assets/_signing/` (`meow-ambulance.keystore` + `keystore.properties`), `android/app/build.gradle` ho načíta. Do webového buildu sa nekopíruje. Kľúč sa nesmie meniť ani stratiť – inak sa nová verzia nedá nainštalovať cez starú (Android by vyžadoval odinštalovanie = strata savu).
 - `src/platform.ts`: `isNative`, `exitApp()` a `onBackButton()` (plugin `@capacitor/app`). Späť spracúva `UI.back()` (vývojárske menu → hlavné menu → minihra `MinigameScene.cancel` → okno → výber mačky → pauza); na PC to isté robí Escape. Tlačidlá „Ukončiť hru" sa ukazujú iba pri `isNative`.
 - Hra beží na celú obrazovku (`MainActivity` skryje systémové lišty, ukážu sa potiahnutím od okraja); na Android 15+ `adjustMarginsForEdgeToEdge: 'auto'` odsadí hru od výrezu kamery.
 - Ikona a úvodná obrazovka: vlastná pixel-art kresba zo skriptu `python3 scripts/android-icons.py` (Pillow) – po úprave skriptu ho spustiť a commitnúť `android/app/src/main/res`.
 - Lokálne zostavenie (s Android SDK): `npm run build && npx cap sync android && cd android && ./gradlew assembleRelease` alebo `npx cap open android` (Android Studio).
-- **Inštalácia v telefóne:** na telefóne otvoriť https://github.com/dzizka/Meow-ambulance/releases/tag/android-latest, stiahnuť `meow-ambulance.apk`, otvoriť ho a povoliť prehliadaču „Inštalovať neznáme aplikácie“. Novšia verzia sa nainštaluje cez staršiu a save zostane.
+- **Inštalácia v telefóne (na testovanie):** spustiť workflow ručne, v telefóne otvoriť beh (prihlásený na GitHube), stiahnuť artefakt `meow-ambulance-apk` (ZIP), rozbaliť a nainštalovať APK (povoliť „Inštalovať neznáme aplikácie“). Novšia verzia sa nainštaluje cez staršiu a save zostane.
+- Príručka (wiki) sa v aplikácii neotvára (`hasWiki` v `src/platform.ts`) – je súčasťou webového buildu.
 
 ## Pošta a minihry vyšetrení
 - `GameState.pruneAdoptions` drží iba pohľadnice na ceste, pripnuté (`AdoptionRecord.pinned`) a posledných `postcard_keep` doručených (+ poslednú adopciu) – volá sa po adopcii, doručení a pri načítaní. Počty sú v `counters`, album má vlastný zoznam. `togglePin` (max `postcard_pins`).
@@ -189,7 +214,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - UI: `UI.decorContent` (výber miestnosti `decorRoom`), `wallPicker` – nastavenie farby stien je v Dekoráciách, nákup v ❤ Srdiečka.
 
 ## Príručka hráča (wiki)
-- `scripts/build-wiki.mjs` – po `vite build` (súčasť `npm run build`) vygeneruje z herných dát a prekladov `dist/wiki/index.html` (SK) a `dist/wiki/en/index.html` (EN): plemená, farby (s obrázkami), diagnózy, povahy, záujemcovia, úrovne, budovy, vybavenie, dekorácie, personál, výzvy, úspechy, udalosti, kampane, srdiečka, tipy; hľadanie v stránke. Nasadí sa s hrou na GitHub Pages: https://dzizka.github.io/Meow-ambulance/wiki/
+- `scripts/build-wiki.mjs` – po `vite build` (súčasť `npm run build`) vygeneruje z herných dát a prekladov `dist/wiki/index.html` (SK) a `dist/wiki/en/index.html` (EN): plemená, farby (s obrázkami), diagnózy, povahy, záujemcovia, úrovne, budovy, vybavenie, dekorácie, personál, výzvy, úspechy, udalosti, kampane, srdiečka, tipy; hľadanie v stránke. Je súčasťou balíka pre itch.io (`wiki/` vedľa hry).
 - V hre: tlačidlo „📖 Príručka hráča“ v hlavnom menu a v pauze (`openWiki` v `platform.ts` – na Androide sa otvorí online stránka v prehliadači).
 - Ručne písané časti (úvod, tipy) sú v objekte `TEXT` v skripte; všetko ostatné je z dát, takže sa nikdy nerozíde s hrou.
 

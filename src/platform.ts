@@ -9,15 +9,25 @@ export function exitApp(): void {
   if (isNative) void App.exitApp();
 }
 
-/** Príručka hráča (wiki) – na webe vedľa hry, v aplikácii online stránka v prehliadači. */
+/**
+ * Stránka hry na itch.io – odtiaľ sa dá autor podporiť ľubovoľnou sumou.
+ * Prázdne = stránka ešte neexistuje a tlačidlo „Podporiť autora" sa neukáže.
+ */
+export const SUPPORT_URL = '';
+
+/** Otvorí adresu mimo hry (na webe nová karta, v aplikácii systémový prehliadač). */
+export function openExternal(url: string): void {
+  if (isNative) location.href = url;
+  else window.open(url, '_blank', 'noopener');
+}
+
+/**
+ * Príručka hráča (wiki) je súčasťou buildu vedľa hry (`wiki/`). V aplikácii sa neotvára –
+ * verejná stránka (GitHub Pages) je vypnutá a webview by z hry odišiel.
+ */
+export const hasWiki = !isNative;
 export function openWiki(lang: string): void {
-  const path = `wiki/${lang === 'en' ? 'en/' : ''}`;
-  if (isNative) {
-    // Capacitor otvorí adresu mimo aplikácie v systémovom prehliadači
-    location.href = `https://dzizka.github.io/Meow-ambulance/${path}`;
-    return;
-  }
-  window.open(`./${path}`, '_blank', 'noopener');
+  window.open(`./wiki/${lang === 'en' ? 'en/' : ''}`, '_blank', 'noopener');
 }
 
 /** Systémové tlačidlo Späť na Androide. */
