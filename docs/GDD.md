@@ -537,7 +537,7 @@ Nekonečné míňanie peňazí s dobrým pocitom – tak, ako to robia skutočn�
   - Po 4. scénke príde **pán Kováč ako záujemca** (`adopters.json → kovac`, `story: true` – náhodne nikdy), keď je niekto pripravený. Hráč mu vyberá mačku ako každému inému (senior, záhrada, veľa doma, tichý domov). Pri slabej zhode sa mačka vráti a on príde znova; inak istá pohľadnica s vlastným textom („– K.").
   - Tlačidlo Späť scénku preskočí; ťuknutie vedľa okna ju nezavrie. Starý save uvidí iba scénku, pri ktorej práve je.
 - **Tón:** teplý, jemný humor, nikdy nie ponurý. Ťažké témy (týranie, množiarne) sa spomínajú, ale nezobrazujú – hra sa sústreďuje na záchranu, nie na utrpenie.
-- **Jazyk:** slovenčina + angličtina od začiatku (lokalizácia cez JSON súbory v `src/i18n/`). Žiadny text natvrdo v kóde.
+- **Jazyky:** angličtina (hlavný jazyk), slovenčina, nemčina, španielčina, zjednodušená čínština, kórejčina (JSON súbory v `src/i18n/`). Pri prvom spustení podľa jazyka prehliadača (čeština → slovenčina), inak angličtina; chýbajúci preklad sa zobrazí po anglicky. Mená mačiek majú vlastný zoznam pre každý jazyk (`public/data/names/<jazyk>.json`) – mačka si meno nechá aj po zmene jazyka. Žiadny text natvrdo v kóde. Preklady DE/ES/ZH/KO by mal skontrolovať rodený hovoriaci.
 
 ---
 
@@ -589,7 +589,7 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 | PC | **Tauri** (alternatíva Electron) | Malé natívne aplikácie pre Windows/macOS/Linux, Steam |
 | Mobil | **Capacitor** | Zabalí webovú hru do Android/iOS aplikácie |
 | Dáta | JSON v `public/data/` | Balansovanie bez zásahu do kódu |
-| Lokalizácia | JSON slovníky `src/i18n/sk.json`, `en.json` | Jednoduché, bez závislostí |
+| Lokalizácia | JSON slovníky `src/i18n/<jazyk>.json` (en, sk, de, es, zh, ko) | Jednoduché, bez závislostí |
 | Testy | **Vitest** | Testy hernej logiky bez prehliadača |
 | Verzovanie | Git + GitHub; assety v súkromnom podmodule | Licencie assetov zakazujú ich verejné šírenie |
 | CI | GitHub Actions: build + testy pri PR, ručne spúšťaný balík pre itch.io (`itch.yml`) | Vydanie na itch.io zadarmo s dobrovoľným príspevkom |
@@ -608,7 +608,7 @@ src/
   scenes/      (Phaser – herný svet a minihry)
     BootScene, GarageScene, minigames/ (jedna scéna = jedna minihra)
   ui/          (HTML/CSS nad plátnom – panel, karty, dialógy, zoznamy)
-  i18n/        sk.json, en.json
+  i18n/        en, sk, de, es, zh, ko (.json)
 ```
 **Rozhranie je HTML/CSS** položené nad plátnom Phaseru: karty, zoznamy a dialógy sa tak robia rýchlo, text je ostrý na každom displeji a rozloženie sa ľahko prispôsobí mobilu. Phaser kreslí iba svet (garáž, mačky) a minihry.
 
@@ -642,7 +642,7 @@ Cieľ: **15–20 minút hrania**, ktoré dokážu, že slučka je zábavná.
 | Systémy | Otvorený režim s hodinami pre atmosféru, hlásenia a adoptéri v reálnom čase, offline príjem, stálice a dary, ekonomika (€, ★), adopčná zhoda, pohľadnice, album, výzvy, ukladanie |
 | Naratív | Tutoriál so Zuzkou, prvé 3 skriptované hlásenia |
 | Audio | 3 skladby, ~20 SFX |
-| Jazyky | SK + EN |
+| Jazyky | EN (hlavný), SK, DE, ES, ZH, KO |
 
 **Mimo MVP:** stavba miestností, personál, udalosti, Fázy 2–4, mobil.
 

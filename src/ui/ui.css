@@ -10,8 +10,15 @@
   --ui-warn: #f2c14e;
   --ui-bad: #e86a6a;
   --ui-info: #7ec8e3;
-  --ui-font: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --ui-display: 'Nunito', system-ui, sans-serif;
+  /* čínština a kórejčina: Nunito tieto znaky nemá – použije sa systémové písmo */
+  --ui-font:
+    'Nunito', system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', 'Apple SD Gothic Neo', 'Malgun Gothic',
+    'Noto Sans CJK KR', 'Noto Sans KR', sans-serif;
+  --ui-display:
+    'Nunito', system-ui, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC',
+    'Noto Sans SC', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans CJK KR', 'Noto Sans KR',
+    sans-serif;
   --ui-gap: 10px;
   --ui-radius: 10px;
   --world-h: 50vh;

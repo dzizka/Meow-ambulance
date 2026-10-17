@@ -1,0 +1,244 @@
+{
+  "_comment": "Mená mačiek pre jazyk hry. by_coat = šanca 30 % použiť meno podľa farby. Meno, ktoré už nosí mačka v útulku, sa nepoužije znova (ak je z čoho vyberať).",
+  "generic": [
+    "Michi",
+    "Mishi",
+    "Pelusa",
+    "Bigotes",
+    "Botitas",
+    "Galleta",
+    "Magdalena",
+    "Churro",
+    "Tapita",
+    "Calcetín",
+    "Pimienta",
+    "Canela",
+    "Nube",
+    "Luna",
+    "Simba",
+    "Nala",
+    "Leo",
+    "Lola",
+    "Coco",
+    "Kiko",
+    "Toby",
+    "Rufo",
+    "Lucas",
+    "Paco",
+    "Pepa",
+    "Rita",
+    "Carmela",
+    "Manolo",
+    "Chispa",
+    "Trufa",
+    "Tomate",
+    "Garbanzo",
+    "Lenteja",
+    "Fideo",
+    "Croqueta",
+    "Tortilla",
+    "Pancho",
+    "Rayita",
+    "Bolita",
+    "Ovillo",
+    "Peluche",
+    "Ronroneo",
+    "Morrongo",
+    "Gatito",
+    "Princesa",
+    "Duquesa",
+    "Don Bigotes",
+    "Doña Patitas",
+    "Capitán Pelusa",
+    "Señor Miau",
+    "Lunita",
+    "Estrellita",
+    "Gominola",
+    "Piruleta",
+    "Turrón",
+    "Flan",
+    "Natilla",
+    "Bombón",
+    "Mango",
+    "Kiwi",
+    "Aceituna",
+    "Almendra",
+    "Avellana",
+    "Pistacho",
+    "Chocolatina",
+    "Rosquilla",
+    "Brisa",
+    "Trébol",
+    "Margarita"
+  ],
+  "by_coat": {
+    "black": [
+      "Sombra",
+      "Carbón",
+      "Regaliz",
+      "Pantera",
+      "Medianoche",
+      "Cuervo"
+    ],
+    "orange": [
+      "Zanahoria",
+      "Naranjito",
+      "Calabaza",
+      "Mandarina",
+      "Fuego",
+      "Melocotón"
+    ],
+    "tabby": [
+      "Tigre",
+      "Rayas",
+      "Lince",
+      "Bandido",
+      "Travieso",
+      "Atigrado"
+    ],
+    "tuxedo": [
+      "Esmoquin",
+      "Dominó",
+      "Pingüino",
+      "Mayordomo",
+      "Conde",
+      "Pajarita"
+    ],
+    "calico": [
+      "Retazos",
+      "Confeti",
+      "Mosaico",
+      "Paleta",
+      "Arlequín",
+      "Colorines"
+    ],
+    "white": [
+      "Copito",
+      "Perla",
+      "Algodón",
+      "Nieve",
+      "Leche",
+      "Azúcar"
+    ],
+    "grey": [
+      "Humo",
+      "Plata",
+      "Neblina",
+      "Ceniza",
+      "Guijarro",
+      "Tormenta"
+    ],
+    "cream": [
+      "Vainilla",
+      "Caramelo",
+      "Natilla",
+      "Miel",
+      "Crema",
+      "Galletita"
+    ],
+    "chocolate": [
+      "Cacao",
+      "Moca",
+      "Avellana",
+      "Trufa",
+      "Chocolate",
+      "Café"
+    ],
+    "blue": [
+      "Pizarra",
+      "Arándano",
+      "Zafiro",
+      "Índigo",
+      "Acero",
+      "Azulín"
+    ],
+    "seal_point": [
+      "Duquesa",
+      "Conde",
+      "Condesa",
+      "Zafiro",
+      "Joya",
+      "Marqués"
+    ],
+    "colorpoint": [
+      "Nubecita",
+      "Peluche",
+      "Malvavisco",
+      "Algodoncito",
+      "Terciopelo",
+      "Copo"
+    ],
+    "hairless": [
+      "Melocotón",
+      "Ramsés",
+      "Cleopatra",
+      "Faraón",
+      "Nefertiti",
+      "Dobby"
+    ],
+    "ghost": [
+      "Fantasmita",
+      "Bu",
+      "Espectro",
+      "Niebla",
+      "Casper",
+      "Susurro"
+    ],
+    "potion": [
+      "Pócima",
+      "Elixir",
+      "Ranita",
+      "Musgo",
+      "Luciérnaga",
+      "Hierbita"
+    ],
+    "witch": [
+      "Brujita",
+      "Morgana",
+      "Hechizo",
+      "Lavanda",
+      "Ciruela",
+      "Mora"
+    ],
+    "midnight": [
+      "Lunar",
+      "Murciélago",
+      "Búho",
+      "Sombrita",
+      "Estrella",
+      "Noche"
+    ],
+    "santa": [
+      "Nicolás",
+      "Rodolfo",
+      "Reno",
+      "Arándano",
+      "Cascabel",
+      "Baltasar"
+    ],
+    "frost": [
+      "Escarcha",
+      "Carámbano",
+      "Copito",
+      "Invierno",
+      "Ventisca",
+      "Hielo"
+    ],
+    "fir": [
+      "Piña",
+      "Abeto",
+      "Muérdago",
+      "Pino",
+      "Ramita",
+      "Enebro"
+    ],
+    "marzipan": [
+      "Mazapán",
+      "Turroncito",
+      "Polvorón",
+      "Bastón",
+      "Roscón",
+      "Mantecado"
+    ]
+  }
+}
