@@ -4,7 +4,7 @@ name: Balík pre itch.io
 # a pripraví ZIP na itch.io (index.html v koreni). Spúšťa sa iba ručne – hra sa nikde
 # automaticky nezverejňuje.
 #
-# Ak sú nastavené secret BUTLER_API_KEY a premenná ITCH_TARGET (napr. „dzizka/meow-ambulance"),
+# Ak sú nastavené secret BUTLER_API_KEY a premenná ITCH_TARGET („quietcraft/meow-ambulance"),
 # ZIP sa rovno nahrá na itch.io cez butler do kanála html5. Inak si ho stiahni z artefaktov behu
 # a nahraj ručne (docs/TECH.md – Vydanie na itch.io).
 on:

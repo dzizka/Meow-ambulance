@@ -101,12 +101,12 @@ Workflowy, ktoré zostavujú hru s assetmi (`itch.yml`, `android.yml`), potrebuj
 2. Token uložiť do repozitára **Meow-ambulance**: Settings → Secrets and variables → Actions → *New repository secret* → názov **`ASSETS_TOKEN`**.
 
 ### Vydanie na itch.io
-Hra je **zadarmo s dobrovoľným príspevkom**. V hlavnom menu je tlačidlo „❤ Podporiť autora", ktoré otvorí stránku hry na itch.io – ukáže sa, až keď je v `src/platform.ts` vyplnené `SUPPORT_URL`. V hre sa nič neplatí a nikde sa hráčovi nepripomína.
+Hra je **zadarmo s dobrovoľným príspevkom**. V hlavnom menu je tlačidlo „❤ Podporiť autora", ktoré otvorí stránku hry na itch.io – adresa je v `src/platform.ts` (`SUPPORT_URL`, prázdne = tlačidlo sa neukáže). V hre sa nič neplatí a nikde sa hráčovi nepripomína.
 
 **Balík:** Actions → **Balík pre itch.io** → *Run workflow*. Po pár minútach je v behu artefakt `meow-ambulance-web` (ZIP, `index.html` v koreni, aj s príručkou `wiki/`). Artefakt sa po 3 dňoch zmaže – vo verejnom repozitári by si ho inak mohol stiahnuť ktokoľvek prihlásený na GitHube.
 
 **Prvé nahratie (ručne):**
-1. Účet na https://itch.io (zadarmo). Používateľské meno bude v adrese hry: `meno.itch.io/meow-ambulance`.
+1. Účet na https://itch.io (zadarmo). Používateľské meno bude v adrese hry: `meno.itch.io/meow-ambulance` (Meow Ambulance: https://quietcraft.itch.io/meow-ambulance).
 2. *Dashboard → Create new project*:
    - Kind of project: **HTML**; Classification: **Games**; Genre: **Simulation**.
    - Uploads: nahrať ZIP a zaškrtnúť **This file will be played in the browser**.
@@ -120,7 +120,7 @@ Hra je **zadarmo s dobrovoľným príspevkom**. V hlavnom menu je tlačidlo „�
 
 **Ďalšie verzie:** buď znova nahrať ZIP ručne, alebo automaticky cez **butler**:
 - API kľúč: itch.io → *Settings → API keys* → uložiť ako secret **`BUTLER_API_KEY`**.
-- Premenná repozitára **`ITCH_TARGET`** = `meno/meow-ambulance` (Settings → Secrets and variables → Actions → *Variables*).
+- Premenná repozitára **`ITCH_TARGET`** = `quietcraft/meow-ambulance` (Settings → Secrets and variables → Actions → *Variables*).
 - Pri spustení workflowu zaškrtnúť *Nahrať na itch.io* – butler nahrá novú verziu do kanála `html5` (iba zmenené súbory) a save hráčov ostane.
 
 **Deti do 13 rokov:** itch.io nemá vekové hodnotenie – hru zaraďuje autor. Hra nezbiera žiadne osobné údaje (save je iba v zariadení), nemá reklamy ani účty, takže nič ďalšie netreba. Plánovaná telemetria (playtest) musí ostať iba lokálna. Pri vydaní na Google Play by vek posúdil dotazník IARC (pridelí PEGI) a pri cieľovej skupine pod 13 rokov platia zásady Google Play pre rodiny.

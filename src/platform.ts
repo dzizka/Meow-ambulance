@@ -13,7 +13,7 @@ export function exitApp(): void {
  * Stránka hry na itch.io – odtiaľ sa dá autor podporiť ľubovoľnou sumou.
  * Prázdne = stránka ešte neexistuje a tlačidlo „Podporiť autora" sa neukáže.
  */
-export const SUPPORT_URL = '';
+export const SUPPORT_URL = 'https://quietcraft.itch.io/meow-ambulance';
 
 /** Otvorí adresu mimo hry (na webe nová karta, v aplikácii systémový prehliadač). */
 export function openExternal(url: string): void {
