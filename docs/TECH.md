@@ -52,7 +52,7 @@ src/
     minigames/          jedna scéna = jedna minihra
   ui/                   znovupoužiteľné UI komponenty
   audio/                AudioManager.ts
-  i18n/                 sk.json, en.json, t.ts
+  i18n/                 en, sk, de, es, zh, ko (.json), t.ts
 tests/                  Vitest testy logiky
 docs/                   dizajn a plánovanie
 ```
@@ -112,7 +112,7 @@ Hra je **zadarmo s dobrovoľným príspevkom**. V hlavnom menu je tlačidlo „�
    - Uploads: nahrať ZIP a zaškrtnúť **This file will be played in the browser**.
    - Embed options: rozmer na výšku (napr. **480 × 854**), **Mobile friendly** (orientácia Portrait), **Fullscreen button**.
    - Pricing: **$0 or donate** (navrhovaný príspevok napr. 2 €).
-   - Tagy: cozy, cats, management, pixel-art; jazyky: slovenčina, angličtina.
+   - Tagy: cozy, cats, management, pixel-art; jazyky: angličtina, slovenčina, nemčina, španielčina, čínština, kórejčina.
    - Obrázok hry (630 × 500) a 3–5 screenshotov.
    - Visibility: najprv **Draft** – vyskúšať, potom **Public**.
 3. Adresu stránky zapísať do `SUPPORT_URL` v `src/platform.ts` a vydať novú verziu.
@@ -136,7 +136,7 @@ Zverejnená hra obsahuje iba súbory, ktoré hra používa (bez `_source/` a `li
 - Pacienti: `cat.ward` = garáž alebo karanténa (`freeIn`, `moveCat`, `totalCages`). Diagnózy, ktoré hráč nemá čím odhaliť, mačky nedostanú (`generateCat({ tools })`).
 - Rozloženie (`computeLayout` v `layout.ts`): na výšku svet hore a panel pod ním; na šírku, ak to svet nezmenší o viac ako ~28 %, je panel **ukotvený vpravo** (`docked`) a stále ukazuje prehľad miestnosti (mačky s ikonkami potrieb, voľné miesta, personál, hlásenia, záujemcovia) alebo kartu mačky. Na užšej obrazovke na šírku sa panel vysúva iba s kartou mačky. Svet je na šírku zvislo v strede.
 - Obchod má záložky (`ShopTab`: stavby, výbava, personál, dekorácie). Okno po kúpe zachová posun (`UI.renderModal` – `modalViewKey`).
-- Jazyk: ⚙️ v menu prepína slovenčinu a angličtinu (`setLang`, uloží sa do `localStorage` `meow:lang`, hra sa znovu načíta). Bez voľby podľa prehliadača.
+- Jazyky: `LANGS` v `src/i18n/t.ts` (en, sk, de, es, zh, ko). Bez voľby podľa `navigator.languages` (čeština → slovenčina, inak angličtina). ⚙️ v menu prepína jazyk (`setLang`, `localStorage` `meow:lang`, hra sa znovu načíta). `t()` padá na angličtinu; `eur(n)` píše sumu podľa jazyka (€70 / 70 €), `locale` pre `Intl`. Mená mačiek: `public/data/names/<jazyk>.json` (načíta sa podľa jazyka, `DATA_FILES.names`). Test `tests/i18n.test.ts` stráži, že každý jazyk má všetky kľúče a rovnaké `{premenné}` ako angličtina. Nový jazyk = JSON v `src/i18n/`, zoznam mien, záznam v `LANGS`/`LANG_NAMES`/`LOCALES`. Čínština a kórejčina používajú systémové písmo (Nunito tie znaky nemá). Príručka (wiki) je iba SK/EN – ostatné jazyky otvoria anglickú.
 - Mačka, ktorá 3× za sebou narazí do prekážky, sa presunie na voľné miesto vo svojej oblasti (`CatSprite.unstick`); pri načítaní sa mačky rozmiestnia v rámci vlastnej oblasti.
 - Karta mačky sa prekreslí iba pri zmene obsahu (`UI.setSheet`) – inak by obnovovanie každých 500 ms mohlo zjesť ťuknutie.
 

@@ -1,0 +1,248 @@
+{
+  "_comment": "Mená mačiek pre jazyk hry. by_coat = šanca 30 % použiť meno podľa farby. Meno, ktoré už nosí mačka v útulku, sa nepoužije znova (ak je z čoho vyberať).",
+  "generic": [
+    "Whiskers",
+    "Mittens",
+    "Biscuit",
+    "Pudding",
+    "Muffin",
+    "Pickles",
+    "Noodle",
+    "Peanut",
+    "Button",
+    "Socks",
+    "Pepper",
+    "Mochi",
+    "Tofu",
+    "Waffles",
+    "Nugget",
+    "Pumpkin",
+    "Jellybean",
+    "Bean",
+    "Oreo",
+    "Olive",
+    "Ziggy",
+    "Luna",
+    "Milo",
+    "Oliver",
+    "Bella",
+    "Simba",
+    "Nala",
+    "Leo",
+    "Willow",
+    "Hazel",
+    "Clover",
+    "Maple",
+    "Daisy",
+    "Poppy",
+    "Rosie",
+    "Ruby",
+    "Pixel",
+    "Bubbles",
+    "Sprout",
+    "Pebble",
+    "Toffee",
+    "Fudge",
+    "Cupcake",
+    "Marshmallow",
+    "Sushi",
+    "Dumpling",
+    "Bagel",
+    "Scout",
+    "Rocket",
+    "Comet",
+    "Pip",
+    "Bramble",
+    "Juniper",
+    "Smudge",
+    "Patches",
+    "Fluffy",
+    "Snuggles",
+    "Sir Purrsalot",
+    "Captain Fluff",
+    "Mr Whiskers",
+    "Lady Paws",
+    "Miso",
+    "Chai",
+    "Basil",
+    "Sage",
+    "Twinkle",
+    "Wiggles",
+    "Doodle",
+    "Kiwi",
+    "Mango",
+    "Chip"
+  ],
+  "by_coat": {
+    "black": [
+      "Shadow",
+      "Midnight",
+      "Onyx",
+      "Salem",
+      "Inky",
+      "Pepper",
+      "Panther"
+    ],
+    "orange": [
+      "Ginger",
+      "Marmalade",
+      "Carrot",
+      "Tango",
+      "Sunny",
+      "Apricot",
+      "Cheeto"
+    ],
+    "tabby": [
+      "Tiger",
+      "Stripes",
+      "Tigger",
+      "Bandit",
+      "Rascal",
+      "Scout"
+    ],
+    "tuxedo": [
+      "Tux",
+      "Domino",
+      "Oreo",
+      "Bow Tie",
+      "Mr Penguin",
+      "Butler"
+    ],
+    "calico": [
+      "Patches",
+      "Calla",
+      "Confetti",
+      "Quilt",
+      "Pebbles",
+      "Mosaic"
+    ],
+    "white": [
+      "Snowball",
+      "Casper",
+      "Pearl",
+      "Cotton",
+      "Flurry",
+      "Coconut"
+    ],
+    "grey": [
+      "Smokey",
+      "Ash",
+      "Misty",
+      "Pebble",
+      "Silver",
+      "Storm"
+    ],
+    "cream": [
+      "Butterscotch",
+      "Custard",
+      "Vanilla",
+      "Caramel",
+      "Honey",
+      "Cookie"
+    ],
+    "chocolate": [
+      "Cocoa",
+      "Mocha",
+      "Brownie",
+      "Hazelnut",
+      "Truffle",
+      "Espresso"
+    ],
+    "blue": [
+      "Slate",
+      "Blueberry",
+      "Dusty",
+      "Sapphire",
+      "Indigo",
+      "Steel"
+    ],
+    "seal_point": [
+      "Duchess",
+      "Sapphire",
+      "Earl",
+      "Countess",
+      "Royal",
+      "Jewel"
+    ],
+    "colorpoint": [
+      "Cloud",
+      "Plush",
+      "Marshmallow",
+      "Fluff",
+      "Snowdrop",
+      "Velvet"
+    ],
+    "hairless": [
+      "Peach",
+      "Ramses",
+      "Cleo",
+      "Pharaoh",
+      "Nefertiti",
+      "Dobby"
+    ],
+    "ghost": [
+      "Boo",
+      "Spooky",
+      "Wisp",
+      "Phantom",
+      "Casper",
+      "Mist"
+    ],
+    "potion": [
+      "Potion",
+      "Elixir",
+      "Froggy",
+      "Moss",
+      "Glowbug",
+      "Clover"
+    ],
+    "witch": [
+      "Hex",
+      "Morgana",
+      "Spell",
+      "Lavender",
+      "Plum",
+      "Bramble"
+    ],
+    "midnight": [
+      "Moonbeam",
+      "Bat",
+      "Raven",
+      "Shade",
+      "Owl",
+      "Starling"
+    ],
+    "santa": [
+      "Nick",
+      "Rudolph",
+      "Holly",
+      "Cranberry",
+      "Jingle",
+      "Berry"
+    ],
+    "frost": [
+      "Frosty",
+      "Icicle",
+      "Flurry",
+      "Blizzard",
+      "Winter",
+      "Snowflake"
+    ],
+    "fir": [
+      "Pine",
+      "Spruce",
+      "Mistletoe",
+      "Evergreen",
+      "Twig",
+      "Juniper"
+    ],
+    "marzipan": [
+      "Marzipan",
+      "Gingerbread",
+      "Candy Cane",
+      "Sugarplum",
+      "Cookie",
+      "Fudge"
+    ]
+  }
+}

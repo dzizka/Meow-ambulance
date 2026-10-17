@@ -21,7 +21,7 @@ import type {
 } from '../data/types';
 import { generateCat } from '../core/systems/CatGenerator';
 import { Rng } from '../core/Rng';
-import { lang, setLang, t } from '../i18n/t';
+import { LANG_NAMES, LANGS, eur, lang, locale, setLang, t } from '../i18n/t';
 import { button, el } from './dom';
 import { DevMenu } from './DevMenu';
 import {
@@ -200,10 +200,12 @@ function decorPreview(def: DecorDef): HTMLElement {
 
 const paws = (n: number): string => '🐾'.repeat(n);
 
-/** „MM-DD" → „20. 10." (SK) alebo „20/10" (EN). */
+/** „MM-DD" → deň a mesiac podľa jazyka (20. 10. / 20/10 / 10月20日 …). */
 function dayMonth(md: string): string {
-  const [m, d] = md.split('-').map(Number);
-  return lang === 'sk' ? `${d}. ${m}.` : `${d}/${m}`;
+  const [m = 1, d = 1] = md.split('-').map(Number);
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'numeric' }).format(
+    new Date(2026, m - 1, d),
+  );
 }
 /** Ikony miestností kliniky (prízemie aj 2. poschodie). */
 const CLINIC_ICONS: Record<ClinicRoomId, string> = {
@@ -264,7 +266,7 @@ function postcardText(
 }
 
 const round1 = (n: number): string =>
-  (Math.round(n * 10) / 10).toLocaleString(undefined, { maximumFractionDigits: 1 });
+  (Math.round(n * 10) / 10).toLocaleString(locale, { maximumFractionDigits: 1 });
 
 /**
  * HTML rozhranie nad plátnom: horný panel, karta mačky, hlásenia, záujemcovia,
@@ -556,9 +558,9 @@ export class UI {
       el(
         'div',
         { class: 'actions lang-row' },
-        ...(['sk', 'en'] as const).map((l) =>
+        ...LANGS.map((l) =>
           button(
-            l === 'sk' ? '🇸🇰 Slovenčina' : '🇬🇧 English',
+            LANG_NAMES[l],
             () => {
               if (l === lang) return;
               setLang(l);
@@ -701,7 +703,7 @@ export class UI {
     const s = this.state;
     const phaseIcon = { night: '🌙', morning: '🌅', day: '☀️', evening: '🌆' }[s.dayPhase];
     this.clockPill.textContent = `${phaseIcon} ${s.clock}`;
-    this.moneyPill.textContent = `${Math.floor(s.money)} €`;
+    this.moneyPill.textContent = eur(Math.floor(s.money));
     this.repPill.textContent = `★ ${s.reputation}`;
     this.setBadge(this.badges.reports, s.reports.length);
     this.setBadge(this.badges.visitors, s.adopters.length);
@@ -1683,7 +1685,7 @@ export class UI {
                   t('UI_LOCKED', { rep: (def.unlock ? s.unlockRep(def.unlock) : null) ?? '?' }),
                 )
               : button(
-                  `${def.price} €`,
+                  eur(def.price),
                   () => {
                     if (s.buyDecor(def.id)) this.renderModal();
                   },
@@ -3307,7 +3309,7 @@ export class UI {
           el(
             'div',
             { class: 'row' },
-            el('span', { class: 'muted' }, `${t('UI_REWARD')}: ${def.money} € · ★ ${def.rep}`),
+            el('span', { class: 'muted' }, `${t('UI_REWARD')}: ${eur(def.money)} · ★ ${def.rep}`),
             ch.completed
               ? button(
                   `🎁 ${t('UI_CLAIM')}`,
@@ -3586,7 +3588,7 @@ export class UI {
           ? el('span', { class: 'chip good' }, t('UI_EQ_MAX'))
           : locked
             ? lockChip(unlock ? s.unlockRep(unlock) : null)
-            : buy(`${price} €`, price, () => s.buyEquipment(def.id)),
+            : buy(eur(price), price, () => s.buyEquipment(def.id)),
       );
     });
 

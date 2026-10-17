@@ -1,3 +1,5 @@
+import { lang } from './i18n/t';
+
 /**
  * Zoznam súborov, ktoré hra načítava. Cesty sú relatívne k index.html
  * (public/ sa kopíruje do koreňa buildu). Slúži aj na výber súborov pri zverejnení ukážky.
@@ -7,7 +9,8 @@ export const DATA_FILES = {
   conditions: 'data/conditions.json',
   breeds: 'data/breeds.json',
   adopters: 'data/adopters.json',
-  names: 'data/names.json',
+  // mená mačiek sú podľa jazyka hry (mačka si meno nechá aj po zmene jazyka)
+  names: `data/names/${lang}.json`,
   balance: 'data/balance.json',
   reports: 'data/reports.json',
   challenges: 'data/challenges.json',
@@ -70,8 +73,9 @@ export const MUSIC_NIGHT: Record<string, [string, string]> = {
   musicCalmSummer: audio(`${MUSIC}calm_5_summer_memories`),
 };
 
-/** Písmo všetkých textov a čísel – dobre čitateľné (Nunito, OFL). */
-export const FONT_FAMILY = '"Nunito", system-ui, sans-serif';
+/** Písmo všetkých textov a čísel – dobre čitateľné (Nunito, OFL); čínština a kórejčina zo systému. */
+export const FONT_FAMILY =
+  '"Nunito", system-ui, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif';
 
 /** Postava dobrovoľníčky Zuzky (G5, hárok 012). */
 export const ZUZKA_SHEET = '012';

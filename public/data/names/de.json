@@ -1,0 +1,246 @@
+{
+  "_comment": "Mená mačiek pre jazyk hry. by_coat = šanca 30 % použiť meno podľa farby. Meno, ktoré už nosí mačka v útulku, sa nepoužije znova (ak je z čoho vyberať).",
+  "generic": [
+    "Mieze",
+    "Minka",
+    "Felix",
+    "Fritzi",
+    "Lilli",
+    "Muffin",
+    "Krümel",
+    "Keks",
+    "Pünktchen",
+    "Socke",
+    "Flocke",
+    "Bommel",
+    "Strolch",
+    "Mausi",
+    "Momo",
+    "Luna",
+    "Leo",
+    "Simba",
+    "Nala",
+    "Tiger",
+    "Rosi",
+    "Paula",
+    "Emil",
+    "Oskar",
+    "Anton",
+    "Frieda",
+    "Mila",
+    "Lotte",
+    "Ida",
+    "Pepe",
+    "Bruno",
+    "Charly",
+    "Fips",
+    "Purzel",
+    "Wuschel",
+    "Schnurri",
+    "Tapsi",
+    "Moritz",
+    "Max",
+    "Wilma",
+    "Hanni",
+    "Nanni",
+    "Kiki",
+    "Lucky",
+    "Sternchen",
+    "Zimtschnecke",
+    "Brezel",
+    "Strudel",
+    "Knödel",
+    "Nudel",
+    "Kartoffel",
+    "Erbse",
+    "Bohne",
+    "Kringel",
+    "Wolke",
+    "Hummel",
+    "Biene",
+    "Pfötchen",
+    "Schnuffel",
+    "Kuschel",
+    "Herr Schnurrbart",
+    "Frau Pfote",
+    "Baron Flausch",
+    "Kapitän Kater",
+    "Fräulein Mau",
+    "Kobold",
+    "Tinka",
+    "Lumpi",
+    "Pünktli",
+    "Fussel",
+    "Gurke"
+  ],
+  "by_coat": {
+    "black": [
+      "Schatten",
+      "Rabe",
+      "Pantherchen",
+      "Kohle",
+      "Lakritz",
+      "Mitternacht"
+    ],
+    "orange": [
+      "Karotte",
+      "Möhrchen",
+      "Kürbis",
+      "Aprikose",
+      "Rotkäppchen",
+      "Ingwer"
+    ],
+    "tabby": [
+      "Tiger",
+      "Streifchen",
+      "Wildfang",
+      "Räuber",
+      "Luchs",
+      "Bandit"
+    ],
+    "tuxedo": [
+      "Frack",
+      "Domino",
+      "Pinguin",
+      "Butler",
+      "Herr Graf",
+      "Smoking"
+    ],
+    "calico": [
+      "Flicken",
+      "Konfetti",
+      "Mosaik",
+      "Bunti",
+      "Patchwork",
+      "Palette"
+    ],
+    "white": [
+      "Schneeball",
+      "Perle",
+      "Wölkchen",
+      "Milchi",
+      "Flöckchen",
+      "Zucker"
+    ],
+    "grey": [
+      "Rauchi",
+      "Silber",
+      "Nebel",
+      "Kiesel",
+      "Ascherl",
+      "Sturm"
+    ],
+    "cream": [
+      "Vanille",
+      "Karamell",
+      "Pudding",
+      "Honig",
+      "Sahne",
+      "Butterkeks"
+    ],
+    "chocolate": [
+      "Kakao",
+      "Mokka",
+      "Haselnuss",
+      "Trüffel",
+      "Schoko",
+      "Brownie"
+    ],
+    "blue": [
+      "Schiefer",
+      "Blaubeere",
+      "Saphir",
+      "Indigo",
+      "Stahl",
+      "Rauchblau"
+    ],
+    "seal_point": [
+      "Herzogin",
+      "Graf",
+      "Gräfin",
+      "Saphir",
+      "Juwel",
+      "Prinz"
+    ],
+    "colorpoint": [
+      "Wolke",
+      "Plüsch",
+      "Marshmallow",
+      "Flausch",
+      "Samt",
+      "Schneeglöckchen"
+    ],
+    "hairless": [
+      "Pfirsich",
+      "Ramses",
+      "Kleopatra",
+      "Pharao",
+      "Nofretete",
+      "Dobby"
+    ],
+    "ghost": [
+      "Gespenst",
+      "Buh",
+      "Nebelchen",
+      "Geisterli",
+      "Schemen",
+      "Irrlicht"
+    ],
+    "potion": [
+      "Zaubertrank",
+      "Elixier",
+      "Fröschli",
+      "Moos",
+      "Glühwürmchen",
+      "Kräuterl"
+    ],
+    "witch": [
+      "Hexe",
+      "Morgana",
+      "Zauber",
+      "Lavendel",
+      "Pflaume",
+      "Brombeere"
+    ],
+    "midnight": [
+      "Mondschein",
+      "Fledermaus",
+      "Eule",
+      "Sternchen",
+      "Dämmerung",
+      "Mitternacht"
+    ],
+    "santa": [
+      "Nikolaus",
+      "Rudolf",
+      "Rentier",
+      "Preiselbeere",
+      "Glöckchen",
+      "Lebkuchen"
+    ],
+    "frost": [
+      "Frosti",
+      "Eiszapfen",
+      "Raureif",
+      "Schneeflocke",
+      "Winter",
+      "Väterchen Frost"
+    ],
+    "fir": [
+      "Tannenzapfen",
+      "Fichte",
+      "Mistel",
+      "Tannenbaum",
+      "Zweiglein",
+      "Wacholder"
+    ],
+    "marzipan": [
+      "Marzipan",
+      "Pfefferkuchen",
+      "Zuckerstange",
+      "Stollen",
+      "Plätzchen",
+      "Spekulatius"
+    ]
+  }
+}

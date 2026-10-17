@@ -27,7 +27,8 @@ export function openExternal(url: string): void {
  */
 export const hasWiki = !isNative;
 export function openWiki(lang: string): void {
-  window.open(`./wiki/${lang === 'en' ? 'en/' : ''}`, '_blank', 'noopener');
+  // príručka je po slovensky a po anglicky – ostatné jazyky dostanú anglickú
+  window.open(`./wiki/${lang === 'sk' ? '' : 'en/'}`, '_blank', 'noopener');
 }
 
 /** Systémové tlačidlo Späť na Androide. */
