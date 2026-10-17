@@ -994,5 +994,9 @@
   "UI_ALBUM_SEASON_WHEN": "They only come in season ({from} – {to}).",
   "UI_ALBUM_PAGES": "Each complete page: +{hearts} ❤ and €{money}.",
   "UI_ALBUM_PAGE_DONE": "page complete",
-  "TOAST_ALBUM_PAGE": "📖 Album page complete: {page}! +{hearts} ❤ and €{money}"
+  "TOAST_ALBUM_PAGE": "📖 Album page complete: {page}! +{hearts} ❤ and €{money}",
+  "TITLE_SUPPORT": "Support the author",
+  "SUPPORT_TEXT": "Meow Ambulance is and will stay free – no ads, and nothing in it costs real money. If you enjoy it, you can support the author with any amount on the game's itch.io page.",
+  "SUPPORT_KIDS": "If you are under 18, please ask your parents first. The game works exactly the same without support.",
+  "SUPPORT_OPEN": "Open the itch.io page"
 }

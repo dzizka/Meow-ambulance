@@ -592,7 +592,7 @@ Alternatíva (pastelový 2D štýl à la Good Pizza) sa ponecháva pre **minihry
 | Lokalizácia | JSON slovníky `src/i18n/sk.json`, `en.json` | Jednoduché, bez závislostí |
 | Testy | **Vitest** | Testy hernej logiky bez prehliadača |
 | Verzovanie | Git + GitHub; assety v súkromnom podmodule | Licencie assetov zakazujú ich verejné šírenie |
-| CI | GitHub Actions: build + testy pri PR, nasadenie webovej verzie na GitHub Pages z `main` | Každá verzia hrateľná cez odkaz aj na mobile |
+| CI | GitHub Actions: build + testy pri PR, ručne spúšťaný balík pre itch.io (`itch.yml`) | Vydanie na itch.io zadarmo s dobrovoľným príspevkom |
 | Úlohy | GitHub Issues + GitHub Projects (Kanban) | Všetko na jednom mieste |
 
 ### 10.2 Architektúra (vysoká úroveň)

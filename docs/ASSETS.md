@@ -18,7 +18,7 @@ Väčšina balíkov z itch.io má podmienku **„nesmie sa šíriť ani predáva
 - Kód, dokumentácia a herné dáta → verejný repozitár [Meow-ambulance](https://github.com/dzizka/Meow-ambulance).
 - **Všetky** assety tretích strán (aj CC0 – kvôli jednoduchosti na jednom mieste) a texty licencií → súkromný repozitár **Meow-ambulance-offline**, pripojený ako Git podmodul na ceste `public/assets/`.
 - Kto nemá prístup k súkromnému repozitáru, vidí kód, ale hru bez assetov nespustí.
-- Verejne nasadený build (itch.io, GitHub Pages) je v poriadku – je to hotová hra, nie šírenie samostatných súborov. CI na to bude potrebovať prístupový token k súkromnému repozitáru (nastaví sa v M0).
+- Verejne nasadený build (itch.io) je v poriadku – je to hotová hra, nie šírenie samostatných súborov. CI na to bude potrebovať prístupový token k súkromnému repozitáru (nastaví sa v M0).
 - Hudba sa ukladá v dvoch formátoch: **OGG + MP3** (Safari na iPhone OGG spoľahlivo neprehrá; Phaser si vyberie podporovaný). Konverzia: `ffmpeg -i x.ogg -q:a 4 x.mp3`.
 - Git LFS sa nepoužíva (súbory sú malé, najväčší ~5 MB).
 
@@ -124,7 +124,7 @@ Hra je na tieto zvuky pripravená. Kým súbor chýba, zahrá sa náhradný zvuk
 **Postup po nahratí:**
 1. Nahraj súbory na GitHub do `Meow-ambulance-offline/audio/sfx/extra/` (*Add file → Upload files*).
 2. Licenciu zapíš sem do tabuľky v §6 (riadok `audio/sfx/extra/`) a pri CC BY aj autora do `CREDITS.md` – alebo mi len napíš odkaz na zvuk a zapíšem to ja.
-3. V repozitári **Meow-ambulance** → *Actions* → **Deploy na GitHub Pages** → *Run workflow* (políčko „Použiť najnovšie assety" nechaj zaškrtnuté). Po pár minútach sú zvuky v hre.
+3. V repozitári **Meow-ambulance** → *Actions* → **Balík pre itch.io** → *Run workflow* (políčko „Použiť najnovšie assety" nechaj zaškrtnuté). Po pár minútach je hotový balík so zvukmi.
 4. Pri ďalšom vývoji posuniem podmodul, aby boli zvuky aj v bežných buildoch (`git submodule update --remote public/assets`).
 
 Iné mená súborov hra ignoruje – nový typ zvuku treba najprv pridať do `src/sfx.ts` (`EXTRA_SFX_NAMES`) a na miesto v kóde, kde má zaznieť.

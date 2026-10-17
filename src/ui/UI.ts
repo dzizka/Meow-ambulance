@@ -24,7 +24,15 @@ import { Rng } from '../core/Rng';
 import { lang, setLang, t } from '../i18n/t';
 import { button, el } from './dom';
 import { DevMenu } from './DevMenu';
-import { exitApp, isNative, onBackButton, openWiki } from '../platform';
+import {
+  SUPPORT_URL,
+  exitApp,
+  hasWiki,
+  isNative,
+  onBackButton,
+  openExternal,
+  openWiki,
+} from '../platform';
 import { computeLayout, type Room } from '../scenes/layout';
 
 /** Čo rozhranie potrebuje od hernej scény. */
@@ -300,7 +308,7 @@ export class UI {
   private storyLine = 0;
   /** Hlavné menu (úvodná obrazovka) – ukáže sa pri spustení a z pauzy. */
   private title = el('div', { class: 'title-screen', role: 'dialog', 'aria-modal': 'true' });
-  private titleView: 'main' | 'settings' | 'new' | 'backup' = 'main';
+  private titleView: 'main' | 'settings' | 'new' | 'backup' | 'support' = 'main';
   /** Záloha hry: zobrazený kód a či posledný import zlyhal. */
   private backupCode: string | null = null;
   private backupError = false;
@@ -428,6 +436,17 @@ export class UI {
       );
     } else if (this.titleView === 'backup') {
       box.append(...this.backupContent());
+    } else if (this.titleView === 'support') {
+      // Hru hrajú aj deti – podpora je dobrovoľná, bez pripomínania v hre a s vysvetlením pre rodičov
+      box.append(
+        el('h2', {}, `❤ ${t('TITLE_SUPPORT')}`),
+        el('p', {}, t('SUPPORT_TEXT')),
+        el('p', { class: 'hint' }, t('SUPPORT_KIDS')),
+        button(`${t('SUPPORT_OPEN')} ↗`, () => openExternal(SUPPORT_URL), {
+          class: 'btn primary',
+        }),
+        button(`← ${t('TITLE_BACK')}`, () => this.setTitleView('main')),
+      );
     } else if (this.titleView === 'new') {
       box.append(
         el('p', { class: 'warning' }, t('UI_NEW_GAME_CONFIRM')),
@@ -444,7 +463,10 @@ export class UI {
           class: 'btn primary big',
         }),
         button(`⚙️ ${t('TITLE_SETTINGS')}`, () => this.setTitleView('settings')),
-        button(`📖 ${t('TITLE_WIKI')}`, () => openWiki(lang)),
+        ...(hasWiki ? [button(`📖 ${t('TITLE_WIKI')}`, () => openWiki(lang))] : []),
+        ...(SUPPORT_URL
+          ? [button(`❤ ${t('TITLE_SUPPORT')}`, () => this.setTitleView('support'))]
+          : []),
         button(`💾 ${t('BACKUP_TITLE')}`, () => {
           this.backupCode = null;
           this.backupError = false;
@@ -563,7 +585,7 @@ export class UI {
         { class: 'hint' },
         t('UI_STATS_LINE', { r: s.counters.rescued, a: s.counters.adopted }),
       ),
-      button(`📖 ${t('TITLE_WIKI')}`, () => openWiki(lang)),
+      ...(hasWiki ? [button(`📖 ${t('TITLE_WIKI')}`, () => openWiki(lang))] : []),
       button(`🏠 ${t('UI_MAIN_MENU')}`, () => {
         this.game.saveNow();
         this.closeModal();

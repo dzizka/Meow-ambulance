@@ -2,13 +2,10 @@
 
 Cozy manažmentová hra o záchrane mačiek pre PC a mobil. Zachráň vystrašenú mačku z ulice, vylieč ju, získaj jej dôveru, nájdi jej dokonalý domov – a z garáže postav národné centrum pre záchranu mačiek.
 
-https://dzizka.github.io/Meow-ambulance/
-
 > Stav: **predprodukcia** – pozri [ROADMAP](docs/ROADMAP.md)
 
 ## Pre hráčov
-- Hrať: https://dzizka.github.io/Meow-ambulance/
-- Príručka hráča (wiki): https://dzizka.github.io/Meow-ambulance/wiki/
+Hra sa pripravuje na vydanie na **itch.io** (zadarmo, s dobrovoľným príspevkom). Verejná webová verzia na GitHub Pages a APK v Releases sú vypnuté.
 
 ## Dokumentácia
 | Dokument | Obsah |
@@ -23,7 +20,7 @@ https://dzizka.github.io/Meow-ambulance/
 
 ## Technológie
 - **TypeScript + Phaser** (HTML5), build cez **Vite**
-- Android cez **Capacitor** – APK: [Releases → android-latest](https://github.com/dzizka/Meow-ambulance/releases/tag/android-latest); PC neskôr cez **Tauri**
+- Android cez **Capacitor** (APK sa verejne nezverejňuje – pozri docs/TECH.md); PC neskôr cez **Tauri**
 - Git + GitHub; assety v súkromnom podmodule
 - GitHub Issues + Projects na úlohy, GitHub Actions na testy a nasadenie
 

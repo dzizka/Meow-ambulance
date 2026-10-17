@@ -1,16 +1,15 @@
 name: Android APK
 
-# Zostaví Android aplikáciu (Capacitor) aj s assetmi zo súkromného repozitára
-# a zverejní podpísané APK v GitHub Release „android-latest".
+# Zostaví Android aplikáciu (Capacitor) aj s assetmi zo súkromného repozitára.
+# APK sa verejne nezverejňuje: na PR sa iba overí, že sa dá zostaviť; pri ručnom spustení
+# je podpísané APK na 3 dni v artefaktoch behu (na vlastné testovanie v telefóne).
 on:
-  push:
-    branches: [main]
   pull_request:
     paths: ['android/**', 'capacitor.config.ts', 'package.json', '.github/workflows/android.yml']
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: android
@@ -49,17 +48,11 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk ../meow-ambulance.apk
+      # Artefakt si vo verejnom repozitári stiahne každý prihlásený používateľ GitHubu – preto iba
+      # pri ručnom spustení a na krátko.
       - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
         with:
           name: meow-ambulance-apk
           path: meow-ambulance.apk
-      - name: GitHub Release „android-latest"
-        if: github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release delete android-latest --cleanup-tag --yes || true
-          gh release create android-latest meow-ambulance.apk \
-            --target "$GITHUB_SHA" \
-            --title "Meow Ambulance – Android (0.1.${{ github.run_number }})" \
-            --notes "Najnovšia verzia hry pre Android, zostavená z $GITHUB_SHA. Stiahni meow-ambulance.apk v telefóne a nainštaluj (treba povoliť inštaláciu z neznámych zdrojov)."
+          retention-days: 3
