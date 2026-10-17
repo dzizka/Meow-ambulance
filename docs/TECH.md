@@ -103,7 +103,7 @@ Workflowy, ktoré zostavujú hru s assetmi (`itch.yml`, `android.yml`), potrebuj
 ### Vydanie na itch.io
 Hra je **zadarmo s dobrovoľným príspevkom**. V hlavnom menu je tlačidlo „❤ Podporiť autora", ktoré otvorí stránku hry na itch.io – adresa je v `src/platform.ts` (`SUPPORT_URL`, prázdne = tlačidlo sa neukáže). V hre sa nič neplatí a nikde sa hráčovi nepripomína.
 
-**Balík:** Actions → **Balík pre itch.io** → *Run workflow*. Po pár minútach je v behu artefakt `meow-ambulance-web` (ZIP, `index.html` v koreni, aj s príručkou `wiki/`). Artefakt sa po 3 dňoch zmaže – vo verejnom repozitári by si ho inak mohol stiahnuť ktokoľvek prihlásený na GitHube.
+**Balík:** Actions → **Balík pre itch.io** → *Run workflow*. Po pár minútach je v behu (úplne dole, *Artifacts*) artefakt `meow-ambulance-web` – stiahnutý `meow-ambulance-web.zip` má `index.html` priamo v koreni (aj s príručkou `wiki/`) a nahrá sa na itch.io **tak, ako je, bez rozbaľovania**. Artefakt sa po 3 dňoch zmaže – vo verejnom repozitári by si ho inak mohol stiahnuť ktokoľvek prihlásený na GitHube.
 
 **Prvé nahratie (ručne):**
 1. Účet na https://itch.io (zadarmo). Používateľské meno bude v adrese hry: `meno.itch.io/meow-ambulance` (Meow Ambulance: https://quietcraft.itch.io/meow-ambulance).
